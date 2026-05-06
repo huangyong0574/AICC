@@ -1,10 +1,9 @@
 import type { Step1Answer } from "../../types"
-import { AlertCircle, Lightbulb, MessageCircle, Sparkles, Loader2 } from "lucide-react"
+import { AlertCircle, Lightbulb, MessageCircle, Sparkles } from "lucide-react"
 import { LoopBlock } from "../LoopBlock"
 import { StreamingSection } from "../StreamingSection"
-import { useEffect, useState } from "react"
-import { loadCfg } from "../../lib/storage"
-import { generateConceptImage } from "../../lib/imageGen"
+import { renderDiagramSvg } from "../../lib/svgRenderer"
+import { useMemo } from "react"
 
 /**
  * Step1View 支持渐进式渲染：
@@ -21,30 +20,18 @@ export function Step1View({
 }) {
   const d = data ?? {}
 
-  // 异步生成图片（LLM 返回 prompt 后触发）
-  const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [imageGenerating, setImageGenerating] = useState(false)
-  const [imageError, setImageError] = useState<string | null>(null)
+  // 当 diagram 有 templateType + nodes + edges 时，自动生成 SVG
+  const diagramWithSvg = useMemo(() => {
+    if (!d.diagram) return d.diagram
+    if (d.diagram.svg) return d.diagram // 已经有 SVG（fixture/mock 数据）
+    if (!d.diagram.templateType || !d.diagram.nodes?.length) return d.diagram
 
-  useEffect(() => {
-    if (!d.diagram?.prompt || imageUrl || imageGenerating) return
-
-    const generate = async () => {
-      setImageGenerating(true)
-      setImageError(null)
-      try {
-        const cfg = loadCfg()
-        const url = await generateConceptImage(d.diagram!.prompt, cfg)
-        setImageUrl(url)
-      } catch (e: any) {
-        setImageError(e.message || "图片生成失败")
-      } finally {
-        setImageGenerating(false)
-      }
+    // 调用渲染器生成 SVG
+    return {
+      ...d.diagram,
+      svg: renderDiagramSvg(d.diagram),
     }
-
-    generate()
-  }, [d.diagram?.prompt])
+  }, [d.diagram])
 
   return (
     <div className="space-y-5">
@@ -117,68 +104,25 @@ export function Step1View({
         )}
       </StreamingSection>
 
-      {/* ④ 概念示意图（通义万相生成精致插画） */}
+      {/* ④ 概念示意图（SVG 模板渲染） */}
       <StreamingSection
         icon={<Sparkles className="h-4 w-4 text-primary" />}
         title="4. 概念示意图"
         tone="primary"
         ready={!!d.diagram}
         streaming={streaming}
-        loadingText="正在构思画面…"
+        loadingText="正在绘制示意图…"
         skeletonLines={3}
       >
-        {d.diagram && (
+        {diagramWithSvg && diagramWithSvg.svg && (
           <>
-            {/* 图片加载区 */}
-            <div className="rounded-lg border border-border/40 bg-card/30 overflow-hidden">
-              {imageGenerating && (
-                <div className="h-64 flex flex-col items-center justify-center gap-3">
-                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                  <span className="text-xs text-muted-foreground">正在生成精致插图…</span>
-                  <span className="text-[11px] text-muted-foreground/60">预计 5-10 秒</span>
-                </div>
-              )}
-
-              {imageError && (
-                <div className="h-64 flex flex-col items-center justify-center gap-2 text-center p-6">
-                  <span className="text-xs text-destructive">{imageError}</span>
-                  <button
-                    onClick={() => {
-                      setImageUrl(null)
-                      setImageGenerating(false)
-                      setImageError(null)
-                    }}
-                    className="text-xs text-primary underline hover:no-underline"
-                  >
-                    重试
-                  </button>
-                </div>
-              )}
-
-              {imageUrl && (
-                <img
-                  src={imageUrl}
-                  alt="Concept illustration"
-                  className="w-full h-auto object-cover animate-fade-in"
-                  onLoad={(e) => {
-                    // 图片加载完成后淡入
-                    e.currentTarget.style.opacity = "1"
-                  }}
-                  style={{ opacity: 0, transition: "opacity 0.5s ease-in" }}
-                />
-              )}
-
-              {!imageGenerating && !imageError && !imageUrl && (
-                <div className="h-64 flex items-center justify-center">
-                  <span className="text-xs text-muted-foreground">等待画面生成…</span>
-                </div>
-              )}
-            </div>
-
-            {/* 图片下方点睛文案 */}
-            {d.diagram.caption && (
+            <div
+              className="rounded-lg border border-border/40 bg-card/30 p-4 flex items-center justify-center overflow-hidden [&>svg]:max-w-full [&>svg]:h-auto"
+              dangerouslySetInnerHTML={{ __html: diagramWithSvg.svg }}
+            />
+            {diagramWithSvg.caption && (
               <div className="mt-3 text-[12px] text-foreground/80 italic border-l-2 border-primary/40 pl-3">
-                {d.diagram.caption}
+                {diagramWithSvg.caption}
               </div>
             )}
           </>

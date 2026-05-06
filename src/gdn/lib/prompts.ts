@@ -200,8 +200,14 @@ export function buildStep1Prompt(question?: string): QaPrompt {
     {"term":"专业术语名","plainHint":"用大白话/生活比喻通俗解释","techNote":"该术语在论文/文档中的技术含义"}
   ],
   "diagram": {
-    "prompt": "Generate a prompt for AI image generation (English, max 50 words). Describe a flat educational illustration showing the core mechanism of this AI concept through a real-world analogy. Style: minimalist flat illustration, soft pastel colors, clean layout, 3-5 key nodes with arrows, no text labels in the image itself. Example: 'Flat illustration of a smart library system where new books flow through a conveyor belt, a smart gate filters important books, and a digital notebook automatically updates key points. Minimalist style, soft blue and orange colors, clean arrows showing information flow.'",
-    "caption": "Image caption in Chinese: one sentence connecting the visual analogy to the concept's core mechanism"
+    "templateType": "Choose one: 'flowchart' (linear process), 'comparison' (old vs new), 'hierarchy' (tree/pyramid), 'cycle' (iterative loop), 'architecture' (layered system)",
+    "nodes": [
+      {"id": "unique_id_1", "label": "节点标题（中文，6-12字）", "sublabel": "副标题/通俗比喻（可选，10-15字）", "color": "可选：#3b82f6/#10b981/#f59e0b/#6b7280"}
+    ],
+    "edges": [
+      {"from": "起点id", "to": "终点id", "label": "箭头标签（可选，2-4字）"}
+    ],
+    "caption": "图片下方一句话点睛：把画面与概念核心机制勾连（20-30字，中文）"
   },
   "loop": {
     "prompt": "展示给学习者的闭环问题：请用自己的话说说当前这个概念的原理与价值（自然表达，问到点子上）"

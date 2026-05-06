@@ -183,12 +183,22 @@ export interface TimelineNodeV2 {
   nextDriver?: string
 }
 
-/** 步骤1 通俗概念插图：LLM 生成场景描述 → 通义万相生成精致图片 */
+/** 步骤1 通俗概念插图：SVG 模板渲染（5 种布局 + LLM 填充内容） */
 export interface ConceptDiagram {
-  prompt: string        // LLM 生成的文生图 prompt（英文，用于 API 调用）
-  imageUrl: string      // 通义万相返回的图片 URL（Base64 data URI 或 CDN 链接）
-  caption: string       // 图片下方一句话点睛（把画面与概念核心动作勾连）
-  generating: boolean   // 图片是否仍在生成中（前端用于显示骨架）
+  templateType: 'flowchart' | 'comparison' | 'hierarchy' | 'cycle' | 'architecture'
+  nodes: Array<{
+    id: string
+    label: string       // 节点标题（如“输入”“门控”“输出”）
+    sublabel?: string   // 节点副标题（可选）
+    color?: string      // 节点颜色（可选，默认主色系）
+  }>
+  edges: Array<{
+    from: string        // 起点节点 ID
+    to: string          // 终点节点 ID
+    label?: string      // 箭头标签（可选）
+  }>
+  caption: string       // 图片下方一句话点睛
+  svg: string           // 前端根据模板 + 数据生成的最终 SVG
 }
 
 /** 每个步骤末尾的闭环问题（用户回答 + LLM 评价，本轮 review 预留） */
