@@ -183,10 +183,12 @@ export interface TimelineNodeV2 {
   nextDriver?: string
 }
 
-/** 步骤1 通俗概念插图：LLM 根据概念生成 SVG 简笔画（动画由步骤2 独占） */
+/** 步骤1 通俗概念插图：LLM 生成场景描述 → 通义万相生成精致图片 */
 export interface ConceptDiagram {
-  svg: string           // LLM 生成的内联 SVG 代码（简笔画风格，viewBox 600x320）
+  prompt: string        // LLM 生成的文生图 prompt（英文，用于 API 调用）
+  imageUrl: string      // 通义万相返回的图片 URL（Base64 data URI 或 CDN 链接）
   caption: string       // 图片下方一句话点睛（把画面与概念核心动作勾连）
+  generating: boolean   // 图片是否仍在生成中（前端用于显示骨架）
 }
 
 /** 每个步骤末尾的闭环问题（用户回答 + LLM 评价，本轮 review 预留） */

@@ -200,8 +200,8 @@ export function buildStep1Prompt(question?: string): QaPrompt {
     {"term":"专业术语名","plainHint":"用大白话/生活比喻通俗解释","techNote":"该术语在论文/文档中的技术含义"}
   ],
   "diagram": {
-    "svg": "请生成一段完整的内联 SVG 代码（不要 <?xml> 头），用简笔画/示意图风格展示这个概念的生活化类比画面。要求：1) viewBox='0 0 600 320'；2) 背景透明无 background rect；3) 用圆角矩形、箭头、简单图形和短文字标注表达；4) 颜色只用：#3b82f6(主色)、#f59e0b(强调)、#10b981(成功)、#6b7280(辅助)、#1f2937(文字)；5) 包含 3-5 个关键节点+箭头连接，体现概念的核心流程；6) 文字用 font-size='13' fill='#1f2937' font-family='system-ui,sans-serif'；7) 总代码不超过 2000 字符。直接返回 <svg>...</svg> 字符串，不要包裹 Markdown 围栏。",
-    "caption": "图片下方一句话点睛，把画面与概念的核心机制勾连起来"
+    "prompt": "Generate a prompt for AI image generation (English, max 50 words). Describe a flat educational illustration showing the core mechanism of this AI concept through a real-world analogy. Style: minimalist flat illustration, soft pastel colors, clean layout, 3-5 key nodes with arrows, no text labels in the image itself. Example: 'Flat illustration of a smart library system where new books flow through a conveyor belt, a smart gate filters important books, and a digital notebook automatically updates key points. Minimalist style, soft blue and orange colors, clean arrows showing information flow.'",
+    "caption": "Image caption in Chinese: one sentence connecting the visual analogy to the concept's core mechanism"
   },
   "loop": {
     "prompt": "展示给学习者的闭环问题：请用自己的话说说当前这个概念的原理与价值（自然表达，问到点子上）"
