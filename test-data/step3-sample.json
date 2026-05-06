@@ -1,0 +1,67 @@
+{
+  "_meta": {
+    "dtSec": 61.9,
+    "ok": true,
+    "errs": []
+  },
+  "data": {
+    "engSummary": "GDN通过线性复杂度重构序列计算范式，彻底打破Transformer的显存墙与算力瓶颈。工程侧实现推理显存占用恒定，支持单卡处理百万级Token长序列；训练阶段支持高效并行化，吞吐量显著提升。该架构大幅降低硬件依赖，使大模型可平滑部署至边缘设备与移动端，为高并发、低延迟的实时AI服务提供底层算力保障[9]。",
+    "engMetrics": [
+      {
+        "name": "推理延迟",
+        "baseline": "O(N^2)",
+        "current": "O(N)",
+        "delta": "-65%",
+        "favor": "up"
+      },
+      {
+        "name": "显存占用",
+        "baseline": "随长度平方增长",
+        "current": "恒定O(1)",
+        "delta": "-80%",
+        "favor": "up"
+      },
+      {
+        "name": "训练吞吐",
+        "baseline": "受限于注意力矩阵",
+        "current": "线性并行优化",
+        "delta": "+45%",
+        "favor": "up"
+      },
+      {
+        "name": "部署门槛",
+        "baseline": "需多卡A100集群",
+        "current": "单卡/边缘设备",
+        "delta": "-70%硬件成本",
+        "favor": "up"
+      }
+    ],
+    "bizSummary": "商业侧直击大模型落地“贵与慢”的核心痛点，显著压缩云算力采购成本，提升产品毛利率。长上下文能力的普惠化，使企业可低成本构建深度研报分析、全量代码审查等垂直场景应用。用户体验因首字响应提速而大幅跃升，直接拉动付费转化率，助力厂商在红海市场中建立“高性能+低成本”的差异化护城河[9]。",
+    "bizScenarios": [
+      {
+        "scenario": "长文档智能问答",
+        "apiCostDelta": "-40% token",
+        "uxDelta": "首字延迟减半",
+        "bizFit": "高度适配"
+      },
+      {
+        "scenario": "实时同声传译",
+        "apiCostDelta": "-35% 算力",
+        "uxDelta": "延迟降至200ms内",
+        "bizFit": "高度适配"
+      },
+      {
+        "scenario": "全量代码库审查",
+        "apiCostDelta": "-50% 显存",
+        "uxDelta": "万行代码秒级解析",
+        "bizFit": "高度适配"
+      },
+      {
+        "scenario": "智能客服长会话",
+        "apiCostDelta": "-30% 并发成本",
+        "uxDelta": "上下文记忆不丢失",
+        "bizFit": "中度适配"
+      }
+    ]
+  }
+}

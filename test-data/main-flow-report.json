@@ -1,0 +1,74 @@
+{
+  "rawQuestion": "什么是 GDN（Gated Delta Network）？",
+  "model": "qwen3.6-plus",
+  "startedAt": "2026-05-05T13:29:50.793Z",
+  "stages": [
+    {
+      "name": "warmup",
+      "ok": true,
+      "dtSec": 47.3,
+      "file": "test-data/feynman-warmup-sample.json",
+      "count": 3
+    },
+    {
+      "name": "step1",
+      "ok": true,
+      "dtSec": 19.6,
+      "file": "test-data/step1-sample.json",
+      "errs": []
+    },
+    {
+      "name": "step2",
+      "ok": true,
+      "dtSec": 85.5,
+      "file": "test-data/step2-sample.json",
+      "errs": []
+    },
+    {
+      "name": "step3",
+      "ok": true,
+      "dtSec": 61.9,
+      "file": "test-data/step3-sample.json",
+      "errs": []
+    },
+    {
+      "name": "feynmanReview",
+      "ok": true,
+      "dtSec": 90.4,
+      "file": "test-data/feynman-review-sample.json",
+      "errs": []
+    }
+  ],
+  "finishedAt": "2026-05-05T13:34:55.647Z",
+  "summary": {
+    "allOk": true,
+    "totalDtSec": 304.70000000000005,
+    "perStage": [
+      {
+        "name": "warmup",
+        "ok": true,
+        "dtSec": 47.3
+      },
+      {
+        "name": "step1",
+        "ok": true,
+        "dtSec": 19.6
+      },
+      {
+        "name": "step2",
+        "ok": true,
+        "dtSec": 85.5
+      },
+      {
+        "name": "step3",
+        "ok": true,
+        "dtSec": 61.9
+      },
+      {
+        "name": "feynmanReview",
+        "ok": true,
+        "dtSec": 90.4
+      }
+    ]
+  }
+}

@@ -1,0 +1,79 @@
+/// <reference types="vite/client" />
+
+declare module "lucide-react" {
+  import * as React from "react"
+  export type LucideProps = React.SVGProps<SVGSVGElement> & { size?: number | string; absoluteStrokeWidth?: boolean }
+  export type LucideIcon = React.ForwardRefExoticComponent<LucideProps & React.RefAttributes<SVGSVGElement>>
+  export const X: LucideIcon
+  export const Check: LucideIcon
+  export const ChevronDown: LucideIcon
+  export const ChevronUp: LucideIcon
+  export const ChevronRight: LucideIcon
+  export const ChevronLeft: LucideIcon
+  export const Settings: LucideIcon
+  export const Sparkles: LucideIcon
+  export const Play: LucideIcon
+  export const RotateCcw: LucideIcon
+  export const Download: LucideIcon
+  export const Copy: LucideIcon
+  export const Trash2: LucideIcon
+  export const BookOpen: LucideIcon
+  export const Network: LucideIcon
+  export const Code2: LucideIcon
+  export const FileText: LucideIcon
+  export const Send: LucideIcon
+  export const Loader2: LucideIcon
+  export const CheckCircle2: LucideIcon
+  export const Circle: LucideIcon
+  export const ArrowRight: LucideIcon
+  export const Target: LucideIcon
+  export const Link2: LucideIcon
+  export const Calculator: LucideIcon
+  export const ScrollText: LucideIcon
+  export const Brain: LucideIcon
+  export const Building2: LucideIcon
+  export const Users: LucideIcon
+  export const Briefcase: LucideIcon
+  export const Code: LucideIcon
+  export const Zap: LucideIcon
+  export const Eye: LucideIcon
+  export const Save: LucideIcon
+  export const FileCode: LucideIcon
+  export const Presentation: LucideIcon
+  export const MessageSquare: LucideIcon
+  export const AlertCircle: LucideIcon
+  export const GitBranch: LucideIcon
+  export const Menu: LucideIcon
+  export const Plus: LucideIcon
+  export const Mic: LucideIcon
+  export const Search: LucideIcon
+  export const Library: LucideIcon
+  export const Share2: LucideIcon
+  export const Trash: LucideIcon
+  export const Clock: LucideIcon
+  export const Tag: LucideIcon
+  export const Upload: LucideIcon
+  export const ExternalLink: LucideIcon
+  export const KeyRound: LucideIcon
+  export const Cpu: LucideIcon
+  export const Layers: LucideIcon
+  export const Factory: LucideIcon
+  export const Home: LucideIcon
+  export const UtensilsCrossed: LucideIcon
+  export const TrafficCone: LucideIcon
+  export const Table2: LucideIcon
+  export const Sigma: LucideIcon
+  export const Rocket: LucideIcon
+  export const GraduationCap: LucideIcon
+  export const Lightbulb: LucideIcon
+  export const TrendingUp: LucideIcon
+  export const TrendingDown: LucideIcon
+  export const Minus: LucideIcon
+  export const DollarSign: LucideIcon
+  export const Gauge: LucideIcon
+  export const ListChecks: LucideIcon
+  export const MessageCircle: LucideIcon
+  export const Wand2: LucideIcon
+  export const Info: LucideIcon
+  export const ChevronsRight: LucideIcon
+}
