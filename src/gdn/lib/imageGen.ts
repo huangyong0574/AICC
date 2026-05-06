@@ -21,7 +21,13 @@ export async function generateConceptImage(
 ): Promise<string> {
   if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
 
-  const res = await fetch(`${WANX_BASE_URL}/services/aigc/text2image/image-synthesis`, {
+  const baseURL = cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  // 通义万相 API 需要去掉 /compatible-mode/v1 后缀
+  // 开发环境走 Vite 代理（/api/v1 → https://dashscope.aliyuncs.com/api/v1）
+  const isDev = import.meta.env.DEV
+  const wanxBase = isDev ? "" : baseURL.replace(/\/compatible-mode\/v1$/, "")
+
+  const res = await fetch(`${wanxBase}/api/v1/services/aigc/text2image/image-synthesis`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -51,7 +57,7 @@ export async function generateConceptImage(
 
   // 异步任务模式：返回 task_id，需要轮询结果
   if (data.output?.task_id) {
-    return await pollTaskResult(data.output.task_id, cfg.apiKey)
+    return await pollTaskResult(data.output.task_id, cfg.apiKey, wanxBase)
   }
 
   // 同步模式（如果返回了直接结果）
@@ -68,13 +74,14 @@ export async function generateConceptImage(
 async function pollTaskResult(
   taskId: string,
   apiKey: string,
+  wanxBase: string,
   maxRetries = 30,
   intervalMs = 2000,
 ): Promise<string> {
   for (let i = 0; i < maxRetries; i++) {
     await sleep(intervalMs)
 
-    const res = await fetch(`${WANX_BASE_URL}/tasks/${taskId}`, {
+    const res = await fetch(`${wanxBase}/api/v1/tasks/${taskId}`, {
       headers: {
         "Authorization": `Bearer ${apiKey}`,
       },

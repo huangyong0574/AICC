@@ -9,4 +9,14 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    proxy: {
+      // 代理通义万相 API 请求，解决 CORS 跨域问题
+      '/api/v1': {
+        target: 'https://dashscope.aliyuncs.com',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 })

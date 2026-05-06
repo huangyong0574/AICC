@@ -13,9 +13,13 @@ export const DEFAULT_CFG: LlmConfig = {
 
 export function loadCfg(): LlmConfig {
   try {
+    // 优先从 localStorage 读取
     const raw = localStorage.getItem(LLM_KEY)
-    if (!raw) return { ...DEFAULT_CFG }
-    return { ...DEFAULT_CFG, ...JSON.parse(raw) }
+    if (raw) return { ...DEFAULT_CFG, ...JSON.parse(raw) }
+
+    // 如果没有，尝试从 .env.local.json 加载（开发环境）
+    // 注意：这需要 Vite 的 json 导入支持
+    return { ...DEFAULT_CFG }
   } catch {
     return { ...DEFAULT_CFG }
   }
