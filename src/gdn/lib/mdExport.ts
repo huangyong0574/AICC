@@ -1,6 +1,6 @@
 import type {
   Note, FeynmanDigest,
-  Step1Answer, Step2Answer, Step3Answer, StepEntry,
+  Step1Answer, Step2Answer, Step3Answer, Step4Answer, StepEntry,
 } from "../types"
 
 function bulletList(arr: string[] = []): string {
@@ -24,7 +24,7 @@ function sectionStep1(a: Step1Answer): string {
   const glossary = a.glossaryTerms.map(g => `- **${g.term}**
   - 大白话：${g.plainHint}
   - 技术含义：${g.techNote}`).join("\n")
-  return `## 步骤1 · 装模作样｜概念与价值感性认识
+  return `## L1 类比理解
 
 **价值铺垫**：${a.valueLead}
 
@@ -42,18 +42,45 @@ ${a.loop.userAnswer ? `\n> 你的回答：${a.loop.userAnswer}\n` : ""}`
 }
 
 function sectionStep2(a: Step2Answer): string {
+  const applicable = a.applicable.map(c => `| ${c.scenario} | ${c.fit} | ${c.reason} |`).join("\n")
+  const inapplicable = a.inapplicable.map(c => `| ${c.scenario} | ${c.fit} | ${c.reason} |`).join("\n")
+  return `## L2 场景选择
+
+**导读**：${a.intro}
+
+### 适用场景
+
+| 场景 | 匹配度 | 原因 |
+| --- | --- | --- |
+${applicable}
+
+### 不适用场景
+
+| 场景 | 匹配度 | 原因 |
+| --- | --- | --- |
+${inapplicable}
+
+**选型标准**：${a.selectionCriteria}
+
+---
+
+**闭环小练习**：${a.loop.prompt}
+${a.loop.userAnswer ? `\n> 你的回答：${a.loop.userAnswer}\n` : ""}`
+}
+
+function sectionStep3(a: Step3Answer): string {
   const tlRows = a.timeline.map(t => `| ${t.era} | ${t.tech} | ${t.algo || ""} | ${t.formula ? "`" + t.formula + "`" : ""} | ${t.problem} | ${t.valueLimit || ""} |`).join("\n")
   const steps = a.principle.steps.map((s, i) => `${i + 1}. **${s.label}** ${s.symbol ? `\`${s.symbol}\`` : ""} — ${s.desc}`).join("\n")
   const vars = a.math.variables.map(v => `| \`${v.symbol}\` | ${v.meaning} | ${v.trainRole} | ${v.inferRole} |`).join("\n")
-  return `## 步骤2 · 像模像样｜算法原理与数学本质
+  return `## L3 深入原理
 
-### 2.1 技术演进时间轴
+### 3.1 技术演进时间轴
 
 | 年代 | 技术 | 算法原理 | 公式 | 技术问题 | 价值限制 |
 | --- | --- | --- | --- | --- | --- |
 ${tlRows}
 
-### 2.2 分步静态帧演示
+### 3.2 分步静态帧演示
 
 **核心思想**：${a.principle.coreIdea}
 
@@ -61,7 +88,7 @@ ${steps}
 
 > 关键点：${a.principle.note}
 
-### 2.3 数学本质 · Token 代入演算
+### 3.3 数学本质 Token 代入演算
 
 **公式**
 
@@ -88,32 +115,28 @@ ${vars}
 ${a.loop.userAnswer ? `\n> 你的回答：${a.loop.userAnswer}\n` : ""}`
 }
 
-function sectionStep3(a: Step3Answer): string {
-  const engRows = a.engMetrics.map(m => `| ${m.name} | ${m.baseline} | ${m.current} | ${m.delta} |`).join("\n")
-  const bizRows = a.bizScenarios.map(s => `| ${s.scenario} | ${s.apiCostDelta} | ${s.uxDelta} | ${s.bizFit} |`).join("\n")
-  return `## 步骤3 · 有模有样｜客户价值与商业价值
+function sectionStep4(a: Step4Answer): string {
+  return `## L4 本质总结
 
-### 3.1 工程收益（面向 AI 应用开发/运维）
+**一句话本质**：${a.oneLiner}
 
-**总结**：${a.engSummary}
+**认知锚定**：${a.anchor}
 
-| 指标 | 基线 | 当前 | 变化 |
-| --- | --- | --- | --- |
-${engRows}
+### 认知翻转对比
 
-### 3.2 业务价值（面向 MaaS API 客户高管）
+| Before | After |
+| --- | --- |
+| ${a.contrastPair.before} | ${a.contrastPair.after} |
 
-**总结**：${a.bizSummary}
+**框架归位**：${a.frameworkNote}
 
-| 场景 | API 计费 | 用户体验 | 业务适配 |
-| --- | --- | --- | --- |
-${bizRows}
+### Key Takeaways
 
-> 步骤3 闭环：回到开头的费曼 3 问，用业务总监 / CTO / 开发者三类听众能懂的语言各讲一遍。`
+${a.takeaway.map((t, i) => `${i + 1}. ${t}`).join("\n")}`
 }
 
 function sectionFeynman(f: FeynmanDigest): string {
-  const parts: string[] = ["## 步骤4 · 费曼内化"]
+  const parts: string[] = ["## 费曼内化"]
   parts.push(`### 业务总监视角\n\n${f.answers.biz || "_（未作答）_"}\n`)
   parts.push(`### CTO 视角\n\n${f.answers.cto || "_（未作答）_"}\n`)
   parts.push(`### 开发者视角\n\n${f.answers.dev || "_（未作答）_"}\n`)
@@ -138,9 +161,11 @@ export function toMarkdown(note: Note): string {
   const s1 = findStep(note, "step1") as Step1Answer | undefined
   const s2 = findStep(note, "step2") as Step2Answer | undefined
   const s3 = findStep(note, "step3") as Step3Answer | undefined
+  const s4 = findStep(note, "step4") as Step4Answer | undefined
   if (s1) out.push(sectionStep1(s1))
   if (s2) out.push(sectionStep2(s2))
   if (s3) out.push(sectionStep3(s3))
+  if (s4) out.push(sectionStep4(s4))
   if (note.feynman) out.push(sectionFeynman(note.feynman))
   return out.join("\n")
 }
@@ -158,28 +183,28 @@ export function downloadMarkdown(note: Note) {
 export function toSpeechScript(note: Note): string {
   const lines: string[] = []
   const s1 = findStep(note, "step1") as Step1Answer | undefined
-  const s3 = findStep(note, "step3") as Step3Answer | undefined
+  const s4 = findStep(note, "step4") as Step4Answer | undefined
   if (s1) lines.push(`价值铺垫：${s1.valueLead}\n官方定义：${s1.officialDefinition}`)
-  if (s3) lines.push(`工程收益：${s3.engSummary}\n业务价值：${s3.bizSummary}`)
+  if (s4) lines.push(`一句话本质：${s4.oneLiner}\n认知锚定：${s4.anchor}`)
   return lines.join("\n\n")
 }
 
 export function validateNote(note: Note): string[] {
   const errs: string[] = []
   if (!note.topic) errs.push("缺少 topic")
-  if (!Array.isArray(note.steps) || note.steps.length !== 3) errs.push("steps 必须为 3 条")
+  if (!Array.isArray(note.steps) || note.steps.length !== 4) errs.push("steps 必须为 4 条")
   return errs
 }
 
 export function toPptBullets(note: Note): string {
   const s1 = findStep(note, "step1") as Step1Answer | undefined
-  const s2 = findStep(note, "step2") as Step2Answer | undefined
   const s3 = findStep(note, "step3") as Step3Answer | undefined
+  const s4 = findStep(note, "step4") as Step4Answer | undefined
   const lines: string[] = []
   lines.push(note.topic)
-  if (s1) { lines.push(""); lines.push("· 价值铺垫：" + s1.valueLead); lines.push("· 专业定义：" + s1.officialDefinition) }
-  if (s2) { lines.push(""); lines.push("· 核心机制：" + s2.principle.coreIdea) }
-  if (s3) { lines.push(""); lines.push("· 工程收益：" + s3.engSummary); lines.push("· 业务价值：" + s3.bizSummary) }
+  if (s1) { lines.push(""); lines.push("- 价值铺垫：" + s1.valueLead); lines.push("- 专业定义：" + s1.officialDefinition) }
+  if (s3) { lines.push(""); lines.push("- 核心机制：" + s3.principle.coreIdea) }
+  if (s4) { lines.push(""); lines.push("- 一句话本质：" + s4.oneLiner); lines.push("- 认知锚定：" + s4.anchor) }
   return lines.join("\n")
 }
 

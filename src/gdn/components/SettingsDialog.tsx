@@ -9,7 +9,9 @@ import type { LlmConfig } from "../types"
 import { loadCfg, saveCfg, DEFAULT_CFG } from "../lib/storage"
 
 const MODEL_OPTIONS = [
-  { value: "qwen3.6-plus", label: "qwen3.6-plus（推荐 · thinking 模式）" },
+  { value: "deepseek-v4-flash", label: "deepseek-v4-flash（推荐 · 更快）" },
+  { value: "deepseek-v4-pro", label: "deepseek-v4-pro（更强）" },
+  { value: "qwen3.6-plus", label: "qwen3.6-plus（thinking 模式）" },
   { value: "qwen-plus", label: "qwen-plus" },
   { value: "qwen-turbo", label: "qwen-turbo（更快）" },
   { value: "qwen-max", label: "qwen-max" },

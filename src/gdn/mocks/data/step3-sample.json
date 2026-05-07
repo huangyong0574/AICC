@@ -1,67 +1,58 @@
 {
   "_meta": {
-    "dtSec": 61.9,
+    "dtSec": 85.5,
     "ok": true,
     "errs": []
   },
   "data": {
-    "engSummary": "GDN通过线性复杂度重构序列计算范式，彻底打破Transformer的显存墙与算力瓶颈。工程侧实现推理显存占用恒定，支持单卡处理百万级Token长序列；训练阶段支持高效并行化，吞吐量显著提升。该架构大幅降低硬件依赖，使大模型可平滑部署至边缘设备与移动端，为高并发、低延迟的实时AI服务提供底层算力保障[9]。",
-    "engMetrics": [
-      {
-        "name": "推理延迟",
-        "baseline": "O(N^2)",
-        "current": "O(N)",
-        "delta": "-65%",
-        "favor": "up"
-      },
-      {
-        "name": "显存占用",
-        "baseline": "随长度平方增长",
-        "current": "恒定O(1)",
-        "delta": "-80%",
-        "favor": "up"
-      },
-      {
-        "name": "训练吞吐",
-        "baseline": "受限于注意力矩阵",
-        "current": "线性并行优化",
-        "delta": "+45%",
-        "favor": "up"
-      },
-      {
-        "name": "部署门槛",
-        "baseline": "需多卡A100集群",
-        "current": "单卡/边缘设备",
-        "delta": "-70%硬件成本",
-        "favor": "up"
-      }
-    ],
-    "bizSummary": "商业侧直击大模型落地“贵与慢”的核心痛点，显著压缩云算力采购成本，提升产品毛利率。长上下文能力的普惠化，使企业可低成本构建深度研报分析、全量代码审查等垂直场景应用。用户体验因首字响应提速而大幅跃升，直接拉动付费转化率，助力厂商在红海市场中建立“高性能+低成本”的差异化护城河[9]。",
-    "bizScenarios": [
-      {
-        "scenario": "长文档智能问答",
-        "apiCostDelta": "-40% token",
-        "uxDelta": "首字延迟减半",
-        "bizFit": "高度适配"
-      },
-      {
-        "scenario": "实时同声传译",
-        "apiCostDelta": "-35% 算力",
-        "uxDelta": "延迟降至200ms内",
-        "bizFit": "高度适配"
-      },
-      {
-        "scenario": "全量代码库审查",
-        "apiCostDelta": "-50% 显存",
-        "uxDelta": "万行代码秒级解析",
-        "bizFit": "高度适配"
-      },
-      {
-        "scenario": "智能客服长会话",
-        "apiCostDelta": "-30% 并发成本",
-        "uxDelta": "上下文记忆不丢失",
-        "bizFit": "中度适配"
-      }
-    ]
+    "principle": {
+      "coreIdea": "引入可学习门控动态调节历史状态与当前输入的融合比例，实现线性复杂度下的精准记忆[2]。",
+      "steps": [
+        {
+          "label": "第1步",
+          "desc": "计算当前Token的QKV生成原始增量Δh。参数来自线性投影层，类比「分拣机初筛包裹」。",
+          "symbol": "Δh_t"
+        },
+        {
+          "label": "第2步",
+          "desc": "独立网络根据上下文生成权重g_t。参数来自门控MLP，类比「智能水龙头调节水流」。",
+          "symbol": "g_t"
+        },
+        {
+          "label": "第3步",
+          "desc": "执行状态递推h_t=h_{t-1}+g_t⊙Δh_t。参数为前序状态，类比「进度条接力更新」。",
+          "symbol": "h_t"
+        }
+      ],
+      "animationKey": "gdn-gate",
+      "note": "门控阀门精准拦截冗余信息，仅放行关键增量，延续步骤1「智能水龙头与进度条」的高效协作逻辑[2]。"
+    },
+    "math": {
+      "formula": "h_t = h_{t-1} + g_t \\odot \\Delta h_t, \\quad \\Delta h_t = (K_t^T V_t) Q_t",
+      "intuition": "用门控过滤噪声，状态像滚雪球累积关键信息，避免重复计算[2]。",
+      "variables": [
+        {
+          "symbol": "g_t",
+          "meaning": "门控权重",
+          "trainRole": "梯度下降优化过滤阈值",
+          "inferRole": "实时决定信息保留比例"
+        },
+        {
+          "symbol": "h_t",
+          "meaning": "隐藏状态",
+          "trainRole": "并行矩阵乘累积上下文",
+          "inferRole": "O(1)内存递推更新"
+        },
+        {
+          "symbol": "Δh_t",
+          "meaning": "状态增量",
+          "trainRole": "线性注意力近似计算",
+          "inferRole": "当前Token带来的新信息"
+        }
+      ],
+      "calculationExample": "输入「我 爱 你」。处理「我」：Δh₁=初始特征，g₁=0.8，h₁=0.8Δh₁。处理「爱」：Δh₂=新特征，g₂=0.6，h₂=h₁+0.6Δh₂（保留「我」记忆）。处理「你」：Δh₃=新特征，g₃=0.9，h₃=h₂+0.9Δh₃（强化关联）。全程仅维护单一h向量。",
+      "trainFlow": "训练时展开为线性注意力形式，利用GPU矩阵乘并行计算所有Token的QKV与状态，保证高吞吐[2]。",
+      "inferFlow": "推理时切换为RNN递推模式，仅加载上一时刻h与当前Token，内存占用恒为O(1)，支持超长序列[2]。"
+    }
   }
 }

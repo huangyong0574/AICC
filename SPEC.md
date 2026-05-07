@@ -1,191 +1,282 @@
 # AICC - AI Concept Penetration Learning Platform
-## 产品规格说明书 (Product Specification)
+## Product Specification
 
-> 版本：v1.0.1  
-> 更新日期：2026-05-06  
-> 状态：MVP 已完成，步骤闭环评价功能待实现  
-> 代码包名：ai-knowledge-explorer
+> Version: v2.0.0  
+> Updated: 2026-05-07  
+> Status: MVP completed, step loop evaluation pending  
+> Package: ai-knowledge-explorer
 
 ---
 
-## 一、产品定位
+## 1. Product Positioning
 
-**产品名称**：AICC (AI Concept Coach) / ai-knowledge-explorer  
-**一句话描述**：面向 MaaS 行业非算法从业者的 AI 概念穿透学习平台，用费曼学习法在 15 分钟内讲透一个 AI 算法概念。  
-**UI 展示名称**："你的AI认知教练"（header 展示）  
-**副标题**："三大步骤流式 · 费曼内化 · Transformer 基线图谱"  
-**首页标题**："算法实验到客户一线的认知桥梁"
+**Product Name**: AICC (AI Concept Coach) / ai-knowledge-explorer  
+**One-liner**: MaaS industry non-algorithm professionals' AI concept penetration learning platform, using Feynman learning method to explain an AI algorithm concept within 15 minutes.  
+**UI Display Name**: "你的AI认知教练" (header)  
+**Subtitle**: "四大步骤流式 · 费曼内化 · Transformer 基线图谱"  
+**Hero Title**: "如果你不能简单地解释它，你就没有真正理解它。"  
+**Hero Sub**: "如果你和我一样，看到新技术想了解，但论文又不太懂，看看这个页面是否适合你"
 
-**目标用户画像**：
-- 大模型售前解决方案工程师
-- AI 业务架构师
-- 产品经理 / 技术销售
-- 不写算法代码、不碰算法工程部署，但需要向客户讲解 AI 技术的从业者
+**Target Users**:
+- Large model pre-sales solution engineers
+- AI business architects
+- Product managers / technical sales
+- Professionals who don't write algorithm code but need to explain AI technology to customers
 
-**核心诉求**：在 arXiv、AI 实验室/科技公司技术论文上看到的算法概念，可以花 15 分钟左右理解，并以费曼学习法作为衡量标准，记录到长期记忆作为下次认知连结点。
+**Core Demand**: Understand an algorithm concept found in arXiv/tech papers within ~15 minutes, validated by Feynman method, recorded as long-term memory for future cognitive linkage.
 
-**默认示例问题**（UI 中展示）：
+**Default Example Questions** (UI EXAMPLES array):
 - "什么是 GDN（Gated Delta Network）？"
-- "Transformer 的 Attention 为什么是 O(N^2)？"
+- "Transformer 的 Attention 为什么是 O(N²)？"
 - "Mamba / 状态空间模型（SSM）和 RNN 的区别"
 - "MoE（混合专家）的路由为什么有负载不均？"
 
 ---
 
-## 二、核心痛点与产品解法
+## 2. Core Problems & Solutions
 
-| 痛点 | 表现 | 产品解法 |
-|------|------|----------|
-| 认知频断层 | 论文/博客只讲数学或只讲业务，无法在"客户业务价值 <-> 工程收益 <-> 算法机制 <-> 数学公式"之间自由升维降维 | 三步骤递进：感性认识 -> 算法原理 -> 商业价值 |
-| 认知负荷高 | 概念抽象、术语密集、公式抽象，非算法背景理解慢、易放弃 | 费曼学习法：预热 3 问倒逼思考 + 多角色讲解 + 通俗类比 + 动画可视化 |
-| 知识碎片化 | Chatbox 问完即丢，无法与过往认知链接，无法形成个人方案资产复利 | 本地知识图谱自动挂载 + 笔记库持久化 + 多格式导出 |
-
----
-
-## 三、功能架构
-
-### 3.1 整体流程图
-
-```
-用户输入自然语言问题（如"GDN是什么意思？"）
-        |
-   费曼预热（3 问）<- LLM 动态生成
-        |
-   用户点击"我看完了，开始讲解"
-        |
-  +-----------------------------+
-  |  步骤 1：装模作样            |
-  |  概念与价值感性认识          |
-  |  -> 价值铺垫 -> 专业定义    |
-  |  -> 术语拆解 -> 示意图/动画 |
-  |  -> 闭环问题（UI 占位）     |
-  |  -> 用户点击确认，进入下一步 |
-  +-----------------------------+
-        | 确认
-  +-----------------------------+
-  |  步骤 2：像模像样            |
-  |  算法原理与数学本质          |
-  |  -> 技术演进时间轴           |
-  |  -> 分步静态帧 + 动画演示   |
-  |  -> Token 代入演算（LaTeX） |
-  |  -> 闭环问题（UI 占位）     |
-  |  -> 用户点击确认，进入下一步 |
-  +-----------------------------+
-        | 确认
-  +-----------------------------+
-  |  步骤 3：有模有样            |
-  |  客户价值与商业价值          |
-  |  -> 工程收益总结 + 指标表   |
-  |  -> 业务价值总结 + 场景表   |
-  |  -> 闭环 = 提示回到费曼 3 问|
-  |  -> 确认后进入费曼内化面板   |
-  +-----------------------------+
-        | 确认
-  +-----------------------------+
-  |  费曼内化面板                |
-  |  -> 用户填写 3 角色复述      |
-  |  -> LLM 评估 + 知识图谱挂载 |
-  +-----------------------------+
-        | 完成
-   素材导出（5 种方式）/ 查看知识图谱
-```
-
-### 3.2 功能模块清单
-
-| 模块 | 功能 | 状态 | 备注 |
-|------|------|------|------|
-| **费曼预热** | 动态生成 3 个角色问题（业务总监/CTO/开发者） | ✅ 已实现 | LLM 调用 `callFeynmanWarmup()` |
-| **步骤 1** | 概念与价值感性认识（4 部分 + 闭环占位） | ✅ 已实现 | LLM 调用 `callStep("step1")` |
-| **步骤 2** | 算法原理与数学本质（时间轴+动画+公式+闭环占位） | ✅ 已实现 | LLM 调用 `callStep("step2")` |
-| **步骤 3** | 客户价值与商业价值（工程+业务，无独立 loop 字段） | ✅ 已实现 | LLM 调用 `callStep("step3")` |
-| **费曼内化** | 三角色复述评估 + 知识图谱自动生成 | ✅ 已实现 | LLM 调用 `callFeynmanReview()` |
-| **知识图谱** | 以 Transformer 为基线的自动挂载 | ✅ 已实现 | `GraphDelta` 数据结构 |
-| **笔记库** | 学习笔记的本地存储与管理 | ✅ 已实现 | localStorage 持久化 |
-| **LLM 设置** | API Key / Base URL / 模型选择 / 离线模式 | ✅ 已实现 | 支持 qwen3.6-plus 等 |
-| **素材导出** | 保存笔记库 + Markdown 下载/复制 + 讲稿片段 + PPT 要点 | ✅ 已实现 | 5 种导出方式 |
-| **动画可视化** | 5 种内置动画（GDN-gate/Attention/Mamba/MoE/Generic） | ✅ 已实现 | CSS @keyframes + React 状态驱动 |
-| **公式渲染** | KaTeX 数学公式渲染 | ✅ 已实现 | 支持 LaTeX 语法，自动标准化 |
-| **离线预览** | 不消耗 API 的本地 fixture 演示 | ✅ 已实现 | 5 个 JSON 样本，模拟流式输出 |
-| **闭环评价** | 步骤 1/2 闭环问题的 LLM 评分 + 解锁逻辑 | ⏳ UI 占位 | 当前为 disabled textarea，下一轮实现 |
-
-### 3.3 步骤确认机制（当前实现）
-
-> **重要说明**：当前版本中，步骤 1/2 的"闭环问题"仅为 UI 占位展示（`LoopBlock` 组件）。
-> 用户点击"确认"按钮后直接进入下一步，**不经过 LLM 评价**。
-> `LoopBlock` 的 Textarea 处于 `disabled` 状态，代码注释明确标注"下一轮会加入 LLM 评分 + 下一步解锁逻辑"。
+| Pain Point | Symptom | Solution |
+|---|---|---|
+| Cognitive fragmentation | Papers only cover math OR business, can't bridge dimensions | 3-step progression: perception -> principle -> business value |
+| High cognitive load | Abstract concepts, dense terminology, hard math | Feynman method: 3 warmup questions + multi-role explanation + analogies + animation |
+| Knowledge fragmentation | ChatBox conversations lost, no linkage to past knowledge | Local knowledge graph auto-mount + note library persistence + multi-format export |
 
 ---
 
-## 四、技术架构
+## 3. Functional Architecture
 
-### 4.1 技术栈
+### 3.1 Overall Flow
 
-| 类别 | 技术 | 版本 | 备注 |
-|------|------|------|------|
-| 前端框架 | React | 18.3.1 | 不使用 StrictMode（避免 LLM 双调用竞态） |
-| 语言 | TypeScript | 5.6.2 | strict 模式 |
-| 构建工具 | Vite | 6.0.5 | @vitejs/plugin-react |
-| UI 组件库 | shadcn/ui + Radix UI | 最新 | dialog/label/progress/select/scroll-area/tabs 等 |
-| 样式 | Tailwind CSS | 3.4.17 | + tailwindcss-animate + tailwind-merge |
-| 图标 | Lucide React | 0.468.0 | |
-| 公式渲染 | KaTeX | 0.16.45 | |
-| Toast 通知 | Sonner | 2.0.7 | |
-| 样式工具 | class-variance-authority | 0.7.1 | 组件变体管理 |
-| LLM API | 阿里云 DashScope / 百炼 | - | 兼容 OpenAI 协议 |
-| 数据存储 | localStorage | 浏览器原生 | |
+```
+User inputs natural language question (e.g. "GDN是什么意思？")
+        |
+   Feynman Warmup (3 questions) <- LLM dynamic generation
+        |
+   User clicks "我看完了，开始讲解"
+        |
+  +-----------------------------+
+  |  Step 1: L1 类比理解          |
+  |  Concept & Value Perception  |
+  |  -> Value lead -> Definition |
+  |  -> Glossary -> SVG Diagram  |
+  |  -> Loop question (UI only)  |
+  |  -> User confirms, next step |
+  +-----------------------------+
+        | confirm
+  +-----------------------------+
+  |  Step 2: L2 场景边界          |
+  |  Scenario Selection          |
+  |  -> Intro overview           |
+  |  -> Applicable scenarios     |
+  |  -> Inapplicable scenarios   |
+  |  -> Selection criteria       |
+  |  -> Loop question (UI only)  |
+  |  -> User confirms, next step |
+  +-----------------------------+
+        | confirm
+  +-----------------------------+
+  |  Step 3: L3 深入原理          |
+  |  Algorithm & Math Essence    |
+  |  -> Timeline evolution       |
+  |  -> Principle steps + anim   |
+  |  -> Token math (LaTeX)       |
+  |  -> Loop question (UI only)  |
+  |  -> User confirms, next step |
+  +-----------------------------+
+        | confirm
+  +-----------------------------+
+  |  Step 4: L4 本质总结          |
+  |  Essence Summary (McKinsey)  |
+  |  -> One-liner (<=30 chars)   |
+  |  -> Anchor analogy           |
+  |  -> Contrast pair            |
+  |  -> Framework note           |
+  |  -> 3 Takeaways              |
+  |  -> User confirms            |
+  +-----------------------------+
+        | confirm (allConfirmed=4)
+  +-----------------------------+
+  |  Feynman Digest Panel        |
+  |  -> User writes 3-role retell|
+  |  -> LLM review + graph mount |
+  +-----------------------------+
+        | done
+   Export (5 methods) / View Knowledge Graph
+```
 
-**注意**：`package.json` 中列有 `react-router-dom@^7.1.1`，但代码中**未实际引用**（僵尸依赖），应用为单页无路由结构。
+### 3.2 Module List
 
-### 4.2 目录结构
+| Module | Function | Status | Notes |
+|---|---|---|---|
+| **Feynman Warmup** | Dynamic 3 role-based questions (biz/CTO/dev) | Done | `callFeynmanWarmup()` |
+| **Step 1** | Concept perception (4 parts + loop placeholder) | Done | `callStep("step1")` |
+| **Step 2** | Algorithm principle & math (timeline+anim+formula+loop) | Done | `callStep("step2")` |
+| **Step 3** | Business value (engineering+business, no loop field) | Done | `callStep("step3")` |
+| **Feynman Digest** | 3-role review + knowledge graph generation | Done | `callFeynmanReview()` |
+| **Knowledge Graph** | Transformer-based auto-mount | Pending (待上线) | Header button disabled + "soon" badge |
+| **Note Library** | Local storage & management | Pending (待上线) | Header button disabled + "soon" badge |
+| **LLM Settings** | API Key / Base URL / Model / Offline Mode | Done | deepseek-v4-flash default |
+| **Export** | Save + MD download/copy + speech script + PPT bullets | Done | 5 export methods |
+| **Animation** | 5 built-in animations (GDN-gate/Attention/Mamba/MoE/Generic) | Done | CSS @keyframes + React state |
+| **Formula Render** | KaTeX math rendering | Done | LaTeX syntax |
+| **SVG Diagrams** | Step1 concept diagram via SVG template renderer | Done | 5 layout types |
+| **Offline Preview** | Local fixture demo without API consumption | Done | 6 JSON samples |
+| **Streaming Parse** | Partial JSON field-by-field rendering during SSE | Done | `partialJson.ts` |
+| **Loop Evaluation** | Step 1/2/3 loop question LLM scoring + unlock | UI Placeholder | disabled textarea, next iteration |
+| **Cognitive NavBar** | Top sticky progress bar showing 6 cognitive nodes | Implemented & Tested | `CognitiveNavBar` component, maps flow: 开场提问→L1-L4→闭环 |
+
+### 3.3 Cognitive Navigation Bar (认知导航条)
+
+> **设计理念**：学习不是线性阅读，而是认知层级的递进攀升。导航条将整个学习旅程映射为 6 个认知台阶，用户始终知道"我在哪一层、还差几层到真正理解"。
+
+**位置**：固定在 header 下方（sticky），始终可见，随页面内容进度自动演进。
+
+**结构**：
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│  ●━━━━━━●━━━━━━●━━━━━━●━━━━━━○━━━━━━○━━━━━━○                                    │
+│ [开场提问] [类比理解] [场景边界] [深入原理] [本质总结] [开场提问闭环]                │
+│   已读      已读      已读      当前       未读       未读                        │
+└──────────────────────────────────────────────────────────────────────────────────┘
+```
+
+**6 个认知节点与内容映射**：
+
+| Node | Label | Level | Maps To | Trigger Condition |
+|---|---|---|---|---|
+| 1 | 开场提问 | - | Feynman Warmup: 3 角色预热问题 | warmupConfirmed |
+| 2 | 类比理解 | Level 1 | Step 1: 生活化类比 + 定义 + 术语 + 概念图 | Step 1 confirmed |
+| 3 | 场景边界 | Level 2 | Step 2: 适用/不适用场景 + 选型标准 | Step 2 confirmed |
+| 4 | 深入原理 | Level 3 | Step 3: 时间轴 + 原理分步 + 动画 + 数学公式 | Step 3 confirmed |
+| 5 | 本质总结 | Level 4 | Step 4: 一句话本质 + 锚点类比 + 对比 + 要点 | Step 4 confirmed |
+| 6 | 开场提问闭环 | - | Feynman Digest: 回答开场 3 问 + LLM review | Feynman Digest 提交完成 |
+
+**节点状态**：
+
+| Status | Visual | Meaning |
+|---|---|---|
+| `completed` (已读) | 实心圆 + 高亮连线 + 文字正常色 | 用户已通过该认知层 |
+| `active` (当前) | 实心圆 + 脉冲动画 + 文字加粗 | 正在此认知层学习 |
+| `pending` (未读) | 空心圆 + 灰色连线 + 文字弱化 | 尚未到达 |
+
+**进度演进规则**：
+
+1. **初始状态**：用户点击"开始讲解"后，导航条出现，node 1（开场提问）为 `active`
+2. **开场提问完成**：warmupConfirmed → node 1 completed，node 2（类比理解）active
+3. **步骤推进**：stepN confirmed → node N+1 completed，node N+2 active（step1→node2, step2→node3, step3→node4, step4→node5）
+4. **最终状态**：Feynman Digest 提交后，全部 6 节点变为 `completed`，显示"认知穿透完成"
+
+**认知层级哲学**（与产品定位关联）：
+
+```
+开场提问          -> 费曼预热：3 个角色问题逼迫学习者先思考
+Level 1 (感性认识) -> 类比理解：用生活化案例让完全不懂的人建立初步印象
+Level 2 (场景认知) -> 场景边界：哪些业务能用、哪些不能用，建立实用判断力
+Level 3 (原理推演) -> 深入原理：能用机制和公式向工程师解释
+Level 4 (本质内化) -> 本质总结：一句话本质 + 锚点类比 + 对比（顾问级提炼）
+开场提问闭环       -> 费曼内化：回答开场 3 问，LLM 评分验证真正理解
+```
+
+**UI 规格**：
+- 高度：~48px（紧凑，不抢占内容区空间）
+- 背景：`bg-background/95 backdrop-blur-sm`，底部细线分隔
+- 连线：水平轨道，`completed` 段用 `--primary` 色，`pending` 段用 `--muted`
+- 节点圆：8px 直径，`active` 时附带 `animate-pulse` 微动
+- 标签文字：`text-[11px]`，`active` 时 `font-semibold text-foreground`，`pending` 时 `text-muted-foreground`
+- 响应式：移动端仅显示节点圆 + 当前标签（折叠其余标签）
+
+**组件设计**：
+- 组件名：`CognitiveNavBar`
+- Props：`{ currentNode: 1-6, completedNodes: number[] }`
+- 放置位置：`GdnApp.tsx` 中 header 下方，`started && warmupConfirmed` 时显示
+- 状态来源：从 `steps[]` 的 streaming/confirmed 状态 + feynman digest 状态计算得出
+
+---
+
+### 3.4 Step Confirmation Mechanism
+
+> **Important**: Current version's "loop questions" in steps 1/2 are UI placeholders only (`LoopBlock` component).
+> User clicks "confirm" to proceed directly without LLM evaluation.
+> `LoopBlock` textarea is `disabled`, code comment: "当前版本：输入占位；下一轮会加入 LLM 评分 + 下一步解锁逻辑"
+
+---
+
+## 4. Technical Architecture
+
+### 4.1 Tech Stack
+
+| Category | Technology | Version | Notes |
+|---|---|---|---|
+| Frontend | React | 18.3.1 | No StrictMode (avoids LLM double-call race) |
+| Language | TypeScript | 5.6.2 | strict mode |
+| Build | Vite | 6.0.5 | @vitejs/plugin-react |
+| UI Components | shadcn/ui + Radix UI | latest | dialog/label/progress/select/scroll-area/tabs |
+| Styles | Tailwind CSS | 3.4.17 | + tailwindcss-animate + tailwind-merge |
+| Icons | Lucide React | 0.468.0 | |
+| Formula | KaTeX | 0.16.45 | |
+| Toast | Sonner | 2.0.7 | |
+| Variants | class-variance-authority | 0.7.1 | |
+| LLM API | Alibaba DashScope / Bailian | - | OpenAI compatible protocol |
+| Storage | localStorage | native | |
+
+**Note**: `package.json` includes `react-router-dom@^7.1.1` but code **never imports it** (zombie dependency). App is single-page with no router.
+
+### 4.2 Directory Structure
 
 ```
 AICC/
 +-- src/
-|   +-- gdn/                          # 主应用模块（当前活跃）
-|   |   +-- GdnApp.tsx                # 应用入口
-|   |   +-- types.ts                  # 数据类型定义（275 行）
-|   |   +-- components/               # React 组件
-|   |   |   +-- StepPipeline.tsx      # 三步骤管道（核心流程控制）
-|   |   |   +-- FeynmanDigestPanel.tsx # 费曼内化面板
-|   |   |   +-- GraphDialog.tsx       # 知识图谱对话框
-|   |   |   +-- MechanismAnim.tsx     # GDN 门控动画（5 token 演示）
-|   |   |   +-- SettingsDialog.tsx    # LLM 设置对话框
-|   |   |   +-- LibraryDialog.tsx     # 笔记库对话框
-|   |   |   +-- ExportBar.tsx         # 素材导出栏（5 种方式）
-|   |   |   +-- FeynmanPrime.tsx      # 费曼预热卡片
-|   |   |   +-- LoopBlock.tsx         # 闭环问题占位（disabled）
-|   |   |   +-- Formula.tsx           # KaTeX 公式渲染组件
+|   +-- gdn/                          # Main app module (active)
+|   |   +-- GdnApp.tsx                # App entry (309 lines)
+|   |   +-- types.ts                  # Data types (287 lines)
+|   |   +-- components/
+|   |   |   +-- StepPipeline.tsx      # 4-step pipeline (core flow control)
+|   |   |   +-- FeynmanDigestPanel.tsx # Feynman digest panel
+|   |   |   +-- QaPipeline.tsx        # Old 6-question pipeline (retained)
+|   |   |   +-- GraphDialog.tsx       # Knowledge graph dialog
+|   |   |   +-- MechanismAnim.tsx     # GDN gate animation (5 token demo)
+|   |   |   +-- SettingsDialog.tsx    # LLM settings dialog
+|   |   |   +-- LibraryDialog.tsx     # Note library dialog
+|   |   |   +-- ExportBar.tsx         # Export bar (5 methods)
+|   |   |   +-- FeynmanPrime.tsx      # Feynman warmup cards
+|   |   |   +-- LoopBlock.tsx         # Loop question placeholder (disabled)
+|   |   |   +-- Formula.tsx           # KaTeX formula component
+|   |   |   +-- StreamingSection.tsx  # Streaming section skeleton
 |   |   |   +-- views/
-|   |   |       +-- Step1View.tsx     # 步骤 1 渲染
-|   |   |       +-- Step2View.tsx     # 步骤 2 渲染
-|   |   |       +-- Step3View.tsx     # 步骤 3 渲染
-|   |   |       +-- PrincipleView.tsx # 原理分步帧视图
-|   |   |       +-- MathView.tsx      # 数学公式与演算视图
-|   |   |       +-- TimelineView.tsx  # 时间轴视图（旧版）
-|   |   |       +-- AnalogyView.tsx   # 通俗类比视图（旧版）
-|   |   |       +-- EngineeringView.tsx # 工程指标视图（旧版）
-|   |   |       +-- BusinessView.tsx  # 商业价值视图（旧版）
+|   |   |       +-- Step1View.tsx     # Step 1 render
+|   |   |       +-- Step2View.tsx     # Step 2 render
+|   |   |       +-- Step3View.tsx     # Step 3 render
+|   |   |       +-- Step4View.tsx     # Step 4 render
+|   |   |       +-- PrincipleView.tsx # Principle steps view
+|   |   |       +-- MathView.tsx      # Math formula view
+|   |   |       +-- TimelineView.tsx  # Timeline view
+|   |   |       +-- AnalogyView.tsx   # Analogy view (legacy)
+|   |   |       +-- EngineeringView.tsx # Engineering view (legacy)
+|   |   |       +-- BusinessView.tsx  # Business view (legacy)
 |   |   |       +-- animations/
 |   |   |           +-- AttentionOnTwoAnim.tsx
 |   |   |           +-- MambaSsmAnim.tsx
 |   |   |           +-- MoeRouteAnim.tsx
 |   |   |           +-- GenericFlowAnim.tsx
 |   |   +-- lib/
-|   |   |   +-- llm.ts               # LLM 调用接口（含旧版 callQa/callQaStream）
-|   |   |   +-- prompts.ts           # 提示词集中管理（284 行）
-|   |   |   +-- storage.ts           # localStorage 持久化
-|   |   |   +-- mdExport.ts          # 多格式导出工具
+|   |   |   +-- llm.ts               # LLM call interface (437 lines)
+|   |   |   +-- prompts.ts           # Prompt centralized management (291 lines)
+|   |   |   +-- storage.ts           # localStorage persistence (88 lines)
+|   |   |   +-- mdExport.ts          # Multi-format export tools
+|   |   |   +-- partialJson.ts       # Streaming partial JSON field extraction
+|   |   |   +-- svgRenderer.ts       # SVG template renderer (5 layouts)
 |   |   +-- mocks/
-|   |       +-- fixtures.ts          # 离线预览 + 流式模拟
-|   |       +-- data/                # 5 个 JSON 样本
-|   +-- components/ui/               # shadcn/ui 基础组件（12 个）
-|   +-- lib/utils.ts                 # 通用工具（cn 函数）
-|   +-- App.tsx                      # 旧版入口（不再使用）
-|   +-- main.tsx                     # 启动入口（直接渲染 GdnApp，无 Router）
-|   +-- index.css                    # 全局样式 + CSS Variables
+|   |       +-- fixtures.ts          # Offline preview + stream simulation
+|   |       +-- data/                # 5 JSON samples
+|   +-- components/ui/               # shadcn/ui base components (12)
+|   +-- lib/utils.ts                 # Utility (cn function)
+|   +-- App.tsx                      # Legacy entry (unused)
+|   +-- main.tsx                     # Entry (renders GdnApp directly, no Router)
+|   +-- index.css                    # Global styles + CSS Variables
 +-- scripts/
-|   +-- test-main-flow.mjs           # 端到端测试
-|   +-- test-step1.mjs               # 步骤 1 单元测试
+|   +-- test-main-flow.mjs           # E2E test
+|   +-- test-step1.mjs               # Step 1 unit test
 +-- package.json
 +-- tsconfig.json / tsconfig.app.json
 +-- vite.config.ts
@@ -193,234 +284,281 @@ AICC/
 +-- postcss.config.js
 ```
 
-### 4.3 核心数据流
+### 4.3 Core Data Flow
 
 ```
-用户输入 -> GdnApp.tsx（状态管理，无 Router）
+User input -> GdnApp.tsx (state management, no Router)
               |
-    callFeynmanWarmup() -> LLM -> 3 个预热问题
+    callFeynmanWarmup() -> LLM -> 3 warmup questions
               |
-    用户确认（warmupConfirmed = true）
+    User confirms (warmupConfirmed = true)
               |
-    StepPipeline 自动触发 callStep("step1")
+    StepPipeline auto-triggers callStep("step1")
               |              |
-    Step1View.tsx <- 解析 <- 流式渲染 (SSE onText 回调)
+    Step1View.tsx <- parse <- SSE streaming (onText callback)
               |
-    用户点击确认 -> confirmAndNext(0) -> 自动触发 callStep("step2")
+    User confirms -> confirmAndNext(0) -> auto callStep("step2")
               |
-    Step2View.tsx <- 解析 <- 流式渲染 + 动画播放
+    Step2View.tsx <- parse <- streaming (scenario selection)
               |
-    用户点击确认 -> confirmAndNext(1) -> 自动触发 callStep("step3")
+    User confirms -> confirmAndNext(1) -> auto callStep("step3")
               |
-    Step3View.tsx <- 解析 <- 流式渲染
+    Step3View.tsx <- parse <- streaming + animation play
               |
-    用户点击确认 -> allConfirmed = true -> 显示 FeynmanDigestPanel
+    User confirms -> confirmAndNext(2) -> auto callStep("step4")
               |
-    用户填写 3 角色复述 -> callFeynmanReview() -> LLM -> 评估 + GraphDelta
+    Step4View.tsx <- parse <- streaming (McKinsey essence)
+              |
+    User confirms -> allConfirmed (4/4) -> show FeynmanDigestPanel
+              |
+    User fills 3-role retell -> callFeynmanReview() -> LLM -> review + GraphDelta
               |
     upsertGraph(graph) -> localStorage
 ```
 
-### 4.4 LLM 调用矩阵
+### 4.4 LLM Call Matrix
 
-| 调用点 | 函数 | 模型 | 流式 | 联网 | 思考 | JSON Schema | 触发时机 |
-|--------|------|------|------|------|------|-------------|----------|
-| 费曼预热 | `callFeynmanWarmup` | qwen3.6-plus | x | yes | x | x | 问题输入后 |
-| 步骤 1 | `callStep("step1")` | qwen3.6-plus | yes | yes | yes | json_object | 预热确认后（自动） |
-| 步骤 2 | `callStep("step2")` | qwen3.6-plus | yes | yes | yes | json_object | step1 确认后（自动） |
-| 步骤 3 | `callStep("step3")` | qwen3.6-plus | yes | yes | yes | json_object | step2 确认后（自动） |
-| 费曼内化 | `callFeynmanReview` | qwen3.6-plus | x | yes | yes | json_object | 用户手动提交 |
+| Call Point | Function | Default Model | Streaming | Search | Thinking | JSON Format | Temperature | Trigger |
+|---|---|---|---|---|---|---|---|---|
+| Feynman Warmup | `callFeynmanWarmup` | deepseek-v4-flash | No | **No** | No | No (array) | 0.8 | After question input |
+| Step 1 | `callStep("step1")` | deepseek-v4-flash | Yes | **Yes** (forced) | **No** | json_object | 0.3 | After warmup confirm (auto) |
+| Step 2 | `callStep("step2")` | deepseek-v4-flash | Yes | **Yes** (forced) | **No** | json_object | 0.3 | After step1 confirm (auto) |
+| Step 3 | `callStep("step3")` | deepseek-v4-flash | Yes | **No** | **No** | json_object | 0.3 | After step2 confirm (auto) |
+| Step 4 | `callStep("step4")` | deepseek-v4-flash | Yes | **No** | **No** | json_object | 0.3 | After step3 confirm (auto) |
+| Feynman Review | `callFeynmanReview` | deepseek-v4-flash | No | **Yes** (forced) | **Yes** | json_object | 0.5 | User manual submit |
 
-### 4.5 存储系统
+**Design Rationale for Call Matrix**:
+- **Warmup no search**: Avoid LLM being misled by homonymous business concepts (e.g. PolarDB GDN = Global Database Network)
+- **Warmup high temperature (0.8)**: Ensure diversity without garbled output; disable thinking for JSON stability
+- **All steps no thinking**: Avoid thinking token stream slowing response
+- **Step 1+2 search**: Concept perception and scenario selection benefit from real-time web data
+- **Step 3+4 no search**: Algorithm derivation, math, and essence summary are based on prior step context, no external search needed
 
-| Key | 内容 | 数据结构 |
-|-----|------|----------|
-| `gdn_llm_cfg_v3` | LLM 配置 | `{ apiKey, baseUrl, model, offlineMock }` |
-| `gdn_notes_v3` | 笔记库 | `Note[]` 数组 |
-| `gdn_graph_v3` | 知识图谱 | `GraphDelta[]` 数组 |
+### 4.5 Storage System
 
-### 4.6 工程决策记录
+| Key | Content | Structure |
+|---|---|---|
+| `gdn_llm_cfg_v3` | LLM config | `{ apiKey, baseUrl, model, offlineMock }` |
+| `gdn_notes_v3` | Note library | `Note[]` array |
+| `gdn_graph_v3` | Knowledge graph | `GraphDelta[]` array |
 
-| 决策 | 原因 | 代码位置 |
-|------|------|----------|
-| 不使用 React.StrictMode | 避免 useEffect 双跑导致 LLM 被调用两次 + AbortController 竞态 | `main.tsx` |
-| 旧版六问代码保留 | `types.ts` 保留 QaKey/QaAnswerMap 等完整类型；`llm.ts` 保留 callQa/callQaStream 函数；`Note.qa?` 用于旧笔记兼容 | `types.ts`, `llm.ts` |
-| react-router-dom 未使用 | 安装但未引入，应用为单页结构 | `package.json` |
+**Default Config** (`storage.ts`):
+```typescript
+DEFAULT_CFG = {
+  apiKey: "",
+  baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+  model: "deepseek-v4-flash",
+  offlineMock: false,
+}
+```
+
+**Legacy Model Migration**: `loadCfg()` contains auto-migration logic. If stored model is in `LEGACY_MODELS = ["qwen3.6-plus", "qwen-plus", "deepseek-v4-pro"]`, it auto-upgrades to current default (`deepseek-v4-flash`) without changing localStorage key version.
+
+### 4.6 Model Options (SettingsDialog)
+
+| Model | Label | Notes |
+|---|---|---|
+| `deepseek-v4-flash` | "deepseek-v4-flash（推荐 · 更快）" | Default, fastest |
+| `deepseek-v4-pro` | "deepseek-v4-pro（更强）" | Stronger reasoning |
+| `qwen3.6-plus` | "qwen3.6-plus（thinking 模式）" | Legacy default |
+| `qwen-plus` | "qwen-plus" | |
+| `qwen-turbo` | "qwen-turbo（更快）" | |
+| `qwen-max` | "qwen-max" | |
+
+### 4.7 Engineering Decisions
+
+| Decision | Reason | Code Location |
+|---|---|---|
+| No React.StrictMode | Avoids useEffect double-run causing LLM double-call + AbortController race | `main.tsx` |
+| Legacy 6-question code retained | `types.ts` retains QaKey/QaAnswerMap; `llm.ts` retains callQa/callQaStream; `QaPipeline.tsx` retained; `Note.qa?` for old note compat | `types.ts`, `llm.ts`, `QaPipeline.tsx` |
+| react-router-dom unused | Installed but never imported, app is single-page | `package.json` |
+| Partial JSON streaming | `partialJson.ts` field-by-field balanced bracket scan instead of try/catch storm | `lib/partialJson.ts` |
+| SVG template for Step1 diagrams | LLM returns structured nodes/edges, `svgRenderer.ts` renders locally (no external image API) | `lib/svgRenderer.ts` |
 
 ---
 
-## 五、详细功能规格
+## 5. Detailed Functional Spec
 
-### 5.1 费曼预热
+### 5.1 Feynman Warmup
 
-**目标**：用 3 个面向不同角色的问题倒逼用户认真思考后续讲解内容。
+**Goal**: 3 role-based questions forcing user to think carefully before explanation.
 
-**输入**：用户原始问题（如"GDN是什么意思？"）
+**Input**: User's raw question (e.g. "GDN是什么意思？")
 
-**LLM 生成要求**：
-- 代入具体概念，不要用模板原话
-- 以客户口吻来问
-- 每个问题 <= 50 字
-- 输出 JSON 数组：`[{role, question}]`
+**LLM Generation Requirements**:
+- Embed the specific concept, don't use template text
+- Ask in client's voice
+- Each question <= 50 chars
+- Output JSON array: `[{role, question}]`
 
-**三个角色**（UI 标签文案）：
-1. `biz` - "你可以和客户的非技术人员说明白吗？（例如业务总监）"
-   - hint: "让完全不懂技术的人快速理解价值"
-2. `cto` - "你可以和客户的技术高管建立价值链接吗？（例如 CTO）"
+**Three Roles** (UI label text from `FEYNMAN_ROLES`):
+1. `biz` - "客户的业务人员问："
+   - hint: ""
+   - loadingText: "正在代入业务人员视角…"
+2. `cto` - "客户的技术高管问："
    - hint: "和技术决策者对话，关心成本/稳定性/改造影响"
-3. `dev` - "你可以和客户的程序员共情这个优势吗？（例如程序员/运维）"
+   - loadingText: "正在代入技术高管视角…"
+3. `dev` - "客户的工程师问："
    - hint: "工程师视角，关心怎么调、踩坑在哪、上手时间"
+   - loadingText: "正在代入工程师视角…"
 
-**UI 展示**：竖向列表展示 3 个问题卡片（含角色图标 + 动态问题文本），下方显示"我看完了，开始讲解"按钮。
+**UI**: Vertical list of 3 question cards (role icon + dynamic question text), below shows "我看完了，开始讲解" button.
 
 ---
 
-### 5.2 步骤 1：装模作样｜概念与价值感性认识
+### 5.2 Step 1: L1 类比理解 它是什么？
 
-**LLM 输出 Schema**：
+**LLM Output Schema**:
 
 ```typescript
 interface Step1Answer {
-  valueLead: string;          // 通俗案例铺垫（100-200 字）
-  officialDefinition: string; // 权威专业定义（80-150 字，引用来源）
-  glossaryTerms: {            // 术语拆解（GlossaryTerm[]）
-    term: string;             // 专业术语名
-    plainHint: string;        // 大白话/生活比喻
-    techNote: string;         // 技术含义
+  valueLead: string;          // Popular case leading (no word limit)
+  officialDefinition: string; // Authoritative definition (no word limit)
+  glossaryTerms: {            // GlossaryTerm[]
+    term: string;             // Technical term name
+    plainHint: string;        // Plain language / life analogy
+    techNote: string;         // Technical meaning in papers
   }[];
-  diagram: {                  // ConceptDiagram
-    animationKey: "gdn-gate" | "attention-on2" | "mamba-ssm" | "moe-route" | "generic-flow";
-    caption: string;          // 结合案例的说明（<60 字）
-  };
-  loop: {                     // LoopCheck
-    prompt: string;           // 闭环问题（<60 字）
-    userAnswer?: string;      // 用户回答（当前版本未启用输入）
-    review?: LoopReview;      // LLM 评价（当前版本未实现）
-  };
+  diagram: ConceptDiagram;    // SVG template-based concept diagram (NOT animationKey)
+  loop: LoopCheck;            // Loop question (UI placeholder only)
+}
+
+interface ConceptDiagram {
+  templateType: 'flowchart' | 'comparison' | 'hierarchy' | 'cycle' | 'architecture';
+  nodes: Array<{
+    id: string;
+    label: string;       // Node title (Chinese, 6-12 chars)
+    sublabel?: string;   // Subtitle / analogy (optional, 10-15 chars)
+    color?: string;      // Optional: #3b82f6/#10b981/#f59e0b/#6b7280
+  }>;
+  edges: Array<{
+    from: string;        // Source node ID
+    to: string;          // Target node ID
+    label?: string;      // Arrow label (optional, 2-4 chars)
+  }>;
+  caption: string;       // One-line caption linking visual to core mechanism (20-30 chars)
+  svg: string;           // Frontend-rendered SVG from template + data
+}
+
+interface LoopCheck {
+  prompt: string;         // Display question
+  userAnswer?: string;    // User answer (not enabled this version)
+  review?: LoopReview;    // LLM review (not implemented this version)
 }
 ```
 
-**内容结构**：
-1. **价值铺垫**：用生活化案例先揭示旧问题/痛点
-2. **专业定义**：基于权威资料的精确定义
-3. **术语拆解**：基于 Transformer 基线，挑出可能不懂的专业词（双解释：通俗类比 + 技术视角）
-4. **示意图/动画**：选择匹配的动画演示
-5. **闭环问题**：让用户用自己的话说原理与价值（当前为 UI 占位，不发送给 LLM）
+**Content Structure**:
+1. **Value Lead**: Life-like case revealing old problem/pain point
+2. **Official Definition**: Precise definition from authoritative sources
+3. **Glossary Terms**: Based on Transformer baseline, pick unfamiliar terms (dual explanation: analogy + technical)
+4. **SVG Diagram**: LLM returns structured nodes/edges/templateType, `svgRenderer.ts` renders locally
+5. **Loop Question**: User describes concept's principle & value in own words (UI placeholder, not sent to LLM)
 
-**animationKey 选择规则**：
-- GDN -> `gdn-gate`（MechanismAnim 组件：5 token 门控动画）
-- Attention -> `attention-on2`（AttentionOnTwoAnim）
-- Mamba/SSM -> `mamba-ssm`（MambaSsmAnim）
-- MoE -> `moe-route`（MoeRouteAnim）
-- 其他 -> `generic-flow`（GenericFlowAnim）
+**Important**: Step 1 does NOT output animationKey. Animation display is exclusive to Step 3.
 
 ---
 
-### 5.3 步骤 2：像模像样｜算法原理与数学本质
+### 5.3 Step 2: L2 场景边界 | Scenario Selection
 
-**LLM 输出 Schema**：
+**LLM Output Schema**:
 
 ```typescript
 interface Step2Answer {
-  timeline: TimelineNodeV2[];   // 技术演进时间轴（扩展版）
-  principle: PrincipleAnswer;   // 分步静态帧演示（复用旧版类型）
-  math: MathAnswer;             // 真实 token 代入公式演算
-  loop: LoopCheck;              // 闭环问题（当前为 UI 占位）
+  intro: string;              // Overview of applicable domain
+  applicable: ScenarioCard[]; // Scenarios where this tech fits well
+  inapplicable: ScenarioCard[]; // Scenarios where this tech is not suitable
+  selectionCriteria: string;  // Criteria for choosing this tech
+  loop: LoopCheck;            // Loop question (UI placeholder)
 }
 
-interface TimelineNodeV2 {
-  era: string;              // 年份，如 "2017"
-  tech: string;             // 技术名称
-  algo?: string;            // 算法原理一句话（可选）
-  formula?: string;         // 数学公式 LaTeX（可选）
-  problem: string;          // 技术问题
-  valueLimit?: string;      // 价值限制（可选）
-  nextDriver?: string;      // 下一步演进驱动（可选）
-}
-
-interface PrincipleAnswer {
-  coreIdea: string;         // 一句话核心机制（<50 字）
-  steps: {
-    label: string;          // 步骤名称
-    desc: string;           // 动作描述（含参数来源+类比回扣，<=100 字）
-    symbol?: string;        // 符号，如 g_t（可选）
-  }[];
-  animationKey: "gdn-gate" | "attention-on2" | "mamba-ssm" | "moe-route" | "generic-flow";
-  note: string;             // 看动画关键点（<80 字，末尾引用步骤 1 类比）
-}
-
-interface MathAnswer {
-  formula: string;          // 核心公式（LaTeX）
-  intuition: string;        // 直觉解释（<60 字）
-  variables: {
-    symbol: string;         // 符号
-    meaning: string;        // 含义
-    trainRole: string;      // 训练阶段作用
-    inferRole: string;      // 推理阶段作用
-  }[];
-  calculationExample: string; // 真实 Token 演算示例（<300 字）
-  trainFlow: string;        // 训练流程说明（<120 字）
-  inferFlow: string;        // 推理流程说明（<120 字）
+interface ScenarioCard {
+  scene: string;              // Scenario name
+  why: string;                // Why it fits/doesn't fit
+  fit: "excellent" | "good" | "neutral" | "poor" | "unsuitable";
 }
 ```
 
-**内容结构**：
-1. **技术演进时间轴**：从 Transformer 开始的演进节点（TimelineV2 组件渲染，水平轴+渐变圆点）
-2. **分步静态帧 + 动画**：以步骤+符号方式演示原理（PrincipleView 组件）
-3. **数学与 Token 演算**：真实 Token 代入公式的分步演算（MathView 组件 + Formula 组件渲染 LaTeX）
-4. **闭环问题**：让用户说明当前技术与以前技术的区别（LoopBlock 占位）
+**Content Structure**:
+1. **Intro**: Brief overview of applicable domain and key strengths
+2. **Applicable Scenarios**: 3-5 scenarios where this tech excels (with fit level)
+3. **Inapplicable Scenarios**: 2-4 scenarios where this tech is not suitable (with reason)
+4. **Selection Criteria**: Key factors for deciding whether to adopt this tech
+5. **Loop Question**: User describes when they would/wouldn't recommend this tech (LoopBlock placeholder)
 
 ---
 
-### 5.4 步骤 3：有模有样｜客户价值与商业价值
+### 5.4 Step 3: L3 深入原理 | Algorithm Principle & Math Essence
 
-**LLM 输出 Schema**：
+**LLM Output Schema**:
 
 ```typescript
 interface Step3Answer {
-  engSummary: string;         // 工程收益总结（100-180 字）
-  engMetrics: {               // EngineeringMetric[]
-    name: string;             // 指标名称
-    baseline: string;         // 基线值
-    current: string;          // 当前值
-    delta: string;            // 变化幅度
-    favor: "up" | "down" | "neutral";
-  }[];                        // 最多 6 条
-  bizSummary: string;         // 业务价值总结（100-180 字）
-  bizScenarios: {             // BusinessScenario[]
-    scenario: string;         // 业务场景
-    apiCostDelta: string;     // API 成本变化
-    uxDelta: string;          // 体验变化
-    bizFit: string;           // 业务适配度
-  }[];                        // 最多 5 条
-  // 注意：Step3Answer 没有 loop 字段
-  // 步骤 3 的闭环由 FeynmanDigestPanel 独立承载
+  timeline: TimelineNodeV2[];   // Tech evolution timeline
+  principle: PrincipleAnswer;   // Step-by-step principle demo
+  math: MathAnswer;             // Real token formula calculation
+  loop: LoopCheck;              // Loop question (UI placeholder)
 }
 ```
 
-**内容结构**：
-1. **工程收益总结**：面向 AI 应用开发与运维人员
-2. **工程收益对比表**：基线 vs 当前（表格渲染，含趋势图标）
-3. **业务价值总结**：面向 MaaS API 调用客户的高管视角
-4. **业务价值对比表**：场景 x API 计费/体验/业务适配
-5. **闭环提示**：硬编码 UI 文案，引导用户去底部费曼内化面板
+(See Section 7.5 for full sub-interface definitions: TimelineNodeV2, PrincipleAnswer, MathAnswer)
+
+**Content Structure**:
+1. **Tech Evolution Timeline**: Evolution nodes from Transformer (TimelineV2 component)
+2. **Principle Steps + Animation**: Step-by-step with symbols (PrincipleView component)
+3. **Math & Token Calculation**: Real token substitution into formulas (MathView + Formula/KaTeX)
+4. **Loop Question**: User explains difference between current and previous tech (LoopBlock placeholder)
+
+**animationKey Selection** (Step 3 principle.animationKey):
+- GDN -> `gdn-gate` (MechanismAnim: 5 token gate animation)
+- Attention -> `attention-on2` (AttentionOnTwoAnim)
+- Mamba/SSM -> `mamba-ssm` (MambaSsmAnim)
+- MoE -> `moe-route` (MoeRouteAnim)
+- Other -> `generic-flow` (GenericFlowAnim)
 
 ---
 
-### 5.5 费曼内化评估
+### 5.5 Step 4: L4 本质总结 | Essence Summary (McKinsey Style)
 
-**输入**：
-- 学习主题（topic）
-- 步骤 1/2/3 完整内容 JSON（context: `Array<{key, answer}>`）
-- 用户对 3 个角色的复述答案（`FeynmanAnswers: {biz, cto, dev}`）
+**LLM Output Schema**:
 
-**前端数据结构**（`types.ts` 中定义）：
+```typescript
+interface Step4Answer {
+  oneLiner: string;           // One-sentence essence (<=30 chars)
+  anchor: string;             // Anchor analogy (<=40 chars)
+  contrastPair: {
+    before: string;           // Before learning this concept
+    after: string;            // After learning this concept
+  };
+  frameworkNote: string;      // Framework/mental model note
+  takeaway: string[];         // 3 key takeaways (each <=25 chars)
+}
+```
+
+**Content Structure**:
+1. **One-Liner**: The absolute essence in one sentence (bold centered display)
+2. **Anchor**: A memorable analogy anchoring the concept to something familiar
+3. **Contrast Pair**: Before vs After learning (2-column grid)
+4. **Framework Note**: How this fits into the broader mental model
+5. **3 Takeaways**: Numbered key points for retention
+
+**Design Philosophy**: McKinsey consulting deck style - distill complexity into executive-ready insights.
+
+---
+
+### 5.6 Feynman Digest Evaluation
+
+**Input**:
+- Learning topic (topic)
+- Steps 1/2/3 full content JSON (context: `Array<{key, answer}>`)
+- User's 3-role retell answers (`FeynmanAnswers: {biz, cto, dev}`)
+
+**Frontend Data Structure** (`types.ts`):
 
 ```typescript
 interface FeynmanDigest {
-  answers: FeynmanAnswers;      // 用户填写的三角色复述
-  reviews: FeynmanReviewItem[]; // LLM 评估结果（每角色一条）
-  graphDelta: GraphDelta;       // 知识图谱挂载增量
+  answers: FeynmanAnswers;      // User-written 3-role retell
+  reviews: FeynmanReviewItem[]; // LLM review results (one per role)
+  graphDelta: GraphDelta;       // Knowledge graph mount delta
 }
 
 interface FeynmanAnswers {
@@ -432,289 +570,558 @@ interface FeynmanAnswers {
 interface FeynmanReviewItem {
   role: "biz" | "cto" | "dev";
   score: number;            // 0-100
-  oneLine: string;          // 总评一句话
-  strengths: string[];      // 优点
-  gaps: string[];           // 不足
-  followups: string[];      // 追问
+  oneLine: string;          // One-line summary
+  strengths: string[];      // Strengths
+  gaps: string[];           // Gaps
+  followups: string[];      // Follow-up questions
 }
 
 interface GraphDelta {
-  concept: string;            // 概念名称（如 "GDN"）
-  parent: string;             // 父节点（默认 "Transformer"）
-  relation: string;           // 与父节点的一句关系
-  tags: string[];             // 3-5 个标签
-  oneLine: string;            // 一句话精髓
+  concept: string;            // Concept name (e.g. "GDN")
+  parent: string;             // Parent node (default "Transformer")
+  relation: string;           // One-line relation to parent
+  tags: string[];             // 3-5 tags
+  oneLine: string;            // One-line essence
 }
 ```
 
-**LLM 返回 Schema**（`callFeynmanReview` 返回）：
+**LLM Return Schema** (`callFeynmanReview` returns):
 
 ```typescript
-// LLM 实际返回的 JSON 结构（注意字段名与前端 FeynmanDigest 不同）：
+// LLM actual return JSON structure (field names differ from frontend FeynmanDigest):
 {
   reviews: FeynmanReviewItem[];
-  graph: GraphDelta;            // LLM 返回用 "graph"
+  graph: GraphDelta;            // LLM returns "graph"
 }
-// 前端代码将 LLM 返回的 graph 映射到 FeynmanDigest.graphDelta
+// Frontend maps LLM's "graph" to FeynmanDigest.graphDelta
 ```
 
-**评估后动作**：
-- 调用 `upsertGraph(graph)` 将 GraphDelta 存入 localStorage
-- Toast 提示：`` `已评估并挂载到知识图谱：${graph.concept} ← ${graph.parent}` ``
+**Post-evaluation Actions**:
+- Call `upsertGraph(graph)` to store GraphDelta in localStorage
+- Toast: `` `已评估并挂载到知识图谱：${graph.concept} ← ${graph.parent}` ``
 
 ---
 
-### 5.6 素材导出
+### 5.7 Export Bar
 
-`ExportBar` 组件提供 5 种导出方式：
+`ExportBar` component provides 5 export methods:
 
-| 按钮 | 功能 | 实现函数 |
-|------|------|----------|
+| Button | Function | Implementation |
+|---|---|---|
 | 保存到笔记库 | addNote -> localStorage | `storage.ts#addNote` |
-| 下载 .md | 生成 Markdown 文件下载 | `mdExport.ts#downloadMarkdown` |
-| 复制 Markdown | 复制到剪贴板 | `mdExport.ts#toMarkdown` |
-| 讲稿片段 | 提取价值铺垫+定义+收益摘要 | `mdExport.ts#toSpeechScript` |
-| PPT 要点 | 提取要点列表 | `mdExport.ts#toPptBullets` |
+| 下载 .md | Generate Markdown file download | `mdExport.ts#downloadMarkdown` |
+| 复制 Markdown | Copy to clipboard | `mdExport.ts#toMarkdown` |
+| 讲稿片段 | Extract value lead + definition + benefit summary | `mdExport.ts#toSpeechScript` |
+| PPT 要点 | Extract bullet points | `mdExport.ts#toPptBullets` |
 
-Markdown 导出含 frontmatter：`title`, `question`, `tags`, `parent: Transformer`, `createdAt`
+Markdown export includes frontmatter: `title`, `question`, `tags`, `parent: Transformer`, `createdAt`
 
 ---
 
-### 5.7 笔记数据结构
+### 5.8 Note Data Structure
 
 ```typescript
 interface Note {
-  id: string;               // 格式：note_{timestamp}_{random}
-  topic: string;            // 概念名
-  rawQuestion: string;      // 用户原始问题
-  steps: StepEntry[];       // 三大步骤（主字段）
-  qa?: QaEntry[];           // 旧版六问（向后兼容历史笔记）
-  feynman?: FeynmanDigest;  // 费曼内化结果
+  id: string;               // Format: note_{timestamp}_{random}
+  topic: string;            // Concept name
+  rawQuestion: string;      // User's original question
+  steps: StepEntry[];       // 4 steps (primary field)
+  qa?: QaEntry[];           // Legacy 6-question (backward compat)
+  feynman?: FeynmanDigest;  // Feynman digest result
   tags: string[];
-  createdAt: string;        // ISO 时间戳
+  createdAt: string;        // ISO timestamp
 }
 ```
 
 ---
 
-## 六、设计系统
+## 6. Design System
 
-### 6.1 配色方案
+### 6.1 Color Scheme
 
-**基础色系**（HSL 格式，定义在 `src/index.css` :root）：
-| Token | 用途 | HSL 值 |
-|-------|------|--------|
-| `--background` | 页面背景 | `0 0% 100%` |
-| `--background-secondary` | 次级背景 | `0 0% 98%` |
-| `--foreground` | 主文本 | `0 0% 3.9%` |
-| `--primary` | 主要操作 | `0 0% 9%` |
-| `--secondary` | 次要操作 | `0 0% 96.1%` |
-| `--accent` | 强调色 | `0 0% 96.1%` |
-| `--muted-foreground` | 弱化文本 | `0 0% 45.1%` |
-| `--destructive` | 危险操作 | `0 72% 50%` |
-| `--success` | 成功状态 | `142 55% 35%` |
-| `--warning` | 警告状态 | `35 85% 45%` |
+**Base Colors** (HSL format, defined in `src/index.css` :root):
+| Token | Usage | HSL |
+|---|---|---|
+| `--background` | Page background | `0 0% 100%` |
+| `--background-secondary` | Secondary background | `0 0% 98%` |
+| `--foreground` | Main text | `0 0% 3.9%` |
+| `--primary` | Primary action | `0 0% 9%` |
+| `--secondary` | Secondary action | `0 0% 96.1%` |
+| `--accent` | Accent | `0 0% 96.1%` |
+| `--muted-foreground` | Muted text | `0 0% 45.1%` |
+| `--destructive` | Danger | `0 72% 50%` |
+| `--success` | Success | `142 55% 35%` |
+| `--warning` | Warning | `35 85% 45%` |
 
-**四层学习递进色**（步骤标签区分，克制低饱和）：
-| Layer | 含义 | HSL 值 | 用途 |
-|-------|------|--------|------|
-| `--layer-1` | 步骤 1：概念感性认识 | `24 55% 42%`（土褐） | StepPipeline tone="layer1" |
-| `--layer-2` | 步骤 2：算法原理 | `152 35% 35%`（墨绿） | StepPipeline tone="layer2" |
-| `--layer-3` | 预留扩展 | `205 45% 38%`（钢蓝） | 暂未使用 |
-| `--layer-4` | 步骤 3：商业价值 | `258 35% 48%`（哑紫） | StepPipeline tone="layer4" |
+**Four-layer Learning Progression** (step label differentiation, muted saturation):
+| Layer | Meaning | HSL | Usage |
+|---|---|---|---|
+| `--layer-1` | Step 1: 类比理解 | `24 55% 42%` (earthy brown) | StepPipeline tone="layer1" |
+| `--layer-2` | Step 2: 场景边界 | `152 35% 35%` (ink green) | StepPipeline tone="layer2" |
+| `--layer-3` | Step 3: 深入原理 | `205 45% 38%` (steel blue) | StepPipeline tone="layer3" |
+| `--layer-4` | Step 4: 本质总结 | `258 35% 48%` (muted purple) | StepPipeline tone="layer4" |
 
-### 6.2 UI 原则
+### 6.2 UI Principles
 
-1. **极简设计**：无首页、无登录、无社交功能，纯自然语言输入
-2. **流式交互**：LLM 输出通过 SSE 流式渲染，实时展示 partial JSON
-3. **确认推进**：用户手动点击"确认"按钮推进到下一步（非自动）
-4. **本地私密**：所有数据存 localStorage，从不上云
-5. **基线统一**：所有陌生名词锚定"传统 Transformer"作为认知参照物
-6. **动画自驱**：动画组件通过 React 状态 + CSS @keyframes 实现，无第三方动画库
+1. **Minimal**: No homepage, no login, no social features, pure natural language input
+2. **Streaming**: LLM output via SSE streaming with partial JSON field-by-field rendering
+3. **Confirm-driven**: User manually clicks "confirm" to advance (not automatic)
+4. **Local-private**: All data in localStorage, never cloud-uploaded
+5. **Baseline-unified**: All unfamiliar terms anchored to "Traditional Transformer"
+6. **Self-driven animation**: Animations via React state + CSS @keyframes, no third-party animation library
 
-### 6.3 字体与排版
+### 6.3 Typography
 
-- **字体**：系统默认 sans-serif
-- **字体特性**：`font-feature-settings: "cv02", "cv03", "cv04", "cv11"`
-- **抗锯齿**：`-webkit-font-smoothing: antialiased`
-- **标题**：font-weight 600-700
-- **正文**：font-weight 400
-- **代码/公式**：monospace，KaTeX 渲染
+- **Font**: System default sans-serif
+- **Font features**: `font-feature-settings: "cv02", "cv03", "cv04", "cv11"`
+- **Antialiasing**: `-webkit-font-smoothing: antialiased`
+- **Headings**: font-weight 600-700
+- **Body**: font-weight 400
+- **Code/Formula**: monospace, KaTeX rendering
 
 ---
 
-## 七、LLM 提示词系统
+## 7. LLM Prompt System (Complete Reference)
 
-### 7.1 全局系统提示词（SYSTEM_BASE）
+### 7.1 System Prompts (Independent Per Step)
 
-所有 LLM 调用的第一条消息（定义于 `src/gdn/lib/prompts.ts`）：
+Each step has its own complete system prompt (defined in `src/gdn/lib/prompts.ts`). Below is SYSTEM_STEP1 as representative example (others follow similar structure with role-specific persona):
 
 ```text
 你是面向非算法 / 非技术领域读者的 AI 概念穿透教练，风格深入浅出。
 读者画像：大模型售前解决方案、业务架构师、产品经理、甚至完全不懂技术的管理者
 硬性要求：
 1. 输出必须是单一合法 JSON 对象，不加任何 Markdown 代码围栏、不加前后缀说明。
-2. 语言：简体中文。首次出现的术语给中文+括号英文。
-3. 禁止把陌生希腊字母直接甩给读者，必要时必须紧接中文解释。
+2. 语言：简体中文。英文专业术语要符合AI语境，用英文(中文)格式表达。
+3. 禁止把陌生希腊字母直接抛给读者，必要时必须紧接中文解释。
 4. 回答要丰富、有温度，像资深专家在耐心讲解一样，不要过于精简或碎片化。
-5. 基线参照：以传统 Transformer（Attention/QKV）为默认认知起点。
-6. 每次回答都必须基于本轮实时互联网搜索到的权威资料（论文、官方博客、技术媒体），
-   不得只凭记忆作答；关键数字、模型版本、发布时间以搜索结果为准。
+5. 基线参照：以传统Transformer为默认已经深度理解的认知起点。
+6. 每次回答都必须基于本轮实时互联网搜索到的权威资料（论文、官方博客、技术媒体），不得只凭记忆作答；关键数字、模型版本、发布时间以搜索结果为准。
+7. 严禁在正文字段中输出任何形如 [1]、[2]、[3][5]、[1,2] 的方括号引用角标、脚注编号或文献编号；如需传递权威来源，直接在文内自然表述（如"MiniMax-01 技术报告指出..."），不准留任何方括号数字引用标记。注：圆圈数字①②③ 仅在 schema 明确要求的括号结构标记位置（如 steps[].desc 末尾的"①参数来源②对应场景"）可用，正文被述中禁用。
 ```
 
-### 7.2 概念告知消息
+### 7.2 Concept Introduction Message (buildConceptIntro)
 
-每次调用（除费曼预热外）的第二条消息：
+Second message in all calls EXCEPT warmup and Feynman review (which uses its own system prompt):
 
 ```text
 用户提出的概念：{rawQuestion}
 
-请以这个概念为主体，进入六问穿透讲解。下一条消息会告知第几问。
+请以这个概念为主体，进入四大步骤讲解。下一条消息会告知第几步。
 ```
 
-### 7.3 API 配置
+### 7.3 Feynman Warmup Prompt (buildFeynmanWarmupPrompt)
 
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| model | `qwen3.6-plus` | 可用户自定义 |
-| base_url | `https://dashscope.aliyuncs.com/compatible-mode/v1` | 可配置 |
-| temperature | 0.5（预热）/ 0.3（步骤）/ 0.5（内化） | |
-| enable_thinking | false（预热）/ true（步骤 1/2/3 + 内化） | 思考模式 |
-| enable_search | true（全局） | 联网搜索 |
-| search_options | `{ forced_search: true, enable_source: true, enable_citation: true }` | 强制搜索 |
-| response_format | 无（预热）/ `{ type: "json_object" }`（其余） | |
-| stream | 无（预热/内化）/ true（步骤 1/2/3） | |
+Used in `callFeynmanWarmup()`. Messages: `[SYSTEM_WARMUP, user: warmupPrompt]`
+
+```text
+用户想学习的概念：{rawQuestion}
+
+请基于这个概念，为 MaaS 从业者（大模型售前解决方案、业务架构师）生成 3 个费曼学习法预热问题，分别面向：
+1. 完全不懂技术的客户公司的业务总监
+2. 客户的 CTO
+3. 客户的开发者（调用大模型的人）
+
+要求：
+- 每个问题都要代入这个具体概念，不要用模板原话
+- 每个问题都要以客户的口吻来问
+- 问题要能倒逼学习者认真思考后续讲解内容
+- **每个问题严格限制在 50 字以内**
+- 输出必须是 JSON 数组，格式：[{"role":"biz","question":"..."},{"role":"cto","question":"..."},{"role":"dev","question":"..."}]
+- 不要加任何 Markdown 围栏或前后缀
+```
+
+**API Parameters**:
+- temperature: 0.8
+- enable_thinking: false
+- enable_search: NOT set (no search)
+- response_format: NOT set (returns array)
+- stream: false
+
+### 7.4 Step 1 Prompt (buildStep1Prompt)
+
+Used in `callStep("step1")`. Messages: `[SYSTEM_STEP1, user: concept + question + schema]`
+
+**Question Text** (`STEP_DEFAULT_QUESTIONS.step1`):
+```text
+步骤1 装模作样｜概念与价值感性认识。请按四部分输出：
+1.【价值铺垫】用生活化通俗案例类比这个技术的价值，先揭示以前的问题。
+2.【专业定义】给出专业定义（要依据权威资料）。
+3.【术语拆解】基于传统 Transformer 基线，挑出客户可能不理解的专业词，给出通俗类比与技术视角双解释。
+4.【示意图】选一个合适的动画 key（参考 animationKey 枚举），并给出一句结合通俗案例的 caption 说明。
+最后生成一个闭环问题，让学习者用自己的话说该技术的原理与价值。
+```
+
+**JSON Schema**:
+```text
+{
+  "valueLead": "用生活化案例先揭示旧问题/痛点，为技术价值做铺垫（多段深入讲解，让读者建立共鸣，不限字数）",
+  "officialDefinition": "该概念的权威专业定义（引用论文/官方文档，展开解读，不限字数）",
+  "glossaryTerms": [
+    {"term":"专业术语名","plainHint":"用大白话/生活比喻通俗解释","techNote":"该术语在论文/文档中的技术含义"}
+  ],
+  "diagram": {
+    "templateType": "Choose one: 'flowchart' (linear process), 'comparison' (old vs new), 'hierarchy' (tree/pyramid), 'cycle' (iterative loop), 'architecture' (layered system)",
+    "nodes": [
+      {"id": "unique_id_1", "label": "节点标题（中文，6-12字）", "sublabel": "副标题/通俗比喻（可选，10-15字）", "color": "可选：#3b82f6/#10b981/#f59e0b/#6b7280"}
+    ],
+    "edges": [
+      {"from": "起点id", "to": "终点id", "label": "箭头标签（可选，2-4字）"}
+    ],
+    "caption": "图片下方一句话点睛：把画面与概念核心机制勾连（20-30字，中文）"
+  },
+  "loop": {
+    "prompt": "展示给学习者的闭环问题：请用自己的话说说当前这个概念的原理与价值（自然表达，问到点子上）"
+  }
+}
+注意：步骤1 不要选择/输出任何动画 key，动画展示由步骤2 独占。diagram.svg 必须是合法 SVG 代码且不超过 2000 字符。
+```
+
+**API Parameters**:
+- temperature: 0.3
+- enable_thinking: false
+- enable_search: true, search_options: { forced_search: true, enable_source: true, enable_citation: true }
+- response_format: { type: "json_object" }
+- stream: true
+
+### 7.5 Step 2 Prompt (buildStep2Prompt)
+
+Used in `callStep("step2")`. Messages: `[SYSTEM_STEP2, user: concept + question + schema]`
+
+**Question Text** (`STEP_DEFAULT_QUESTIONS.step2`):
+```text
+步骤2 像模像样｜算法原理与数学本质。请按三部分输出：
+1.【技术演进时间轴】从 Transformer 开始，列出每个演进节点，每个节点必须包含：算法原理(algo)、数学公式(formula)、技术问题(problem)、价值限制(valueLimit)。
+2.【分步静态帧】以步骤+符号方式静态演示当前技术的实现原理，从上下文步骤1 中的类比场景回扣。
+3.【数学与 token 演算】用真实 token 代入公式做一次完整分步演算。
+最后生成一个闭环问题，让学习者用自己的话说明当前技术和以前技术的区别、为什么要用这个新技术。
+```
+
+**JSON Schema**:
+```text
+{
+  "timeline": [
+    {"era":"2017","tech":"Transformer","algo":"算法原理一句话","formula":"Attention(Q,K,V)=softmax(QK^T/\\sqrt{d})V","problem":"O(N^2) 显存/算力暴涨","valueLimit":"长序列推理成本高","nextDriver":"需要线性化方案"}
+  ],
+  "principle": {
+    "coreIdea": "一句话核心机制（精炼表达，表意完整）",
+    "steps": [
+      {"label":"第1步名称","desc":"动作描述，详细展开讲清楚，末尾用括号注明：①参数来源（训练固定值 or 推理上游传入）②对应步骤1 类比中的哪个场景（不限字数）","symbol":"可选符号如 g_t"}
+    ],
+    "animationKey": "gdn-gate|attention-on2|mamba-ssm|moe-route|generic-flow",
+    "note": "看动画时要抓住的关键点，末尾用括号引用步骤1 的类比场景（自然表达，把点说透）"
+  },
+  "math": {
+    "formula": "核心公式（LaTeX 或符号串）",
+    "intuition": "公式在直觉上意味着什么（一段话说到位，不限字数）",
+    "variables": [
+      {"symbol":"g_t","meaning":"门控强度","trainRole":"可学习参数更新","inferRole":"每 token 动态计算"}
+    ],
+    "calculationExample": "以实际 token（如"我 爱 你"）为例子，假设 d=4 维度，给出 k_t、v_t、α_t、β_t 的示例数值，然后分步展示：擦除旧记忆→计算门控→写入新信息→更新 S_t 的完整演算过程（每步清晰展开，不限字数）",
+    "trainFlow": "训练阶段完整流程说明（不限字数）",
+    "inferFlow": "推理阶段完整流程说明（不限字数）"
+  },
+  "loop": {
+    "prompt": "展示给学习者的闭环问题：用自己的话说说当前技术和之前技术的区别、为什么要用这个（自然表达，问到点子上）"
+  }
+}
+```
+
+**API Parameters**:
+- temperature: 0.3
+- enable_thinking: false
+- enable_search: true, search_options: { forced_search: true, enable_source: true, enable_citation: true }
+- response_format: { type: "json_object" }
+- stream: true
+
+### 7.6 Step 3 Prompt (buildStep3Prompt)
+
+Used in `callStep("step3")`. Messages: `[SYSTEM_STEP3, user: concept + question + schema]`
+
+**Question Text** (`STEP_DEFAULT_QUESTIONS.step3`):
+```text
+步骤3 有模有样｜客户价值与商业价值。请按四部分输出：
+1.【工程收益总结】基于演进前之间的对比，面向 AI 应用开发和运维人员讲清餐技术和算法工程上的收益。
+2.【工程收益对比表】给出指标及基线 vs 当前对比。
+3.【业务价值总结】面向调用 MaaS API 的客户（不考虑私有化部署），讲清餐业务价值，可隐射高管视角。
+4.【业务价值对比表】给出场景 × API 计费/体验/业务适配 的对比。
+```
+
+**JSON Schema**:
+```text
+{
+  "engSummary": "工程收益总结，面向 AI 应用开发与运维，结合演进前对比（多段充分阐述，不限字数）",
+  "engMetrics": [
+    {"name":"推理延迟","baseline":"O(N^2)","current":"O(N)","delta":"-65%","favor":"up"}
+  ],
+  "bizSummary": "业务价值总结，面向调用 MaaS API 的客户高管，结合演进前对比（多段充分阐述，不限字数）",
+  "bizScenarios": [
+    {"scenario":"长文档问答","apiCostDelta":"-40% token 费","uxDelta":"首字延迟减半","bizFit":"高度适配"}
+  ]
+}
+favor 取值：up=更好，down=更差，neutral=中性。engMetrics 最多 6 条，bizScenarios 最多 5 条。
+```
+
+**API Parameters**:
+- temperature: 0.3
+- enable_thinking: false
+- enable_search: false (no search for step3)
+- response_format: { type: "json_object" }
+- stream: true
+
+### 7.7 Feynman Review System Prompt (buildFeynmanSystemPrompt)
+
+Used in `callFeynmanReview()`. Uses its OWN system prompt (not SYSTEM_BASE):
+
+```text
+你是费曼学习法评估教练。学习者刚通过六问讲解了"{topic}"这个 AI 概念，现在要以三种听众身份复述。请从三个听众视角分别评估，并为知识图谱生成一个挂载项（以 Transformer 为基线父节点）。
+必须返回单一合法 JSON：
+{
+  "reviews": [
+    {"role":"biz","score":0-100,"oneLine":"业务总监总评","strengths":["..."],"gaps":["..."],"followups":["..."]},
+    {"role":"cto","score":0-100,"oneLine":"...","strengths":["..."],"gaps":["..."],"followups":["..."]},
+    {"role":"dev","score":0-100,"oneLine":"...","strengths":["..."],"gaps":["..."],"followups":["..."]}
+  ],
+  "graph": {"concept":"{topic}","parent":"Transformer","relation":"与父节点的一句关系","tags":["标签1","标签2","标签3"],"oneLine":"一句话精髓"}
+}
+若某角色 answers 为空，仍给 0-20 分并在 gaps 写"未提交该角色答案"。
+```
+
+**User Message** (constructed inline):
+```text
+讲解内容 JSON：
+{JSON.stringify(context.map(q => ({ key: q.key, answer: q.answer })))}
+
+学习者原问题：{rawQuestion}
+
+学习者分别对三类听众的复述：
+- 业务总监：{answers.biz || "（未填）"}
+- CTO：{answers.cto || "（未填）"}
+- 开发者：{answers.dev || "（未填）"}
+```
+
+**API Parameters**:
+- temperature: 0.5
+- enable_thinking: true
+- enable_search: true, search_options: { forced_search: true, enable_source: true, enable_citation: true }
+- response_format: { type: "json_object" }
+- stream: false
+
+### 7.8 Legacy 6-Question Prompts (BUILD_PROMPT)
+
+Retained for backward compatibility. Used by `callQa`/`callQaStream` (not in active 3-step flow).
+
+**6 Question Keys**: `background`, `principle`, `analogy`, `engineering`, `math`, `business`
+
+Each question has a `DEFAULT_QUESTIONS[key]` text and corresponding `build*Prompt()` function returning `{question, schema}`.
+
+| Key | Question Summary | Schema Output |
+|---|---|---|
+| background | 四步结构介绍概念 (value lead + definition + glossary + summary) | `{valueLead, officialDefinition, glossaryTerms, summary, timeline}` |
+| principle | 核心工作流程4步演示 | `{coreIdea, steps[], animationKey, note}` |
+| analogy | 通俗案例类比 | `{title, story, mapping[], diagramHint}` |
+| engineering | 工程收益指标对比 | `{summary, metrics[], deployNote}` |
+| math | 实际 token 代入公式演算 | `{formula, intuition, variables[], calculationExample, trainFlow, inferFlow}` |
+| business | MaaS API 客户商业价值 | `{oneLine, scenarios[], recommendation}` |
+
+### 7.9 API Configuration Summary
+
+| Parameter | Warmup | Step 1 | Step 2 | Step 3 | Step 4 | Feynman Review |
+|---|---|---|---|---|---|---|
+| model | deepseek-v4-flash | deepseek-v4-flash | deepseek-v4-flash | deepseek-v4-flash | deepseek-v4-flash | deepseek-v4-flash |
+| temperature | 0.8 | 0.3 | 0.3 | 0.3 | 0.3 | 0.5 |
+| enable_thinking | false | false | false | false | false | true |
+| enable_search | - (not set) | true | true | false | false | true |
+| search_options | - | forced_search | forced_search | - | - | forced_search |
+| response_format | - (array) | json_object | json_object | json_object | json_object | json_object |
+| stream | false | true | true | true | true | false |
+| system prompt | SYSTEM_WARMUP | SYSTEM_STEP1 | SYSTEM_STEP2 | SYSTEM_STEP3 | SYSTEM_STEP4 | buildFeynmanSystemPrompt |
 
 ---
 
-## 八、已知问题与优化方向
+## 8. Streaming & Partial JSON
 
-### 8.1 性能风险
+### 8.1 SSE Protocol
 
-| 问题 | 原因 | 影响 | 优化建议 |
-|------|------|------|----------|
-| 流式 JSON 解析复杂 | 深层嵌套 JSON 的 partial 渲染容易卡顿 | step2/step3 加载慢 | 引入 partial-json 解析器，逐步渲染 |
-| 上下文膨胀 | step3 messages 达 8KB | step3 推理延迟 62s（step1 的 3 倍） | 精简 history 为摘要，或并行三步 |
-| 思考模式耗时 | thinking token 占大头 | step2 85s、费曼 90s | 评估关闭 thinking 后的耗时对比 |
-| 联网搜索耗时 | forced_search 对所有概念都开启 | 纯数学概念增加 10-30s 检索 | 按概念类型动态决定是否搜索 |
+All streaming calls use standard SSE:
+- Each line prefixed with `data: `
+- Delta content extracted from `obj.choices[0].delta.content`
+- Stream terminates with `data: [DONE]`
+- AbortController used for cancellation
 
-### 8.2 提示词冲突
+### 8.2 Partial JSON Field Extraction (`partialJson.ts`)
 
-| 冲突 | 表现 | 建议 |
-|------|------|------|
-| "丰富有温度" vs 字数限制 | LLM 摇摆，字段过长或过短 | 明确优先级：schema 注释优先 |
-| schema 嵌套深 | 流式容错难 | 扁平化 schema，减少嵌套层级 |
+Strategy: Given known field order, find each key position, then balanced-bracket/string scan from `:` to determine if value is complete. Only fully-parsed fields are rendered.
 
-### 8.3 存储与兼容
+**Field Orders**:
+- Step 1: `["valueLead", "officialDefinition", "glossaryTerms", "diagram", "loop"]`
+- Step 2: `["intro", "applicable", "inapplicable", "selectionCriteria", "loop"]`
+- Step 3: `["timeline", "principle", "math", "loop"]`
+- Step 4: `["oneLiner", "anchor", "contrastPair", "frameworkNote", "takeaway"]`
 
-| 问题 | 风险 | 建议 |
-|------|------|------|
-| localStorage 容量限制 | 笔记库+图谱积累可能超 5-10MB | 引入数据清理机制或 IndexedDB 迁移 |
-| StepPipeline / FeynmanDigestPanel apiKey 检查 | 离线模式下若 apiKey 为空，两处组件都会阻断调用（GdnApp 入口已正确处理 `!cfg.apiKey && !cfg.offlineMock`） | 统一 offlineMock 前置判断 |
+This enables progressive rendering: as each field completes in the stream, its corresponding UI section appears immediately.
 
 ---
 
-## 九、开发规范
+## 9. Known Issues & Optimization Direction
 
-### 9.1 代码规范
+### 9.1 Performance Risks
 
-- **TypeScript**：strict 模式，ES2020 target，ESNext module
-- **路径别名**：`@/*` -> `./src/*`（tsconfig.app.json + vite.config.ts）
-- **组件风格**：函数组件 + Hooks，优先使用 shadcn/ui 组件
-- **样式**：Tailwind CSS 原子类，CSS Variables 管理主题色
-- **编译范围**：`src/main.tsx`, `src/gdn/**`, `src/components/ui/**`, `src/lib/**`
+| Issue | Cause | Impact | Suggestion |
+|---|---|---|---|
+| Streaming JSON parse complexity | Deep nested JSON partial rendering | step2/step3 loading slow | Partial-json field-by-field (already implemented via `partialJson.ts`) |
+| Context inflation | step3 messages reach ~8KB | step3 inference delayed | Summarize history instead of full JSON |
+| Search latency | forced_search on step1 | Pure math concepts +10-30s search | Dynamic search decision by concept type |
 
-### 9.2 数据规范
+### 9.2 Prompt Conflicts
 
-- **LLM 输出**：必须为合法 JSON，不使用 Markdown 围栏
-- **流式处理**：SSE 协议（`data:` 前缀行），AbortController 取消，容错解析（正则提取 JSON）
-- **错误处理**：网络错误、JSON 解析失败、API 限流等场景需有兜底 toast 提示
-- **类型安全**：每个 LLM 返回值通过解构映射到强类型（非 `any` 直接返回）
+| Conflict | Symptom | Suggestion |
+|---|---|---|
+| "Rich & warm" vs no word limit | LLM may over-generate | Monitor field length, add soft max in schema |
+| Schema nesting depth | Streaming fault-tolerance harder | Flatten schema where possible |
 
-### 9.3 测试规范
+### 9.3 Storage & Compatibility
 
-- **端到端测试**：`scripts/test-main-flow.mjs`（Node.js 脚本）
-- **单元测试**：`scripts/test-step1.mjs`
-- **离线预览**：`fixtures.ts` + `mocks/data/*.json`（模拟 40 片段 x 35ms 的流式打字机）
+| Issue | Risk | Suggestion |
+|---|---|---|
+| localStorage capacity limit | Notes + graph accumulation may exceed 5-10MB | Introduce cleanup or IndexedDB migration |
+| StepPipeline / FeynmanDigestPanel apiKey check | Offline mode blocked if apiKey empty (GdnApp entry correctly handles `!cfg.apiKey && !cfg.offlineMock`) | Unify offlineMock pre-check |
 
 ---
 
-## 十、运行方式
+## 10. Development Standards
+
+### 10.1 Code Standards
+
+- **TypeScript**: strict mode, ES2020 target, ESNext module
+- **Path alias**: `@/*` -> `./src/*` (tsconfig.app.json + vite.config.ts)
+- **Component style**: Function components + Hooks, prefer shadcn/ui
+- **Styles**: Tailwind CSS atomic classes, CSS Variables for theme
+- **Compilation scope**: `src/main.tsx`, `src/gdn/**`, `src/components/ui/**`, `src/lib/**`
+
+### 10.2 Data Standards
+
+- **LLM output**: Must be valid JSON, no Markdown fences
+- **Streaming**: SSE protocol (`data:` prefix lines), AbortController cancel, fault-tolerant parsing (regex JSON extraction)
+- **Error handling**: Network errors, JSON parse failures, API rate limits all need fallback toast
+- **Type safety**: Every LLM return value mapped to strong types via destructuring
+
+### 10.3 Testing
+
+- **E2E test**: `scripts/test-main-flow.mjs` (Node.js script)
+- **Unit test**: `scripts/test-step1.mjs`
+- **Offline preview**: `fixtures.ts` + `mocks/data/*.json` (simulates 40 chunks x 35ms stream typewriter)
+
+---
+
+## 11. Running
 
 ```bash
-# 开发环境
+# Development
 npm run dev                 # http://localhost:5173
 
-# 生产构建
+# Production build
 npm run build               # tsc -b && vite build -> dist/
 
-# 预览构建结果
+# Preview build
 npm run preview
 ```
 
 ---
 
-## 十一、后续迭代路线图
+## 12. Iteration Roadmap
 
-### P0（高优先级）
-- [ ] 实现步骤 1/2 的闭环 LLM 评价（LoopBlock 从占位升级为可交互）
-- [ ] 优化流式 JSON 解析性能（partial-json 渲染）
-- [ ] 精简 step3 历史上下文（摘要替代完整 JSON）
+### P0 (High Priority)
+- [ ] Implement step 1/2 loop LLM evaluation (LoopBlock upgrade from placeholder to interactive)
+- [ ] Optimize step3 history context (summary instead of full JSON)
 
-### P1（中优先级）
-- [ ] 评估关闭 thinking 模式对耗时的影响
-- [ ] 按概念类型动态决定是否开启联网搜索
-- [ ] 扁平化 step2/step3 的 JSON Schema
-- [ ] localStorage 容量告警 + 数据导出/清理
-- [ ] 清理僵尸依赖（react-router-dom）
+### P1 (Medium Priority)
+- [ ] Dynamic search decision by concept type
+- [ ] localStorage capacity warning + data export/cleanup
+- [ ] Clean zombie dependency (react-router-dom)
 
-### P2（低优先级）
-- [ ] 增加更多动画类型（覆盖更多算法概念）
-- [ ] 支持多语言（英文）
-- [ ] 学习进度追踪 + 间隔重复复习提醒
-- [ ] 清理旧版六问代码（或明确标记 @deprecated）
+### P2 (Low Priority)
+- [ ] Add more animation types (cover more algorithm concepts)
+- [ ] Multi-language support (English)
+- [ ] Learning progress tracking + spaced repetition reminders
+- [ ] Clean legacy 6-question code (or mark @deprecated)
 
 ---
 
-## 附录
+## Appendix
 
-### A. 数据类型完整定义
+### A. Complete Type Definitions
 
-见 `src/gdn/types.ts`（275 行），包含两套并行结构：
-- **新版三步骤**：`StepKey`, `StepEntry`, `Step1Answer`, `Step2Answer`, `Step3Answer`（活跃使用）
-- **旧版六问**：`QaKey`, `QaEntry`, `BackgroundAnswer`, `PrincipleAnswer` 等（代码保留，UI 不再引用，`Note.qa` 用于旧笔记兼容）
+See `src/gdn/types.ts` (287 lines), containing two parallel systems:
+- **New 4-step**: `StepKey`, `StepEntry`, `Step1Answer`, `Step2Answer`, `Step3Answer`, `Step4Answer` (active)
+- **Legacy 6-question**: `QaKey`, `QaEntry`, `BackgroundAnswer`, `PrincipleAnswer`, etc. (retained for `Note.qa` compat)
 
-### B. 提示词完整快照
+### B. Offline Fixture Data
 
-见 `src/gdn/lib/prompts.ts`（284 行），包含：
-- `SYSTEM_BASE` 全局系统提示词
-- `buildFeynmanWarmupPrompt()` 费曼预热
-- `buildConceptIntro()` 概念告知
-- `BUILD_STEP_PROMPT` 三步骤 prompt + schema（step1/step2/step3）
-- `BUILD_PROMPT` 旧版六问 prompt + schema（保留兼容）
-- `buildFeynmanSystemPrompt()` 费曼评估系统提示词
+| File | Content | Size |
+|---|---|---|
+| `mocks/data/feynman-warmup-sample.json` | Feynman warmup 3 questions | 474B |
+| `mocks/data/step1-sample.json` | Step 1 example | 1.7KB |
+| `mocks/data/step2-sample.json` | Step 2 example (scenario selection) | 2.8KB |
+| `mocks/data/step3-sample.json` | Step 3 example (timeline/principle/math) | 3.5KB |
+| `mocks/data/step4-sample.json` | Step 4 example (McKinsey essence) | 1.2KB |
+| `mocks/data/feynman-review-sample.json` | Feynman review example | 3.5KB |
 
-### C. 示例数据
+**simulateStream** defaults: 50 chunks x 30ms. But `callStep` invokes with `{ chunks: 40, intervalMs: 35 }`.
 
-| 文件 | 内容 | 大小 |
-|------|------|------|
-| `mocks/data/feynman-warmup-sample.json` | 费曼预热 3 问 | 474B |
-| `mocks/data/step1-sample.json` | 步骤 1 示例 | 1.7KB |
-| `mocks/data/step2-sample.json` | 步骤 2 示例 | 3.5KB |
-| `mocks/data/step3-sample.json` | 步骤 3 示例 | 2.4KB |
-| `mocks/data/feynman-review-sample.json` | 费曼评估示例 | 3.5KB |
+### C. Animation Components
 
-### D. 动画组件清单
+| Component | File | animationKey | Implementation |
+|---|---|---|---|
+| MechanismAnim | `components/MechanismAnim.tsx` | `gdn-gate` | React useState + setTimeout sequence |
+| AttentionOnTwoAnim | `views/animations/AttentionOnTwoAnim.tsx` | `attention-on2` | CSS @keyframes + React state |
+| MambaSsmAnim | `views/animations/MambaSsmAnim.tsx` | `mamba-ssm` | CSS @keyframes + React state |
+| MoeRouteAnim | `views/animations/MoeRouteAnim.tsx` | `moe-route` | CSS @keyframes + React state |
+| GenericFlowAnim | `views/animations/GenericFlowAnim.tsx` | `generic-flow` | CSS @keyframes + React state |
 
-| 组件 | 文件 | 对应 animationKey | 实现方式 |
-|------|------|-------------------|----------|
-| MechanismAnim | `components/MechanismAnim.tsx` | `gdn-gate` | React useState + setTimeout 序列动画 |
-| AttentionOnTwoAnim | `views/animations/AttentionOnTwoAnim.tsx` | `attention-on2` | CSS @keyframes + React 状态 |
-| MambaSsmAnim | `views/animations/MambaSsmAnim.tsx` | `mamba-ssm` | CSS @keyframes + React 状态 |
-| MoeRouteAnim | `views/animations/MoeRouteAnim.tsx` | `moe-route` | CSS @keyframes + React 状态 |
-| GenericFlowAnim | `views/animations/GenericFlowAnim.tsx` | `generic-flow` | CSS @keyframes + React 状态 |
+### D. SVG Template Renderer
+
+`src/gdn/lib/svgRenderer.ts` (13.4KB) supports 5 layout types for Step 1 concept diagrams:
+- `flowchart`: Linear process flow
+- `comparison`: Old vs new side-by-side
+- `hierarchy`: Tree/pyramid structure
+- `cycle`: Iterative loop
+- `architecture`: Layered system
+
+Uses shadcn-compatible color palette, renders nodes (150x72px, rounded 12px) with edges and labels.
 
 ---
 
-> **文档维护**：此 SPEC 基于工程代码逐文件核实生成，需基于实际开发持续同步更新。
-> **变更日志**：每次功能变更需同步更新此文档的对应章节。
+> **Document Maintenance**: This SPEC is verified against engineering source code file-by-file and must be kept in sync with every code change.
+> **Change Log**: Every feature change must update the corresponding section of this document.
+> **Change Log**: Every feature change must update the corresponding section of this document.
+|---|---|---|---|
+| MechanismAnim | `components/MechanismAnim.tsx` | `gdn-gate` | React useState + setTimeout sequence |
+| AttentionOnTwoAnim | `views/animations/AttentionOnTwoAnim.tsx` | `attention-on2` | CSS @keyframes + React state |
+| MambaSsmAnim | `views/animations/MambaSsmAnim.tsx` | `mamba-ssm` | CSS @keyframes + React state |
+| MoeRouteAnim | `views/animations/MoeRouteAnim.tsx` | `moe-route` | CSS @keyframes + React state |
+| GenericFlowAnim | `views/animations/GenericFlowAnim.tsx` | `generic-flow` | CSS @keyframes + React state |
+
+### D. SVG Template Renderer
+
+`src/gdn/lib/svgRenderer.ts` (13.4KB) supports 5 layout types for Step 1 concept diagrams:
+- `flowchart`: Linear process flow
+- `comparison`: Old vs new side-by-side
+- `hierarchy`: Tree/pyramid structure
+- `cycle`: Iterative loop
+- `architecture`: Layered system
+
+Uses shadcn-compatible color palette, renders nodes (150x72px, rounded 12px) with edges and labels.
+
+---
+
+> **Document Maintenance**: This SPEC is verified against engineering source code file-by-file and must be kept in sync with every code change.
+> **Change Log**: Every feature change must update the corresponding section of this document.
+
+> **Document Maintenance**: This SPEC is verified against engineering source code file-by-file and must be kept in sync with every code change.
+> **Change Log**: Every feature change must update the corresponding section of this document.
+---
+
+> **Document Maintenance**: This SPEC is verified against engineering source code file-by-file and must be kept in sync with every code change.
+> **Change Log**: Every feature change must update the corresponding section of this document.
+> **Change Log**: Every feature change must update the corresponding section of this document.

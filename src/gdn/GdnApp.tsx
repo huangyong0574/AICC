@@ -5,17 +5,18 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Toaster, toast } from "sonner"
 import {
-  Sparkles, Settings, Library, Network, Play, Zap, MessageCircle,
+  Sparkles, Settings, Library, Network, Play, Zap, MessageCircle, Brain,
 } from "lucide-react"
 
 import type { FeynmanDigest, LlmConfig, Note, StepEntry, FeynmanWarmupQuestion } from "./types"
-import { DEFAULT_CFG, loadCfg } from "./lib/storage"
+import { DEFAULT_CFG, loadCfg, addNote, findCachedNote } from "./lib/storage"
 import { callFeynmanWarmup } from "./lib/llm"
 
 import { FeynmanPrime } from "./components/FeynmanPrime"
 import { StepPipeline, emptySteps } from "./components/StepPipeline"
 import { FeynmanDigestPanel } from "./components/FeynmanDigestPanel"
 import { ExportBar } from "./components/ExportBar"
+import { CognitiveNavBar } from "./components/CognitiveNavBar"
 import { SettingsDialog } from "./components/SettingsDialog"
 import { LibraryDialog } from "./components/LibraryDialog"
 import { GraphDialog } from "./components/GraphDialog"
@@ -65,7 +66,47 @@ export function GdnApp() {
   )
 
   const confirmedCnt = steps.filter(s => s.confirmed).length
-  const allConfirmed = steps.length === 3 && confirmedCnt === 3
+  const allConfirmed = steps.length === 4 && confirmedCnt === 4
+
+  // Cognitive nav bar state computation (6 nodes)
+  // 开场提问(1) → 类比理解(2) → 场景边界(3) → 深入原理(4) → 本质总结(5) → 开场提问闭环(6)
+  const cognitiveState = useMemo(() => {
+    const completed: number[] = []
+    let current = 1
+
+    // Node 1 (开场提问): completed when warmup confirmed
+    if (warmupConfirmed) {
+      completed.push(1)
+      current = 2
+    }
+    // Node 2 (类比理解): completed when step1 confirmed
+    if (steps[0]?.confirmed) {
+      completed.push(2)
+      current = 3
+    }
+    // Node 3 (场景边界): completed when step2 confirmed
+    if (steps[1]?.confirmed) {
+      completed.push(3)
+      current = 4
+    }
+    // Node 4 (深入原理): completed when step3 confirmed
+    if (steps[2]?.confirmed) {
+      completed.push(4)
+      current = 5
+    }
+    // Node 5 (本质总结): completed when step4 confirmed
+    if (steps[3]?.confirmed) {
+      completed.push(5)
+      current = 6
+    }
+    // Node 6 (开场提问闭环): completed when feynman digest done
+    if (feynman) {
+      completed.push(6)
+      current = 6
+    }
+
+    return { current, completed }
+  }, [steps, feynman, warmupConfirmed])
 
   function onStart() {
     if (!rawQuestion.trim()) {
@@ -80,6 +121,17 @@ export function GdnApp() {
     if (!topic.trim()) {
       setTopic(rawQuestion.slice(0, 24))
     }
+
+    // 检查本地缓存：如果之前已完成过同一问题，直接复用离线资料
+    const cached = findCachedNote(rawQuestion)
+    if (cached) {
+      loadFromNote(cached)
+      setWarmupQuestions(cached.warmupQuestions || [])
+      setWarmupConfirmed(true)
+      toast.success("已从本地离线资料加载，无需再次调用 LLM")
+      return
+    }
+
     setNoteId(genId())
     setSteps(emptySteps())
     setFeynman(null)
@@ -106,7 +158,7 @@ export function GdnApp() {
   }
 
   function onReset() {
-    if (started && !confirm("重新开始会清空当前三大步骤进度，确定？")) return
+    if (started && !confirm("重新开始会清空当前四大步骤进度，确定？")) return
     setStarted(false)
     setSteps([])
     setFeynman(null)
@@ -136,6 +188,7 @@ export function GdnApp() {
     topic: topic.trim() || rawQuestion.slice(0, 24),
     rawQuestion,
     steps,
+    warmupQuestions: warmupQuestions.length > 0 ? warmupQuestions : undefined,
     feynman: feynman || undefined,
     tags,
     createdAt: new Date().toISOString(),
@@ -154,7 +207,7 @@ export function GdnApp() {
             </div>
             <div>
               <div className="text-sm font-semibold leading-tight tracking-tight">你的AI认知教练</div>
-              <div className="text-[10px] text-muted-foreground font-mono leading-tight">三大步骤流式 · 费曼内化 · Transformer 基线图谱</div>
+              <div className="text-[10px] text-muted-foreground font-mono leading-tight">四大步骤流式 · 费曼内化 · Transformer 基线图谱</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -164,13 +217,15 @@ export function GdnApp() {
                 离线预览
               </Badge>
             )}
-            <Button variant="ghost" size="sm" onClick={() => setShowLibrary(true)}>
+            <Button variant="ghost" size="sm" disabled className="opacity-50 cursor-not-allowed relative" title="待上线">
               <Library className="mr-1.5 h-4 w-4" />
               笔记库
+              <span className="absolute -top-1.5 -right-1.5 text-[8px] bg-muted-foreground/15 text-muted-foreground px-1 py-px rounded-full leading-tight font-medium">soon</span>
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setShowGraph(true)}>
+            <Button variant="ghost" size="sm" disabled className="opacity-50 cursor-not-allowed relative" title="待上线">
               <Network className="mr-1.5 h-4 w-4" />
               图谱
+              <span className="absolute -top-1.5 -right-1.5 text-[8px] bg-muted-foreground/15 text-muted-foreground px-1 py-px rounded-full leading-tight font-medium">soon</span>
             </Button>
             <Button variant="outline" size="sm" onClick={() => setShowSettings(true)}>
               <Settings className="mr-1.5 h-4 w-4" />
@@ -180,19 +235,27 @@ export function GdnApp() {
         </div>
       </header>
 
+      {/* Cognitive Navigation Bar - appears once learning started */}
+      {started && (
+        <CognitiveNavBar
+          currentNode={cognitiveState.current}
+          completedNodes={cognitiveState.completed}
+        />
+      )}
+
       <main className="mx-auto max-w-6xl px-6 py-8 space-y-8">
         {/* Hero */}
         <section className="relative overflow-hidden rounded-xl border border-border bg-background-secondary px-8 py-12 text-center">
           <div className="relative max-w-2xl mx-auto">
             <Badge variant="outline" className="mb-4 rounded-full border-border text-muted-foreground bg-background font-normal">
-              <Zap className="mr-1 h-3 w-3" />
-              面向客户一线的MaaS从业者
+              <Brain className="mr-1 h-3 w-3" />
+              你的AI认知教练
             </Badge>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight spectrum-text mb-4 whitespace-nowrap">
-              算法实验到客户一线的认知桥梁
+            <h1 className="text-2xl md:text-4xl font-bold tracking-tight spectrum-text mb-4 whitespace-nowrap">
+              如果你不能简单地解释它，你就没有真正理解它。
             </h1>
             <p className="text-xs md:text-sm text-muted-foreground leading-relaxed whitespace-nowrap">
-              学习的终点不是记住多少道理，而是过上更好的生活、拥有更多选择权、掌控自己的人生！
+              如果你和我一样，看到新技术想了解，但论文又不太懂，看看这个页面是否适合你
             </p>
           </div>
         </section>
@@ -229,7 +292,7 @@ export function GdnApp() {
             <div className="flex items-center justify-between gap-3 pt-4">
               <div className="text-[11px] text-muted-foreground font-mono">
                 {started ? (
-                  <>进度：已确认 <span className="text-primary">{confirmedCnt}/3</span> {feynman ? "· 已内化" : allConfirmed ? "· 待内化" : ""}</>
+                  <>进度：已确认 <span className="text-primary">{confirmedCnt}/4</span> {feynman ? "· 已内化" : allConfirmed ? "· 待内化" : ""}</>
                 ) : (
                   <>未开始讲解</>
                 )}
@@ -282,7 +345,23 @@ export function GdnApp() {
                 rawQuestion={rawQuestion}
                 context={steps.map(s => ({ key: s.key, answer: s.answer }))}
                 cfg={cfg}
-                onDigest={setFeynman}
+                warmupQuestions={warmupQuestions}
+                onDigest={(d) => {
+                  setFeynman(d)
+                  // 费曼评估完成后，自动保存为离线资料
+                  const note: Note = {
+                    id: noteId || genId(),
+                    topic: topic.trim() || rawQuestion.slice(0, 24),
+                    rawQuestion,
+                    steps,
+                    warmupQuestions: warmupQuestions.length > 0 ? warmupQuestions : undefined,
+                    feynman: d,
+                    tags,
+                    createdAt: new Date().toISOString(),
+                  }
+                  addNote(note)
+                  toast.success("整份资料已保存为离线资料，下次提问相同问题将直接加载")
+                }}
               />
             )}
 

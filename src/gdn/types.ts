@@ -122,7 +122,7 @@ export interface QaEntry<K extends QaKey = QaKey> {
 
 // ---- 费曼内化（3 问 + 评估）-------------------------------------
 
-export type FeynmanRole = "biz" | "cto" | "dev"
+export type FeynmanRole = "biz" | "dev" | "internal"
 
 /** 费曼预热问题（LLM 动态生成） */
 export interface FeynmanWarmupQuestion {
@@ -131,15 +131,15 @@ export interface FeynmanWarmupQuestion {
 }
 
 export const FEYNMAN_ROLES: { key: FeynmanRole; label: string; hint: string; loadingText: string; question?: string }[] = [
-  { key: "biz", label: "客户的业务人员问：", hint: "", loadingText: "正在代入业务人员视角…" },
-  { key: "cto", label: "客户的技术高管问：", hint: "和技术决策者对话，关心成本/稳定性/改造影响", loadingText: "正在代入技术高管视角…" },
-  { key: "dev", label: "客户的工程师问：", hint: "工程师视角，关心怎么调、踩坑在哪、上手时间", loadingText: "正在代入工程师视角…" },
+  { key: "biz", label: "讲给客户的业务小姐姐听", hint: "完全不懂技术，你能让她秒懂吗？", loadingText: "正在代入业务小姐姐视角…" },
+  { key: "dev", label: "讲给客户的程序员小哥听", hint: "他关心怎么调、踩坑在哪、上手门槛", loadingText: "正在代入程序员小哥视角…" },
+  { key: "internal", label: "让公司产研同学服气", hint: "模型产研同学，他们比你更懂底层", loadingText: "正在代入产研同学视角…" },
 ]
 
 export interface FeynmanAnswers {
   biz: string
-  cto: string
   dev: string
+  internal: string
 }
 
 export interface FeynmanReviewItem {
@@ -167,10 +167,10 @@ export interface GraphDelta {
   oneLine: string                // 一句话精髓
 }
 
-// ---- 三大步骤（Spec v4）-----------------------------------------
+// ---- 四步穿透讲解（Spec v5）---------------------------------------
 
-export type StepKey = "step1" | "step2" | "step3"
-export const STEP_ORDER: StepKey[] = ["step1", "step2", "step3"]
+export type StepKey = "step1" | "step2" | "step3" | "step4"
+export const STEP_ORDER: StepKey[] = ["step1", "step2", "step3", "step4"]
 
 /** 扩展版时间轴节点（步骤2：每节点需含算法/公式/技术问题/价值限制） */
 export interface TimelineNodeV2 {
@@ -214,36 +214,55 @@ export interface LoopReview {
   nextHint: string              // 是否建议进入下一步的一句话
 }
 
-/** 步骤1 装模作样｜概念与价值感性认识 */
+/** 步骤1 L1 类比理解｜它是什么？ */
 export interface Step1Answer {
   valueLead: string             // 生活化类比揭示旧问题
-  officialDefinition: string    // 权威专业定义
+  officialDefinition: string    // 权威专业定义（含 $公式$ 和 **高亮**）
+  source: {                     // 引用来源（仅 arxiv 论文或 AI 公司官网）
+    title: string               // 论文/文档标题
+    url: string                 // arxiv 或公司官网 URL
+  }
   glossaryTerms: GlossaryTerm[] // 难懂术语拆解
-  diagram: ConceptDiagram       // 结合通俗案例的示意图
-  loop: LoopCheck               // 闭环：让用户用自己的话说原理与价值
 }
 
-/** 步骤2 像模像样｜算法原理与数学本质 */
+/** 步骤2 L2 场景选择｜能用在哪？ */
+export interface ScenarioCard {
+  scenario: string       // 场景名称
+  description: string    // 一句话场景说明
+  fit: "excellent" | "good" | "neutral" | "poor" | "unsuitable"
+  reason: string         // 为什么适合/不适合（技术原因）
+  example?: string       // 具体业务举例
+}
 export interface Step2Answer {
-  timeline: TimelineNodeV2[]    // 技术演进时间轴（扩展版）
+  intro: string                 // 场景选择总述
+  applicable: ScenarioCard[]    // 适用场景列表
+  inapplicable: ScenarioCard[]  // 不适用场景列表
+  selectionCriteria: string     // 判断标准总结
+}
+
+/** 步骤3 L3 深入原理｜怎么实现？ */
+export interface Step3Answer {
   principle: PrincipleAnswer    // 分步静态帧演示
   math: MathAnswer              // 真实 token 代入公式演算
-  loop: LoopCheck               // 闭环：和之前技术的区别
 }
 
-/** 步骤3 有模有样｜客户价值与商业价值 */
-export interface Step3Answer {
-  engSummary: string                   // 工程收益总结（面向 AI 应用开发/运维）
-  engMetrics: EngineeringMetric[]      // 工程收益对比表
-  bizSummary: string                   // 业务价值总结（面向 MaaS API 客户高管）
-  bizScenarios: BusinessScenario[]     // 业务价值对比表
-  // 闭环 = 回答开头费曼 3 问，由 FeynmanDigestPanel 承载
+/** 步骤4 L4 本质总结｜一句话是？ */
+export interface Step4Answer {
+  oneLiner: string              // 一句话本质（McKinsey风格，≤30字）
+  anchor: string                // 锚定比喻（极简类比固化认知）
+  contrastPair: {               // 对比对：旧世界 vs 新世界
+    before: string
+    after: string
+  }
+  frameworkNote: string         // 框架性总结（串联前3步）
+  takeaway: string[]            // 3个要点（记住这三点就够了）
 }
 
 export type StepAnswerMap = {
   step1: Step1Answer
   step2: Step2Answer
   step3: Step3Answer
+  step4: Step4Answer
 }
 
 export interface StepEntry<K extends StepKey = StepKey> {
@@ -255,13 +274,14 @@ export interface StepEntry<K extends StepKey = StepKey> {
   error?: string
 }
 
-// ---- 完整笔记 v4 -------------------------------------------------
+// ---- 完整笔记 v5 -------------------------------------------------
 
 export interface Note {
   id: string
   topic: string                  // 概念名
   rawQuestion: string            // 用户最初那句话
-  steps: StepEntry[]             // 三大步骤（主字段）
+  steps: StepEntry[]             // 四步穿透讲解（主字段）
+  warmupQuestions?: FeynmanWarmupQuestion[] // 费曼预热问题（缓存后复用）
   qa?: QaEntry[]                 // 旧版六问（向后兼容笔记库历史数据）
   feynman?: FeynmanDigest
   tags: string[]

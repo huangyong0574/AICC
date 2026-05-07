@@ -1,9 +1,44 @@
 import type { Step1Answer } from "../../types"
-import { AlertCircle, Lightbulb, MessageCircle, Sparkles } from "lucide-react"
-import { LoopBlock } from "../LoopBlock"
+import { AlertCircle, Lightbulb, MessageCircle, ExternalLink } from "lucide-react"
 import { StreamingSection } from "../StreamingSection"
-import { renderDiagramSvg } from "../../lib/svgRenderer"
-import { useMemo } from "react"
+import { Formula } from "../Formula"
+
+/**
+ * 解析文本中的 **高亮** 和 $公式$ 标记，返回 React 节点数组。
+ * 支持混合：普通文本 / **加粗高亮** / $LaTeX公式$
+ */
+function renderRichText(text: string) {
+  const tokens = text.split(/(\$[^$]+\$|\*\*[^*]+\*\*)/g)
+  return tokens.map((tok, i) => {
+    if (tok.startsWith("$") && tok.endsWith("$")) {
+      const latex = tok.slice(1, -1)
+      return <Formula key={i} tex={latex} inline className="mx-0.5" />
+    }
+    if (tok.startsWith("**") && tok.endsWith("**")) {
+      const inner = tok.slice(2, -2)
+      return (
+        <mark key={i} className="bg-warning/20 text-warning-foreground font-semibold px-0.5 rounded-sm">
+          {inner}
+        </mark>
+      )
+    }
+    return <span key={i}>{tok}</span>
+  })
+}
+
+/** 解析文本中的 **高亮** 标记（不含公式），用于 valueLead */
+function renderHighlighted(text: string) {
+  const parts = text.split(/\*\*(.+?)\*\*/g)
+  return parts.map((part, i) =>
+    i % 2 === 1 ? (
+      <mark key={i} className="bg-warning/20 text-warning-foreground font-semibold px-0.5 rounded-sm">
+        {part}
+      </mark>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  )
+}
 
 /**
  * Step1View 支持渐进式渲染：
@@ -20,19 +55,6 @@ export function Step1View({
 }) {
   const d = data ?? {}
 
-  // 当 diagram 有 templateType + nodes + edges 时，自动生成 SVG
-  const diagramWithSvg = useMemo(() => {
-    if (!d.diagram) return d.diagram
-    if (d.diagram.svg) return d.diagram // 已经有 SVG（fixture/mock 数据）
-    if (!d.diagram.templateType || !d.diagram.nodes?.length) return d.diagram
-
-    // 调用渲染器生成 SVG
-    return {
-      ...d.diagram,
-      svg: renderDiagramSvg(d.diagram),
-    }
-  }, [d.diagram])
-
   return (
     <div className="space-y-5">
       {/* ① 价值铺垫 */}
@@ -47,7 +69,7 @@ export function Step1View({
       >
         {d.valueLead && (
           <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
-            {d.valueLead}
+            {renderHighlighted(d.valueLead)}
           </p>
         )}
       </StreamingSection>
@@ -63,7 +85,25 @@ export function Step1View({
         skeletonLines={2}
       >
         {d.officialDefinition && (
-          <p className="text-sm text-foreground/90 leading-relaxed">{d.officialDefinition}</p>
+          <div className="space-y-2">
+            <p className="text-sm text-foreground/90 leading-relaxed">
+              {renderRichText(d.officialDefinition)}
+            </p>
+            {d.source && (
+              <div className="flex items-center gap-1.5 pt-2 border-t border-border/30 mt-3">
+                <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
+                <a
+                  href={d.source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-muted-foreground hover:text-primary truncate"
+                  title={d.source.url}
+                >
+                  {d.source.title}
+                </a>
+              </div>
+            )}
+          </div>
         )}
       </StreamingSection>
 
@@ -103,46 +143,6 @@ export function Step1View({
           </div>
         )}
       </StreamingSection>
-
-      {/* ④ 概念示意图（SVG 模板渲染） */}
-      <StreamingSection
-        icon={<Sparkles className="h-4 w-4 text-primary" />}
-        title="4. 概念示意图"
-        tone="primary"
-        ready={!!d.diagram}
-        streaming={streaming}
-        loadingText="正在绘制示意图…"
-        skeletonLines={3}
-      >
-        {diagramWithSvg && diagramWithSvg.svg && (
-          <>
-            <div
-              className="rounded-lg border border-border/40 bg-card/30 p-4 flex items-center justify-center overflow-hidden [&>svg]:max-w-full [&>svg]:h-auto"
-              dangerouslySetInnerHTML={{ __html: diagramWithSvg.svg }}
-            />
-            {diagramWithSvg.caption && (
-              <div className="mt-3 text-[12px] text-foreground/80 italic border-l-2 border-primary/40 pl-3">
-                {diagramWithSvg.caption}
-              </div>
-            )}
-          </>
-        )}
-      </StreamingSection>
-
-      {/* ⑤ 闭环问题 */}
-      <StreamingSection
-        icon={<MessageCircle className="h-4 w-4 text-primary" />}
-        title="5. 闭环问题"
-        tone="primary"
-        ready={!!d.loop}
-        streaming={streaming}
-        loadingText="正在布置闭环思考题…"
-        skeletonLines={2}
-        hideHeader={!!d.loop}
-      >
-        {d.loop && <LoopBlock loop={d.loop} stepLabel="步骤1" />}
-      </StreamingSection>
     </div>
   )
 }
-

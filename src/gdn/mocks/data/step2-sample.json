@@ -1,90 +1,43 @@
 {
   "_meta": {
-    "dtSec": 85.5,
+    "dtSec": 42.3,
     "ok": true,
     "errs": []
   },
   "data": {
-    "timeline": [
+    "intro": "GDN（Gated Delta Network）的核心优势在于线性复杂度的序列处理能力，特别适合需要处理超长上下文、追求低延迟推理的场景。以下从「适合」与「不适合」两个维度分析其业务场景适配性。",
+    "applicable": [
       {
-        "era": "2017",
-        "tech": "Transformer",
-        "algo": "全局自注意力计算",
-        "formula": "Attention(Q,K,V)=softmax(QK^T/\\sqrt{d})V",
-        "problem": "O(N^2)",
-        "valueLimit": "长序列成本高",
-        "nextDriver": "线性化"
+        "scenario": "长文档智能问答",
+        "description": "企业知识库问答、法律合同审查、研报全文分析等需要理解数万至百万 Token 上下文的任务",
+        "fit": "excellent",
+        "reason": "GDN 的 O(N) 复杂度 + O(1) 推理内存，使其在超长文档场景下成本远低于 Transformer 的 O(N^2)",
+        "example": "某券商用 GDN 做 50 页研报全文 QA，单次推理显存从 24GB 降至 4GB"
       },
       {
-        "era": "2020",
-        "tech": "Linear Attention",
-        "algo": "核函数近似替代Softmax",
-        "formula": "h_t = K_t^T V_t + h_{t-1}",
-        "problem": "O(Nd^2)",
-        "valueLimit": "状态记忆易遗忘",
-        "nextDriver": "门控增强"
-      },
-      {
-        "era": "2024",
-        "tech": "GDN",
-        "algo": "门控增量状态递推",
-        "formula": "h_t = h_{t-1} + g_t \\odot \\Delta h_t",
-        "problem": "O(Nd^2)",
-        "valueLimit": "需精细调参",
-        "nextDriver": "架构融合"
+        "scenario": "实时流式对话",
+        "description": "智能客服、同声传译、直播弹幕交互等需要持续递增上下文的实时交互场景",
+        "fit": "excellent",
+        "reason": "RNN 递推模式天然支持流式输入，无需 KV Cache 膨胀，首字延迟恒定",
+        "example": "某翻译产品接入 GDN 后，端到端延迟从 800ms 降至 180ms"
       }
     ],
-    "principle": {
-      "coreIdea": "引入可学习门控动态调节历史状态与当前输入的融合比例，实现线性复杂度下的精准记忆[2]。",
-      "steps": [
-        {
-          "label": "第1步",
-          "desc": "计算当前Token的QKV生成原始增量Δh。参数来自线性投影层，类比“分拣机初筛包裹”。",
-          "symbol": "Δh_t"
-        },
-        {
-          "label": "第2步",
-          "desc": "独立网络根据上下文生成权重g_t。参数来自门控MLP，类比“智能水龙头调节水流”。",
-          "symbol": "g_t"
-        },
-        {
-          "label": "第3步",
-          "desc": "执行状态递推h_t=h_{t-1}+g_t⊙Δh_t。参数为前序状态，类比“进度条接力更新”。",
-          "symbol": "h_t"
-        }
-      ],
-      "animationKey": "gdn-gate",
-      "note": "门控阀门精准拦截冗余信息，仅放行关键增量，延续步骤1“智能水龙头与进度条”的高效协作逻辑[2]。"
-    },
-    "math": {
-      "formula": "h_t = h_{t-1} + g_t \\odot \\Delta h_t, \\quad \\Delta h_t = (K_t^T V_t) Q_t",
-      "intuition": "用门控过滤噪声，状态像滚雪球累积关键信息，避免重复计算[2]。",
-      "variables": [
-        {
-          "symbol": "g_t",
-          "meaning": "门控权重",
-          "trainRole": "梯度下降优化过滤阈值",
-          "inferRole": "实时决定信息保留比例"
-        },
-        {
-          "symbol": "h_t",
-          "meaning": "隐藏状态",
-          "trainRole": "并行矩阵乘累积上下文",
-          "inferRole": "O(1)内存递推更新"
-        },
-        {
-          "symbol": "Δh_t",
-          "meaning": "状态增量",
-          "trainRole": "线性注意力近似计算",
-          "inferRole": "当前Token带来的新信息"
-        }
-      ],
-      "calculationExample": "输入“我 爱 你”。处理“我”：Δh₁=初始特征，g₁=0.8，h₁=0.8Δh₁。处理“爱”：Δh₂=新特征，g₂=0.6，h₂=h₁+0.6Δh₂（保留“我”记忆）。处理“你”：Δh₃=新特征，g₃=0.9，h₃=h₂+0.9Δh₃（强化关联）。全程仅维护单一h向量。",
-      "trainFlow": "训练时展开为线性注意力形式，利用GPU矩阵乘并行计算所有Token的QKV与状态，保证高吞吐[2]。",
-      "inferFlow": "推理时切换为RNN递推模式，仅加载上一时刻h与当前Token，内存占用恒为O(1)，支持超长序列[2]。"
-    },
-    "loop": {
-      "prompt": "门控权重g_t在训练与推理阶段如何保持行为一致性？"
-    }
+    "inapplicable": [
+      {
+        "scenario": "需要全局精确注意力的任务",
+        "description": "如精确的文档排版还原、像素级图像生成等需要 Token 间精确双向关注的任务",
+        "fit": "poor",
+        "reason": "门控递推本质是单向压缩，无法像双向 Attention 那样精确捕获任意两个 Token 间的关系",
+        "example": ""
+      },
+      {
+        "scenario": "短序列高精度推理",
+        "description": "数学证明、代码竞赛等输入短（<2K Token）但需要极高推理精度的任务",
+        "fit": "unsuitable",
+        "reason": "短序列下 Transformer 的 O(N^2) 开销可忽略，且全局 Attention 的表达力优势明显",
+        "example": ""
+      }
+    ],
+    "selectionCriteria": "选型决策核心看三点：(1) 序列长度是否超过 8K Token — 是则 GDN 优势显著；(2) 是否需要流式/递增上下文 — 是则 GDN 的 RNN 模式天然适配；(3) 部署环境是否有严格显存限制 — 是则 GDN 的 O(1) 推理内存不可替代。反之，短序列 + 需要精确双向关注 + 已有 Transformer 工具链的场景，继续使用 Transformer 是更务实的选择。"
   }
 }

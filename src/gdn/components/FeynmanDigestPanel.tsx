@@ -3,14 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import { Brain, Building2, Users, Code2, Loader2, Wand2, Network, CheckCircle2 } from "lucide-react"
+import { Brain, FlaskConical, Users, Code2, Loader2, Wand2, Network, CheckCircle2, MessageCircle } from "lucide-react"
 import { toast } from "sonner"
-import type { FeynmanAnswers, FeynmanDigest, FeynmanReviewItem, LlmConfig } from "../types"
+import type { FeynmanAnswers, FeynmanDigest, FeynmanReviewItem, FeynmanWarmupQuestion, LlmConfig } from "../types"
 import { FEYNMAN_ROLES } from "../types"
 import { callFeynmanReview } from "../lib/llm"
 import { upsertGraph } from "../lib/storage"
 
-const ICONS: Record<string, any> = { biz: Users, cto: Building2, dev: Code2 }
+const ICONS: Record<string, any> = { biz: Users, dev: Code2, internal: FlaskConical }
 
 /** 步骤讲解内容的最小上下文投影：只要 key + answer 即可给 LLM 参考 */
 export type DigestContext = Array<{ key: string; answer: any }>
@@ -20,15 +20,17 @@ export function FeynmanDigestPanel({
   rawQuestion,
   context,
   cfg,
+  warmupQuestions,
   onDigest,
 }: {
   topic: string
   rawQuestion: string
   context: DigestContext
   cfg: LlmConfig
+  warmupQuestions: FeynmanWarmupQuestion[]
   onDigest: (d: FeynmanDigest) => void
 }) {
-  const [answers, setAnswers] = useState<FeynmanAnswers>({ biz: "", cto: "", dev: "" })
+  const [answers, setAnswers] = useState<FeynmanAnswers>({ biz: "", dev: "", internal: "" })
   const [loading, setLoading] = useState(false)
   const [digest, setDigest] = useState<FeynmanDigest | null>(null)
 
@@ -36,7 +38,7 @@ export function FeynmanDigestPanel({
 
   async function submit() {
     if (!hasAny) return toast.error("请至少回答一个角色的问题（只有回答过的才会存到知识图谱）")
-    if (!cfg.apiKey) return toast.error("请先配置 API Key")
+    if (!cfg.apiKey && !cfg.offlineMock) return toast.error("请先配置 API Key")
     setLoading(true)
     try {
       const { reviews, graph } = await callFeynmanReview(rawQuestion, topic, context, answers, cfg)
@@ -52,6 +54,10 @@ export function FeynmanDigestPanel({
     }
   }
 
+  // 按 role 匹配对应的预热问题
+  const questionForRole = (roleKey: string) =>
+    warmupQuestions.find(q => q.role === roleKey)?.question
+
   return (
     <Card>
       <CardHeader className="border-b border-border/60">
@@ -63,6 +69,27 @@ export function FeynmanDigestPanel({
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-5 space-y-4">
+        {/* 重新展示预热问题，提醒用户回答什么 */}
+        {warmupQuestions.length > 0 && (
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
+            <div className="flex items-center gap-2 text-primary text-sm font-medium">
+              <MessageCircle className="h-4 w-4" />
+              回顾开场问题 · 现在用自己的话回答
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+              {warmupQuestions.map((q, i) => {
+                const role = FEYNMAN_ROLES.find(r => r.key === q.role)
+                return (
+                  <div key={i} className="rounded-md border border-border/60 bg-background/50 p-2.5">
+                    <div className="text-[10px] text-muted-foreground mb-1">{role?.label}</div>
+                    <div className="text-foreground/90 leading-relaxed">{q.question}</div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="text-xs text-muted-foreground border-l-2 border-foreground/20 pl-3">
           只有 <b className="text-foreground">写出文字</b> 的回答才会沉淀到知识图谱。空着的角色会被记为"未作答"。
         </div>
@@ -70,13 +97,14 @@ export function FeynmanDigestPanel({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {FEYNMAN_ROLES.map(r => {
             const Icon = ICONS[r.key]
+            const q = questionForRole(r.key)
             return (
               <div key={r.key} className="rounded-lg border border-border/60 bg-card/40 p-3 space-y-2">
                 <div className="flex items-center gap-2">
                   <Icon className="h-4 w-4 text-foreground" />
                   <div className="text-sm font-medium">{r.label}</div>
                 </div>
-                <div className="text-[11px] text-muted-foreground">{r.hint}</div>
+                <div className="text-[11px] text-muted-foreground">{q || r.hint}</div>
                 <Textarea
                   value={answers[r.key]}
                   onChange={e => setAnswers({ ...answers, [r.key]: e.target.value })}

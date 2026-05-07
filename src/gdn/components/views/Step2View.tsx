@@ -1,15 +1,11 @@
-import type { Step2Answer, TimelineNodeV2 } from "../../types"
-import { AlertCircle, ArrowRight, Layers, Sigma } from "lucide-react"
-import { PrincipleView } from "./PrincipleView"
-import { MathView } from "./MathView"
-import { Formula } from "../Formula"
-import { LoopBlock } from "../LoopBlock"
+import type { Step2Answer, ScenarioCard } from "../../types"
+import { CheckCircle2, XCircle, Target } from "lucide-react"
 import { StreamingSection } from "../StreamingSection"
 
 /**
- * Step2View 支持渐进式渲染：
- * - streaming=true 时 data 可能是 Partial<Step2Answer>，已就绪段落渲染真实内容
- * - 未就绪段落走骨架 + 叙事加载文案
+ * Step2View — L2 场景选择
+ * 双列卡片布局：适用场景 vs 不适用场景
+ * 支持渐进式渲染
  */
 export function Step2View({
   data,
@@ -22,152 +18,123 @@ export function Step2View({
 
   return (
     <div className="space-y-5">
-      {/* ① 扩展版时间轴 */}
+      {/* 1 场景导读 */}
       <StreamingSection
-        icon={<AlertCircle className="h-4 w-4 text-primary" />}
-        title="1. 技术演进时间轴（算法 + 公式 + 问题 + 限制）"
-        tone="muted"
-        ready={!!d.timeline && d.timeline.length > 0}
+        icon={<Target className="h-4 w-4 text-primary" />}
+        title="1. 场景导读"
+        tone="primary"
+        ready={!!d.intro}
         streaming={streaming}
-        loadingText="正在梳理技术演进脉络…"
+        loadingText="正在分析该技术的适用边界..."
         skeletonLines={3}
       >
-        <TimelineV2 nodes={d.timeline || []} />
+        {d.intro && (
+          <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
+            {d.intro}
+          </p>
+        )}
       </StreamingSection>
 
-      {/* ② 分步静态帧 */}
+      {/* 2 适用场景 */}
       <StreamingSection
-        icon={<Layers className="h-4 w-4 text-primary" />}
-        title="2. 分步静态帧 · 当前技术实现原理"
-        tone="muted"
-        ready={!!d.principle}
+        icon={<CheckCircle2 className="h-4 w-4 text-success" />}
+        title="2. 适用场景"
+        tone="success"
+        ready={!!d.applicable && d.applicable.length > 0}
         streaming={streaming}
-        loadingText="正在拆解分步原理…"
+        loadingText="正在列举适用的业务场景..."
         skeletonLines={4}
       >
-        {d.principle && <PrincipleView data={d.principle} />}
+        {d.applicable && d.applicable.length > 0 && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {d.applicable.map((card, i) => (
+              <ScenarioCardView key={i} card={card} index={i} positive />
+            ))}
+          </div>
+        )}
       </StreamingSection>
 
-      {/* ③ 数学 + token 演算 */}
+      {/* 3 不适用场景 */}
       <StreamingSection
-        icon={<Sigma className="h-4 w-4 text-primary" />}
-        title="3. 数学本质 · 真实 token 代入演算"
+        icon={<XCircle className="h-4 w-4 text-destructive" />}
+        title="3. 不适用场景"
+        tone="destructive"
+        ready={!!d.inapplicable && d.inapplicable.length > 0}
+        streaming={streaming}
+        loadingText="正在分析不适用的场景..."
+        skeletonLines={4}
+      >
+        {d.inapplicable && d.inapplicable.length > 0 && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {d.inapplicable.map((card, i) => (
+              <ScenarioCardView key={i} card={card} index={i} positive={false} />
+            ))}
+          </div>
+        )}
+      </StreamingSection>
+
+      {/* 4 选型标准 */}
+      <StreamingSection
+        icon={<Target className="h-4 w-4 text-primary" />}
+        title="4. 选型决策标准"
         tone="muted"
-        ready={!!d.math}
+        ready={!!d.selectionCriteria}
         streaming={streaming}
-        loadingText="正在代入 token 做数学演算…"
-        skeletonLines={3}
-      >
-        {d.math && <MathView data={d.math} />}
-      </StreamingSection>
-
-      {/* ④ 闭环问题 */}
-      <StreamingSection
-        icon={<AlertCircle className="h-4 w-4 text-primary" />}
-        title="4. 闭环问题"
-        tone="primary"
-        ready={!!d.loop}
-        streaming={streaming}
-        loadingText="正在布置闭环思考题…"
+        loadingText="正在总结选型决策标准..."
         skeletonLines={2}
-        hideHeader={!!d.loop}
       >
-        {d.loop && <LoopBlock loop={d.loop} stepLabel="步骤2" />}
+        {d.selectionCriteria && (
+          <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
+            {d.selectionCriteria}
+          </p>
+        )}
       </StreamingSection>
     </div>
   )
 }
 
-function TimelineV2({ nodes }: { nodes: TimelineNodeV2[] }) {
-  if (!nodes || nodes.length === 0) return <div className="text-xs text-muted-foreground">暂无时间轴数据</div>
+const FIT_CONFIG: Record<ScenarioCard["fit"], { label: string; color: string; bg: string }> = {
+  excellent: { label: "极佳", color: "text-success", bg: "bg-success/10 border-success/30" },
+  good: { label: "适合", color: "text-success/80", bg: "bg-success/5 border-success/20" },
+  neutral: { label: "一般", color: "text-muted-foreground", bg: "bg-muted/30 border-border/40" },
+  poor: { label: "较差", color: "text-warning", bg: "bg-warning/5 border-warning/20" },
+  unsuitable: { label: "不宜", color: "text-destructive", bg: "bg-destructive/5 border-destructive/20" },
+}
 
-  const dotColors = [
-    "bg-muted-foreground/30 ring-muted-foreground/10",
-    "bg-muted-foreground/50 ring-muted-foreground/15",
-    "bg-primary/60 ring-primary/15",
-    "bg-primary ring-primary/25",
-  ]
-  const labelColors = [
-    "text-muted-foreground/50",
-    "text-muted-foreground/70",
-    "text-primary/80",
-    "text-primary",
-  ]
-  const cardBorders = [
-    "border-muted-foreground/20",
-    "border-muted-foreground/30",
-    "border-primary/30",
-    "border-primary/40",
-  ]
+function ScenarioCardView({
+  card,
+  index,
+  positive,
+}: {
+  card: ScenarioCard
+  index: number
+  positive: boolean
+}) {
+  const fitCfg = FIT_CONFIG[card.fit] || FIT_CONFIG.neutral
 
   return (
-    <div className="relative overflow-x-auto pb-2 -mx-1 px-1">
-      <div className="flex items-start gap-0 min-w-[640px] pr-4">
-        {nodes.map((t, i) => {
-          const idx = Math.min(i, dotColors.length - 1)
-          const isLast = i === nodes.length - 1
-          return (
-            <div
-              key={i}
-              className="flex-1 flex flex-col items-center relative animate-fade-in-up"
-              style={{ animationDelay: `${i * 100}ms` }}
-            >
-              {i > 0 && (
-                <div
-                  className={`absolute top-3 left-0 right-1/2 h-px z-0 ${
-                    i === 1
-                      ? "bg-gradient-to-r from-transparent via-muted-foreground/30 to-muted-foreground/40"
-                      : i === 2
-                      ? "bg-gradient-to-r from-muted-foreground/40 via-primary/30 to-primary/40"
-                      : "bg-gradient-to-r from-primary/40 to-primary/60"
-                  }`}
-                  style={{ width: "calc(100%)" }}
-                />
-              )}
-
-              <div className={`relative z-10 h-6 w-6 rounded-full ${dotColors[idx]} ring-4 ring-offset-2 ring-offset-card flex items-center justify-center transition-transform duration-300 hover:scale-125`}>
-                <span className={`text-[9px] font-mono font-bold ${labelColors[idx]}`}>
-                  {(t.era || "").slice(-2)}
-                </span>
-              </div>
-
-              <div className={`mt-3 w-full mx-1 rounded-lg border ${cardBorders[idx]} bg-background/80 p-2.5 shadow-sm hover:shadow-md transition-shadow duration-200`}>
-                <div className="text-xs font-semibold text-foreground mb-1">{t.tech}</div>
-                {t.algo && (
-                  <div className="text-[10px] text-foreground/70 leading-snug mb-1.5">{t.algo}</div>
-                )}
-                {t.formula && (
-                  <div className="rounded bg-muted/40 px-1.5 py-1 mb-1.5 overflow-x-auto">
-                    <Formula tex={t.formula} inline />
-                  </div>
-                )}
-                {t.problem && (
-                  <div className="text-[10px] leading-tight mb-1 flex items-start gap-1">
-                    <span className="shrink-0 mt-0.5 text-destructive/80">·</span>
-                    <span className="text-foreground/70"><span className="text-destructive/80 mr-1">问题：</span>{t.problem}</span>
-                  </div>
-                )}
-                {t.valueLimit && (
-                  <div className="text-[10px] leading-tight mb-1 flex items-start gap-1">
-                    <span className="shrink-0 mt-0.5 text-warning/80">·</span>
-                    <span className="text-foreground/70"><span className="text-warning/80 mr-1">限制：</span>{t.valueLimit}</span>
-                  </div>
-                )}
-                {t.nextDriver && (
-                  <div className="text-[10px] leading-tight flex items-start gap-1">
-                    <ArrowRight className="h-2.5 w-2.5 shrink-0 mt-0.5 text-primary/80" />
-                    <span className="text-foreground/70">{t.nextDriver}</span>
-                  </div>
-                )}
-              </div>
-
-              {isLast && (
-                <div className="absolute top-3 left-1/2 right-0 h-px bg-gradient-to-r from-primary/60 to-transparent" style={{ width: "50%" }} />
-              )}
-            </div>
-          )
-        })}
+    <div
+      className={`rounded-lg border p-3.5 ${fitCfg.bg} animate-fade-in-up transition-shadow hover:shadow-md`}
+      style={{ animationDelay: `${index * 80}ms` }}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-semibold text-foreground">{card.scenario}</span>
+        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${fitCfg.color} bg-background/60`}>
+          {fitCfg.label}
+        </span>
       </div>
+      <p className="text-xs text-foreground/70 leading-relaxed mb-2">{card.description}</p>
+      <div className="text-xs leading-snug">
+        <span className={`font-medium ${positive ? "text-success/80" : "text-destructive/80"} mr-1`}>
+          {positive ? "Why:" : "Why not:"}
+        </span>
+        <span className="text-foreground/70">{card.reason}</span>
+      </div>
+      {card.example && (
+        <div className="mt-1.5 text-[11px] text-foreground/60 italic border-l-2 border-primary/30 pl-2">
+          {card.example}
+        </div>
+      )}
     </div>
   )
 }

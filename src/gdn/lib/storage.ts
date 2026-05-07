@@ -7,7 +7,7 @@ const GRAPH_KEY = "gdn_graph_v3"  // 用户内化过的概念（用于知识图�
 export const DEFAULT_CFG: LlmConfig = {
   apiKey: "",
   baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-  model: "qwen3.6-plus",
+  model: "deepseek-v4-flash",
   offlineMock: false,
 }
 
@@ -15,7 +15,16 @@ export function loadCfg(): LlmConfig {
   try {
     // 优先从 localStorage 读取
     const raw = localStorage.getItem(LLM_KEY)
-    if (raw) return { ...DEFAULT_CFG, ...JSON.parse(raw) }
+    if (raw) {
+      const cached = { ...DEFAULT_CFG, ...JSON.parse(raw) } as LlmConfig
+      // 迁移：旧默认 model 升级为当前默认 model（deepseek-v4-flash）
+      const LEGACY_MODELS = ["qwen3.6-plus", "qwen-plus", "deepseek-v4-pro"]
+      if (LEGACY_MODELS.includes(cached.model)) {
+        cached.model = DEFAULT_CFG.model
+        try { localStorage.setItem(LLM_KEY, JSON.stringify(cached)) } catch {}
+      }
+      return cached
+    }
 
     // 如果没有，尝试从 .env.local.json 加载（开发环境）
     // 注意：这需要 Vite 的 json 导入支持
@@ -46,6 +55,15 @@ export function addNote(note: Note) {
   if (idx >= 0) list[idx] = note
   else list.unshift(note)
   saveNotes(list)
+}
+
+/** 按原始问题文本查找已完成的离线缓存（含费曼内化结果的笔记） */
+export function findCachedNote(rawQuestion: string): Note | undefined {
+  const q = rawQuestion.trim()
+  if (!q) return undefined
+  return loadNotes().find(
+    n => n.rawQuestion.trim() === q && n.feynman && n.steps?.length === 4,
+  )
 }
 export function deleteNote(id: string) {
   saveNotes(loadNotes().filter(n => n.id !== id))

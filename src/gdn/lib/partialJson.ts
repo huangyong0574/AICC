@@ -118,23 +118,29 @@ export function extractCompletedFields<T extends Record<string, any>>(
 export const STEP1_KEYS = [
   "valueLead",
   "officialDefinition",
+  "source",
   "glossaryTerms",
-  "diagram",
-  "loop",
 ] as const
 
-/** 便捷：step2 字段顺序（与 schema 一致） */
+/** 便捷：step2 字段顺序 — 场景选择（与 schema 一致） */
 export const STEP2_KEYS = [
-  "timeline",
+  "intro",
+  "applicable",
+  "inapplicable",
+  "selectionCriteria",
+] as const
+
+/** 便捷：step3 字段顺序 — 深入原理（与 schema 一致） */
+export const STEP3_KEYS = [
   "principle",
   "math",
-  "loop",
 ] as const
 
-/** 便捷：step3 字段顺序（与 schema 一致） */
-export const STEP3_KEYS = [
-  "engSummary",
-  "engMetrics",
-  "bizSummary",
-  "bizScenarios",
+/** 便捷：step4 字段顺序 — 本质总结（与 schema 一致） */
+export const STEP4_KEYS = [
+  "oneLiner",
+  "anchor",
+  "contrastPair",
+  "frameworkNote",
+  "takeaway",
 ] as const

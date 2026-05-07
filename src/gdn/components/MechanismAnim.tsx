@@ -52,7 +52,7 @@ export function MechanismAnim() {
         timers.current.push(
           window.setTimeout(() => {
             setStep(6)
-            setLabel(`播放完成 · Attention 共 ${TOKENS.length * TOKENS.length} 次计算 vs GDN 仅 ${TOKENS.length} 次，点「▶ 重播」再来一遍`)
+            setLabel(`播放完成 · Attention 共 ${attAcc} 次计算 vs GDN 仅 ${gdnAcc} 次，点「▶ 重播」再来一遍`)
           }, 2200),
         )
         return

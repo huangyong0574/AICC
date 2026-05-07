@@ -9,17 +9,19 @@ import {
   buildConceptIntro,
   BUILD_PROMPT,
   BUILD_STEP_PROMPT,
+  SYSTEM_PROMPTS,
+  SYSTEM_WARMUP,
   buildFeynmanSystemPrompt,
   buildFeynmanWarmupPrompt,
 } from "./prompts"
 
 // 离线预览 fixtures
 import {
-  FIXTURE_WARMUP, FIXTURE_STEP1, FIXTURE_STEP2, FIXTURE_STEP3, FIXTURE_REVIEW,
+  FIXTURE_WARMUP, FIXTURE_STEP1, FIXTURE_STEP2, FIXTURE_STEP3, FIXTURE_STEP4, FIXTURE_REVIEW,
   simulateStream, mockDelay,
 } from "../mocks/fixtures"
 // ============================================================
-// 六问 API 调用（prompt 定义已移到 prompts.ts）
+// Legacy 六问 QA API 调用（已废弃，保留兼容）
 // ============================================================
 
 // ============================================================
@@ -27,7 +29,7 @@ import {
 // ============================================================
 
 export interface FeynmanWarmupQuestion {
-  role: "biz" | "cto" | "dev"
+  role: "biz" | "dev" | "internal"
   question: string
 }
 
@@ -44,7 +46,7 @@ export async function callFeynmanWarmup(
   const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
 
   const messages: { role: string; content: string }[] = [
-    { role: "system", content: SYSTEM_BASE },
+    { role: "system", content: SYSTEM_WARMUP },
     { role: "user", content: buildFeynmanWarmupPrompt(rawQuestion) },
   ]
 
@@ -52,14 +54,11 @@ export async function callFeynmanWarmup(
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` },
     body: JSON.stringify({
-      model: cfg.model || "qwen3.6-plus",
+      model: cfg.model || "deepseek-v4-flash",
       messages,
-      temperature: 1.5,
-      // 费曼预热：关闭思考以提升 JSON 稳定性；高 temperature 让问题更有多样性
+      temperature: 0.8,
+      // 费曼预热：适度 temperature 保障多样性；关闭思考提升 JSON 稳定性
       enable_thinking: false,
-      enable_search: true,
-      search_options: { forced_search: true, enable_source: true, enable_citation: true },
-      // 不设 response_format：LLM 返回数组比对象更稳定
     }),
   })
 
@@ -82,7 +81,7 @@ export async function callFeynmanWarmup(
     }
 
     return parsed.map((item: any) => ({
-      role: item.role as "biz" | "cto" | "dev",
+      role: item.role as "biz" | "dev" | "internal",
       question: item.question as string,
     }))
   } catch (e: any) {
@@ -102,7 +101,7 @@ export async function callQa<K extends QaKey>(
 ): Promise<QaAnswerMap[K]> {
   if (cfg.offlineMock) {
     // 旧版六问不提供离线 fixture，直接报错
-    throw new Error("离线预览仅支持新版三大步骤（step1/2/3）的 fixture 渲染")
+    throw new Error("离线预览仅支持新版四大步骤（step1/2/3/4）的 fixture 渲染")
   }
   if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
   const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
@@ -129,7 +128,7 @@ export async function callQa<K extends QaKey>(
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` },
     body: JSON.stringify({
-      model: cfg.model || "qwen3.6-plus",
+      model: cfg.model || "deepseek-v4-flash",
       messages,
       temperature: 0.3,
       response_format: { type: "json_object" },
@@ -171,7 +170,7 @@ export async function callQaStream<K extends QaKey>(
   signal?: AbortSignal,
 ): Promise<QaAnswerMap[K]> {
   if (cfg.offlineMock) {
-    throw new Error("离线预览仅支持新版三大步骤（step1/2/3）的 fixture 渲染")
+    throw new Error("离线预览仅支持新版四大步骤（step1/2/3/4）的 fixture 渲染")
   }
   if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
   const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
@@ -198,7 +197,7 @@ export async function callQaStream<K extends QaKey>(
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` },
     body: JSON.stringify({
-      model: cfg.model || "qwen3.6-plus",
+      model: cfg.model || "deepseek-v4-flash",
       messages,
       temperature: 0.3,
       response_format: { type: "json_object" },
@@ -256,7 +255,7 @@ export async function callQaStream<K extends QaKey>(
 }
 
 // ============================================================
-// 三大步骤（Spec v4）流式调用
+// 四大步骤流式调用（独立 system prompt）
 // ============================================================
 
 export async function callStep<K extends StepKey>(
@@ -273,6 +272,7 @@ export async function callStep<K extends StepKey>(
       step1: FIXTURE_STEP1,
       step2: FIXTURE_STEP2,
       step3: FIXTURE_STEP3,
+      step4: FIXTURE_STEP4,
     }
     const data = fixtureMap[stepKey]
     await simulateStream(data, onText, { chunks: 40, intervalMs: 35, signal })
@@ -281,14 +281,15 @@ export async function callStep<K extends StepKey>(
   if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
   const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
 
+  // 每步使用独立 system prompt，概念嵌入 user 消息
   const messages: { role: string; content: string }[] = [
-    { role: "system", content: SYSTEM_BASE },
-    { role: "user", content: buildConceptIntro(rawQuestion) },
+    { role: "system", content: SYSTEM_PROMPTS[stepKey] },
+    { role: "user", content: `学习者想要深入理解的概念：「${rawQuestion}」` },
   ]
   // 追加历史步骤上下文（已确认的步骤才追加）
   for (const h of history) {
     if (!h.answer || !h.confirmed) continue
-    messages.push({ role: "user", content: `🔹 ${h.key}问题：${h.question}` })
+    messages.push({ role: "user", content: `🔹 ${h.key}已确认结果：` })
     messages.push({ role: "assistant", content: JSON.stringify(h.answer) })
   }
   const cur = BUILD_STEP_PROMPT[stepKey]()
@@ -297,19 +298,19 @@ export async function callStep<K extends StepKey>(
     content: `🔹 问题：${cur.question}\n\n请严格按以下 JSON Schema 输出（只返回 JSON）：\n${cur.schema}`,
   })
 
-  // step2/step3 以算法推导、数学演算、工程/商业价值总结为主，无需联网搜索，关下来加速
-  const useSearch = stepKey === "step1"
+  // step1（类比理解）+ step2（场景选择）需联网获取真实案例；step3/step4 纯推理不需要
+  const useSearch = stepKey === "step1" || stepKey === "step2"
 
   const res = await fetch(`${base}/chat/completions`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` },
     body: JSON.stringify({
-      model: cfg.model || "qwen3.6-plus",
+      model: cfg.model || "deepseek-v4-flash",
       messages,
       temperature: 0.3,
       response_format: { type: "json_object" },
       stream: true,
-      // 三大步骤全部关闭深度思考，避免 thinking 流拖慢响应
+      // 四大步骤全部关闭深度思考，避免 thinking 流拖慢响应
       enable_thinking: false,
       enable_search: useSearch,
       ...(useSearch
@@ -386,10 +387,10 @@ export async function callFeynmanReview(
   const sys = buildFeynmanSystemPrompt(topic)
 
   const body = {
-    model: cfg.model || "qwen3.6-plus",
+    model: cfg.model || "deepseek-v4-flash",
     messages: [
       { role: "system", content: sys },
-      { role: "user", content: `讲解内容 JSON：\n${JSON.stringify(context.map(q => ({ key: q.key, answer: q.answer })))}\n\n学习者原问题：${rawQuestion}\n\n学习者分别对三类听众的复述：\n- 业务总监：${answers.biz || "（未填）"}\n- CTO：${answers.cto || "（未填）"}\n- 开发者：${answers.dev || "（未填）"}` },
+      { role: "user", content: `讲解内容 JSON：\n${JSON.stringify(context.map(q => ({ key: q.key, answer: q.answer })))}\n\n学习者原问题：${rawQuestion}\n\n学习者分别对三类听众的复述：\n- 客户业务小姐姐：${answers.biz || "（未填）"}\n- 客户程序员小哥：${answers.dev || "（未填）"}\n- 公司产研同学：${answers.internal || "（未填）"}` },
     ],
     temperature: 0.5,
     response_format: { type: "json_object" },

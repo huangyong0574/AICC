@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Brain, Users, Building2, Code2 } from "lucide-react"
+import { Brain, Users, Code2, FlaskConical } from "lucide-react"
 import { FEYNMAN_ROLES } from "../types"
 import type { FeynmanWarmupQuestion } from "../types"
 
 const ICONS: Record<string, any> = {
   biz: Users,
-  cto: Building2,
   dev: Code2,
+  internal: FlaskConical,
 }
 
 /**
@@ -52,7 +52,7 @@ export function FeynmanPrime({
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-foreground text-background">
             <Brain className="h-4 w-4" />
           </div>
-          10分钟后，轻松回答客户的3个问题
+          费曼精髓-"输出倒逼输入"，看完我还问你这3个问题，嘿嘿~
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-5 space-y-3">

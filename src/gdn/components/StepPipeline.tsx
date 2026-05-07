@@ -3,26 +3,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
-  Sparkles, Layers, DollarSign,
+  Sparkles, Target, Layers, Gem,
   Loader2, CheckCircle2, ChevronDown, Play, ArrowRight, AlertCircle,
 } from "lucide-react"
 import { toast } from "sonner"
 import type {
   StepEntry, StepKey, LlmConfig,
-  Step1Answer, Step2Answer, Step3Answer,
+  Step1Answer, Step2Answer, Step3Answer, Step4Answer,
 } from "../types"
 import { STEP_ORDER } from "../types"
 import { callStep } from "../lib/llm"
 import { getDefaultStepQuestion } from "../lib/prompts"
-import { extractCompletedFields, STEP1_KEYS, STEP2_KEYS, STEP3_KEYS } from "../lib/partialJson"
+import { extractCompletedFields, STEP1_KEYS, STEP2_KEYS, STEP3_KEYS, STEP4_KEYS } from "../lib/partialJson"
 import { Step1View } from "./views/Step1View"
 import { Step2View } from "./views/Step2View"
 import { Step3View } from "./views/Step3View"
+import { Step4View } from "./views/Step4View"
 
-const META: Record<StepKey, { num: number; title: string; subtitle: string; icon: any; tone: string }> = {
-  step1: { num: 1, title: "装模作样｜概念与价值感性认识", subtitle: "价值铺垫 · 专业定义 · 术语拆解 · 示意图", icon: Sparkles,  tone: "layer1" },
-  step2: { num: 2, title: "像模像样｜算法原理与数学本质", subtitle: "扩展时间轴 · 分步静态帧 · Token 演算", icon: Layers,     tone: "layer2" },
-  step3: { num: 3, title: "有模有样｜客户价值与商业价值", subtitle: "工程收益 · 业务场景 · 回到开头费曼 3 问", icon: DollarSign, tone: "layer4" },
+const META: Record<StepKey, { num: number; title: string; subtitle: string; icon: any; tone: string; level: string; levelTitle: string; levelQ: string }> = {
+  step1: { num: 1, title: "L1 类比理解", subtitle: "生活化类比 · 专业定义 · 术语拆解", icon: Sparkles, tone: "layer1", level: "L1", levelTitle: "类比理解", levelQ: "它是什么？" },
+  step2: { num: 2, title: "L2 场景边界", subtitle: "适用场景 · 不适用场景 · 选型标准", icon: Target, tone: "layer2", level: "L2", levelTitle: "场景边界", levelQ: "哪里能用？" },
+  step3: { num: 3, title: "L3 深入原理", subtitle: "分步原理 · 动画示意 · 数学演算", icon: Layers, tone: "layer3", level: "L3", levelTitle: "深入原理", levelQ: "怎么做到的？" },
+  step4: { num: 4, title: "L4 本质总结", subtitle: "一句本质 · 锚点类比 · 对比 · 要点", icon: Gem, tone: "layer4", level: "L4", levelTitle: "本质总结", levelQ: "一句话说清" },
 }
 
 const TONE_WRAP: Record<string, string> = {
@@ -82,7 +84,7 @@ export function StepPipeline({
   }
 
   async function runOne(idx: number) {
-    if (!cfg.apiKey) {
+    if (!cfg.offlineMock && !cfg.apiKey) {
       toast.error("请先设置 API Key")
       return
     }
@@ -132,7 +134,7 @@ export function StepPipeline({
       }
     } else {
       if (onAllDone) onAllDone(next)
-      toast.success("三大步骤讲解完成，去底部做费曼内化吧")
+      toast.success("四大步骤讲解完成，去底部做费曼内化吧")
     }
   }
 
@@ -180,13 +182,16 @@ function StepCard({
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-mono text-muted-foreground">步骤{meta.num}</span>
-              <span className="font-semibold">{meta.title}</span>
+              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wide ${TONE_WRAP[meta.tone]}`}>
+                {meta.level}
+              </span>
+              <span className="font-semibold">{meta.levelTitle}</span>
+              <span className="text-sm text-muted-foreground font-normal">{meta.levelQ}</span>
               {entry.streaming && <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-[10px]"><Loader2 className="h-3 w-3 mr-1 animate-spin" />生成中</Badge>}
               {entry.answer && !entry.streaming && !entry.confirmed && <Badge variant="outline" className="border-warning/40 text-warning bg-warning/5 text-[10px]">待确认</Badge>}
               {entry.confirmed && <Badge variant="outline" className="border-success/40 text-success bg-success/5 text-[10px]"><CheckCircle2 className="h-3 w-3 mr-1" />已确认</Badge>}
             </div>
-            <div className="text-xs font-normal text-muted-foreground mt-0.5">{meta.subtitle}</div>
+            {meta.subtitle && <div className="text-xs font-normal text-muted-foreground mt-0.5">{meta.subtitle}</div>}
           </div>
           <Button variant="ghost" size="icon" onClick={() => setExpanded(v => !v)} className="h-7 w-7">
             <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "" : "-rotate-90"}`} />
@@ -196,7 +201,7 @@ function StepCard({
 
       {expanded && (
         <CardContent className="pt-5 space-y-4">
-          {/* 三大步骤流式阶段均走分段骨架渐进式渲染，不再显示原 JSON 小黑框 */}
+          {/* 四大步骤流式阶段均走分段骨架渐进式渲染，不再显示原 JSON 小黑框 */}
           {entry.streaming && entry.key === "step1" && (
             <Step1View
               data={extractCompletedFields<Step1Answer>(streamBuf, STEP1_KEYS) as Partial<Step1Answer>}
@@ -215,6 +220,12 @@ function StepCard({
               streaming
             />
           )}
+          {entry.streaming && entry.key === "step4" && (
+            <Step4View
+              data={extractCompletedFields<Step4Answer>(streamBuf, STEP4_KEYS) as Partial<Step4Answer>}
+              streaming
+            />
+          )}
 
           {entry.error && (
             <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive flex items-start gap-2">
@@ -230,7 +241,7 @@ function StepCard({
               {!entry.confirmed && (
                 <div className="flex items-center justify-between pt-2 border-t border-border/50">
                   <div className="text-[11px] text-muted-foreground">
-                    {entry.key === "step3"
+                    {entry.key === "step4"
                       ? "都讲到这了？确认后去底部做费曼 3 问内化"
                       : "读懂这段了吗？确认后才会进入下一步"}
                   </div>
@@ -238,7 +249,7 @@ function StepCard({
                     <Button variant="outline" size="sm" onClick={onRerun}>重新生成</Button>
                     <Button variant="glow" size="sm" onClick={onConfirm}>
                       <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                      {entry.key === "step3" ? "确认，去做费曼内化" : `确认，继续步骤 ${idx + 2}`}
+                      {entry.key === "step4" ? "确认，去做费曼内化" : `确认，继续步骤 ${idx + 2}`}
                       <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -266,6 +277,7 @@ function renderView(entry: StepEntry) {
     case "step1": return <Step1View data={entry.answer as Step1Answer} streaming={false} />
     case "step2": return <Step2View data={entry.answer as Step2Answer} streaming={false} />
     case "step3": return <Step3View data={entry.answer as Step3Answer} streaming={false} />
+    case "step4": return <Step4View data={entry.answer as Step4Answer} streaming={false} />
     default: return null
   }
 }

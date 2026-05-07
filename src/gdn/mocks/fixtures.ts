@@ -6,7 +6,7 @@
 // ============================================================
 
 import type {
-  Step1Answer, Step2Answer, Step3Answer,
+  Step1Answer, Step2Answer, Step3Answer, Step4Answer,
   FeynmanReviewItem, GraphDelta,
 } from "../types"
 
@@ -15,18 +15,20 @@ import warmupRaw from "./data/feynman-warmup-sample.json"
 import step1Raw from "./data/step1-sample.json"
 import step2Raw from "./data/step2-sample.json"
 import step3Raw from "./data/step3-sample.json"
+import step4Raw from "./data/step4-sample.json"
 import reviewRaw from "./data/feynman-review-sample.json"
 
 // ------------------------------------------------------------
 // 数据解包（从 {_meta,data} 中取出 data 部分）
 // ------------------------------------------------------------
 
-export const FIXTURE_WARMUP: Array<{ role: "biz" | "cto" | "dev"; question: string }> =
+export const FIXTURE_WARMUP: Array<{ role: "biz" | "dev" | "internal"; question: string }> =
   warmupRaw.data as any
 
 export const FIXTURE_STEP1: Step1Answer = step1Raw.data as any
 export const FIXTURE_STEP2: Step2Answer = step2Raw.data as any
 export const FIXTURE_STEP3: Step3Answer = step3Raw.data as any
+export const FIXTURE_STEP4: Step4Answer = step4Raw.data as any
 
 export const FIXTURE_REVIEW: { reviews: FeynmanReviewItem[]; graph: GraphDelta } = {
   reviews: (reviewRaw.data as any).reviews as FeynmanReviewItem[],

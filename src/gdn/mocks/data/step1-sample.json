@@ -5,8 +5,9 @@
     "errs": []
   },
   "data": {
-    "valueLead": "传统Transformer处理长序列时，注意力机制需计算所有词对关系，导致计算量随序列长度平方级增长。例如分析万字文档时，模型需反复比对每个词与其他词的关系，如同让万人同时互相通话，效率低下且易遗漏关键信息。GDN通过门控机制动态筛选关键交互，将计算复杂度降至线性，让长文本处理如精准快递分拣般高效。",
-    "officialDefinition": "Gated Delta Network（GDN）是一种改进的序列建模架构，通过可学习的门控机制动态调节相邻状态间的增量更新（Delta），替代传统自注意力的全局计算。其核心公式为h_t = h_{t-1} + g_t ⊙ Δh_t，其中g_t为门控权重，Δh_t为状态增量，实现高效长程依赖建模[5][8]。",
+    "valueLead": "传统Transformer处理长序列时，注意力机制需计算所有词对关系，导致计算量随序列长度平方级增长。例如分析万字文档时，模型需反复比对每个词与其他词的关系，**如同让万人同时互相通话**，效率低下且易遗漏关键信息。GDN通过门控机制动态筛选关键交互，将计算复杂度降至线性，**让长文本处理如精准快递分拣般高效**。",
+    "officialDefinition": "**Gated Delta Network（GDN）**是一种改进的序列建模架构，通过可学习的**门控机制**动态调节相邻状态间的增量更新（Delta），替代传统自注意力的全局计算。其核心公式为 $h_t = h_{t-1} + g_t \\odot \\Delta h_t$，其中 $g_t$ 为门控权重，$\\Delta h_t$ 为状态增量，实现高效**长程依赖建模**。",
+    "source": { "title": "Gated Delta Networks: Improving Mamba2 with Delta Rule", "url": "https://arxiv.org/abs/2412.06464" },
     "glossaryTerms": [
       {
         "term": "Gated（门控）",
@@ -23,25 +24,6 @@
         "plainHint": "流水线工厂",
         "techNote": "多层门控增量模块堆叠的序列处理架构，支持并行训练"
       }
-    ],
-    "diagram": {
-      "templateType": "flowchart",
-      "nodes": [
-        {"id": "input", "label": "新信息流入", "sublabel": "用户提问/数据输入", "color": "#3b82f6"},
-        {"id": "gate", "label": "智能闸门", "sublabel": "判断是否放行", "color": "#f59e0b"},
-        {"id": "memory", "label": "记忆笔记本", "sublabel": "只微调不重写", "color": "#10b981"},
-        {"id": "result", "label": "高效更新", "sublabel": "线性复杂度 O(n)", "color": "#10b981"}
-      ],
-      "edges": [
-        {"from": "input", "to": "gate", "label": "过滤"},
-        {"from": "gate", "to": "memory", "label": "增量"},
-        {"from": "memory", "to": "result"}
-      ],
-      "caption": "智能闸门 = 门控 Gated，记忆笔记本只微调 = 增量 Delta，两者合起来替代了重写整本的笨办法",
-      "svg": "<svg viewBox='0 0 680 340' xmlns='http://www.w3.org/2000/svg'><rect width='680' height='340' fill='#ffffff' rx='8'/><defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0 0 L10 4 L0 8 Z' fill='#6b7280'/></marker></defs><g transform='translate(60, 140)'><rect width='150' height='72' rx='12' fill='#eff6ff' stroke='#3b82f6' stroke-width='2'/><text x='75' y='32' text-anchor='middle' font-size='13' fill='#1e293b' font-family='system-ui, -apple-system, sans-serif' font-weight='600'>新信息流入</text><text x='75' y='52' text-anchor='middle' font-size='11' fill='#64748b' font-family='system-ui, -apple-system, sans-serif'>用户提问/数据输入</text></g><g transform='translate(220, 140)'><rect width='150' height='72' rx='12' fill='#fffbeb' stroke='#f59e0b' stroke-width='2'/><text x='75' y='32' text-anchor='middle' font-size='13' fill='#1e293b' font-family='system-ui, -apple-system, sans-serif' font-weight='600'>智能闸门</text><text x='75' y='52' text-anchor='middle' font-size='11' fill='#64748b' font-family='system-ui, -apple-system, sans-serif'>判断是否放行</text></g><line x1='210' y1='176' x2='220' y2='176' stroke='#6b7280' stroke-width='2' marker-end='url(#arrow)'/><rect x='200' y='160' width='60' height='20' rx='4' fill='#ffffff' stroke='#e2e8f0' stroke-width='1'/><text x='230' y='174' text-anchor='middle' font-size='10' fill='#64748b' font-family='system-ui, -apple-system, sans-serif'>过滤</text><g transform='translate(380, 140)'><rect width='150' height='72' rx='12' fill='#ecfdf5' stroke='#10b981' stroke-width='2'/><text x='75' y='32' text-anchor='middle' font-size='13' fill='#1e293b' font-family='system-ui, -apple-system, sans-serif' font-weight='600'>记忆笔记本</text><text x='75' y='52' text-anchor='middle' font-size='11' fill='#64748b' font-family='system-ui, -apple-system, sans-serif'>只微调不重写</text></g><line x1='370' y1='176' x2='380' y2='176' stroke='#6b7280' stroke-width='2' marker-end='url(#arrow)'/><rect x='360' y='160' width='60' height='20' rx='4' fill='#ffffff' stroke='#e2e8f0' stroke-width='1'/><text x='390' y='174' text-anchor='middle' font-size='10' fill='#64748b' font-family='system-ui, -apple-system, sans-serif'>增量</text><g transform='translate(540, 140)'><rect width='150' height='72' rx='12' fill='#ecfdf5' stroke='#10b981' stroke-width='2'/><text x='75' y='32' text-anchor='middle' font-size='13' fill='#1e293b' font-family='system-ui, -apple-system, sans-serif' font-weight='600'>高效更新</text><text x='75' y='52' text-anchor='middle' font-size='11' fill='#64748b' font-family='system-ui, -apple-system, sans-serif'>线性复杂度 O(n)</text></g><line x1='530' y1='176' x2='540' y2='176' stroke='#6b7280' stroke-width='2' marker-end='url(#arrow)'/></svg>"
-    },
-    "loop": {
-      "prompt": "门控机制如何精准判断何时该更新/保留历史状态？"
-    }
+    ]
   }
 }
