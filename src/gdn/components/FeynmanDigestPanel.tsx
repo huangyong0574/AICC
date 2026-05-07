@@ -12,6 +12,13 @@ import { upsertGraph } from "../lib/storage"
 
 const ICONS: Record<string, any> = { biz: Users, dev: Code2, internal: FlaskConical }
 
+/** C1: 每个角色 textarea 的引导开头 starter */
+const STARTERS: Record<string, string> = {
+  biz: "简单来说，这个概念就像……",
+  dev: "从工程实现角度看，关键步骤是……",
+  internal: "底层原理可以概括为……",
+}
+
 /** 步骤讲解内容的最小上下文投影：只要 key + answer 即可给 LLM 参考 */
 export type DigestContext = Array<{ key: string; answer: any }>
 
@@ -108,7 +115,7 @@ export function FeynmanDigestPanel({
                 <Textarea
                   value={answers[r.key]}
                   onChange={e => setAnswers({ ...answers, [r.key]: e.target.value })}
-                  placeholder="用 TA 能听懂的语言讲……"
+                  placeholder={STARTERS[r.key] || "用 TA 能听懂的语言讲……"}
                   className="min-h-[120px] text-xs"
                 />
               </div>

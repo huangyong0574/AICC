@@ -1,9 +1,12 @@
+import { useState } from "react"
 import type { MathAnswer } from "../../types"
 import { Badge } from "@/components/ui/badge"
-import { Sigma, GraduationCap, Rocket, Lightbulb, Calculator } from "lucide-react"
+import { Sigma, GraduationCap, Rocket, Lightbulb, Calculator, ChevronDown } from "lucide-react"
 import { Formula } from "../Formula"
+import { RichText } from "../RichText"
 
 export function MathView({ data }: { data: MathAnswer }) {
+  const [calcOpen, setCalcOpen] = useState(false)
   return (
     <div className="space-y-4">
       {/* 公式区 */}
@@ -19,18 +22,32 @@ export function MathView({ data }: { data: MathAnswer }) {
 
       <div className="rounded-md border border-border bg-background-secondary p-3 flex items-start gap-2 text-sm">
         <Lightbulb className="h-4 w-4 text-foreground shrink-0 mt-0.5" />
-        <div className="text-foreground/90">{data.intuition}</div>
+        <div className="text-foreground/90"><RichText text={data.intuition} /></div>
       </div>
 
-      {/* 代入 token 演算 */}
+      {/* 代入 token 演算 — 默认折叠，只展示摘要 */}
       <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Calculator className="h-4 w-4 text-primary" />
-          <span className="text-xs font-semibold text-primary uppercase tracking-wider">代入实际 token 演算</span>
-        </div>
-        <div className="text-xs text-foreground/90 leading-relaxed whitespace-pre-line font-mono bg-card/60 rounded-md p-3 border border-border/40">
-          {data.calculationExample}
-        </div>
+        <button
+          type="button"
+          onClick={() => setCalcOpen(!calcOpen)}
+          className="w-full flex items-center justify-between gap-2 group cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            <Calculator className="h-4 w-4 text-primary" />
+            <span className="text-xs font-semibold text-primary uppercase tracking-wider">代入实际 token 演算</span>
+          </div>
+          <ChevronDown className={`h-4 w-4 text-primary transition-transform duration-200 ${calcOpen ? "rotate-180" : ""}`} />
+        </button>
+        {!calcOpen && (
+          <p className="mt-2 text-[11px] text-muted-foreground line-clamp-2">
+            {data.calculationExample.slice(0, 100)}…
+          </p>
+        )}
+        {calcOpen && (
+          <div className="mt-3 text-xs text-foreground/90 leading-relaxed whitespace-pre-line font-mono bg-card/60 rounded-md p-3 border border-border/40 animate-fade-in-up">
+            <RichText text={data.calculationExample} />
+          </div>
+        )}
       </div>
 
       {/* 变量表 */}

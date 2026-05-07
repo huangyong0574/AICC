@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Zap } from "lucide-react"
 import { MechanismAnim } from "../MechanismAnim"
 import { Formula } from "../Formula"
+import { RichText } from "../RichText"
 import { GenericFlowAnim } from "./animations/GenericFlowAnim"
 import { AttentionOnTwoAnim } from "./animations/AttentionOnTwoAnim"
 import { MambaSsmAnim } from "./animations/MambaSsmAnim"
@@ -13,7 +14,7 @@ export function PrincipleView({ data }: { data: PrincipleAnswer }) {
     <div className="space-y-4">
       <div className="rounded-md border border-primary/30 bg-primary/5 p-3 flex items-start gap-2">
         <Zap className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-        <div className="text-sm text-foreground/90">{data.coreIdea}</div>
+        <div className="text-sm text-foreground/90"><RichText text={data.coreIdea} /></div>
       </div>
 
       {/* 动画区 */}
@@ -37,14 +38,14 @@ export function PrincipleView({ data }: { data: PrincipleAnswer }) {
                   </Badge>
                 )}
               </div>
-              <div className="text-xs text-foreground/80 mt-0.5">{s.desc}</div>
+              <div className="text-xs text-foreground/80 mt-0.5"><RichText text={s.desc} /></div>
             </div>
           </li>
         ))}
       </ol>
 
       <div className="text-[11px] text-muted-foreground italic border-l-2 border-primary/40 pl-3">
-        关键点：{data.note}
+        关键点：<RichText text={data.note} />
       </div>
     </div>
   )

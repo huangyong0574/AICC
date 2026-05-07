@@ -1,44 +1,7 @@
 import type { Step1Answer } from "../../types"
 import { AlertCircle, Lightbulb, MessageCircle, ExternalLink } from "lucide-react"
 import { StreamingSection } from "../StreamingSection"
-import { Formula } from "../Formula"
-
-/**
- * 解析文本中的 **高亮** 和 $公式$ 标记，返回 React 节点数组。
- * 支持混合：普通文本 / **加粗高亮** / $LaTeX公式$
- */
-function renderRichText(text: string) {
-  const tokens = text.split(/(\$[^$]+\$|\*\*[^*]+\*\*)/g)
-  return tokens.map((tok, i) => {
-    if (tok.startsWith("$") && tok.endsWith("$")) {
-      const latex = tok.slice(1, -1)
-      return <Formula key={i} tex={latex} inline className="mx-0.5" />
-    }
-    if (tok.startsWith("**") && tok.endsWith("**")) {
-      const inner = tok.slice(2, -2)
-      return (
-        <mark key={i} className="bg-warning/20 text-warning-foreground font-semibold px-0.5 rounded-sm">
-          {inner}
-        </mark>
-      )
-    }
-    return <span key={i}>{tok}</span>
-  })
-}
-
-/** 解析文本中的 **高亮** 标记（不含公式），用于 valueLead */
-function renderHighlighted(text: string) {
-  const parts = text.split(/\*\*(.+?)\*\*/g)
-  return parts.map((part, i) =>
-    i % 2 === 1 ? (
-      <mark key={i} className="bg-warning/20 text-warning-foreground font-semibold px-0.5 rounded-sm">
-        {part}
-      </mark>
-    ) : (
-      <span key={i}>{part}</span>
-    ),
-  )
-}
+import { RichText } from "../RichText"
 
 /**
  * Step1View 支持渐进式渲染：
@@ -69,7 +32,7 @@ export function Step1View({
       >
         {d.valueLead && (
           <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
-            {renderHighlighted(d.valueLead)}
+            <RichText text={d.valueLead} />
           </p>
         )}
       </StreamingSection>
@@ -87,7 +50,7 @@ export function Step1View({
         {d.officialDefinition && (
           <div className="space-y-2">
             <p className="text-sm text-foreground/90 leading-relaxed">
-              {renderRichText(d.officialDefinition)}
+              <RichText text={d.officialDefinition} />
             </p>
             {d.source && (
               <div className="flex items-center gap-1.5 pt-2 border-t border-border/30 mt-3">

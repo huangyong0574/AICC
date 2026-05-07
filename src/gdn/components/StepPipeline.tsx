@@ -9,7 +9,7 @@ import {
 import { toast } from "sonner"
 import type {
   StepEntry, StepKey, LlmConfig,
-  Step1Answer, Step2Answer, Step3Answer, Step4Answer,
+  Step1Answer, Step2Answer, Step3Answer, Step4Answer, GlossaryTerm,
 } from "../types"
 import { STEP_ORDER } from "../types"
 import { callStep } from "../lib/llm"
@@ -123,8 +123,38 @@ export function StepPipeline({
     }
   }
 
+  /** 从已完成步骤数据中提取一句话认知收获 */
+  function extractCognitiveGain(entry: StepEntry): string {
+    const a = entry.answer as any
+    if (!a) return ""
+    switch (entry.key) {
+      case "step1":
+        // 提取 valueLead 中 **高亮** 的第一个短语作为核心认知
+        const match = (a.valueLead || "").match(/\*\*(.+?)\*\*/)
+        return match ? `核心类比：${match[1]}` : (a.valueLead || "").slice(0, 40)
+      case "step2":
+        return a.selectionCriteria ? `选型判据：${a.selectionCriteria.slice(0, 50)}` : ""
+      case "step3":
+        return a.principle?.coreIdea ? `核心机制：${a.principle.coreIdea.slice(0, 50)}` : ""
+      case "step4":
+        return a.oneLiner || ""
+      default:
+        return ""
+    }
+  }
+
   function confirmAndNext(idx: number) {
     const next = update(idx, { confirmed: true })
+
+    // A1: 弹出认知小结 toast
+    const gain = extractCognitiveGain(next[idx])
+    if (gain) {
+      toast(`✓ ${META[STEP_ORDER[idx]].levelTitle}已掌握`, {
+        description: gain,
+        duration: 4000,
+      })
+    }
+
     if (idx < STEP_ORDER.length - 1) {
       const nextEntry = next[idx + 1]
       if (!nextEntry.answer && !nextEntry.streaming) {
@@ -138,6 +168,9 @@ export function StepPipeline({
     }
   }
 
+  // D1: 从 step1 answer 提取 glossaryTerms 供后续步骤使用
+  const glossaryTerms: GlossaryTerm[] = (value[0]?.answer as Step1Answer)?.glossaryTerms || []
+
   return (
     <div className="space-y-5">
       {value.map((q, i) => (
@@ -147,6 +180,7 @@ export function StepPipeline({
           entry={q}
           active={i === activeIdx}
           streamBuf={i === activeIdx && q.streaming ? streamBuf : ""}
+          glossaryTerms={i > 0 ? glossaryTerms : []}
           onRerun={() => runOne(i)}
           onConfirm={() => confirmAndNext(i)}
         />
@@ -156,12 +190,13 @@ export function StepPipeline({
 }
 
 function StepCard({
-  idx, entry, active, streamBuf, onRerun, onConfirm,
+  idx, entry, active, streamBuf, glossaryTerms, onRerun, onConfirm,
 }: {
   idx: number
   entry: StepEntry
   active: boolean
   streamBuf: string
+  glossaryTerms: GlossaryTerm[]
   onRerun: () => void
   onConfirm: () => void
 }) {
@@ -237,7 +272,7 @@ function StepCard({
 
           {entry.answer && !entry.streaming && (
             <>
-              {renderView(entry)}
+              {renderView(entry, glossaryTerms)}
               {!entry.confirmed && (
                 <div className="flex items-center justify-between pt-2 border-t border-border/50">
                   <div className="text-[11px] text-muted-foreground">
@@ -272,12 +307,12 @@ function StepCard({
   )
 }
 
-function renderView(entry: StepEntry) {
+function renderView(entry: StepEntry, glossaryTerms: GlossaryTerm[]) {
   switch (entry.key) {
     case "step1": return <Step1View data={entry.answer as Step1Answer} streaming={false} />
-    case "step2": return <Step2View data={entry.answer as Step2Answer} streaming={false} />
-    case "step3": return <Step3View data={entry.answer as Step3Answer} streaming={false} />
-    case "step4": return <Step4View data={entry.answer as Step4Answer} streaming={false} />
+    case "step2": return <Step2View data={entry.answer as Step2Answer} streaming={false} glossaryTerms={glossaryTerms} />
+    case "step3": return <Step3View data={entry.answer as Step3Answer} streaming={false} glossaryTerms={glossaryTerms} />
+    case "step4": return <Step4View data={entry.answer as Step4Answer} streaming={false} glossaryTerms={glossaryTerms} />
     default: return null
   }
 }

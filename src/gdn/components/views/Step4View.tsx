@@ -1,6 +1,7 @@
-import type { Step4Answer } from "../../types"
+import type { Step4Answer, GlossaryTerm } from "../../types"
 import { Gem, Anchor, ArrowLeftRight, BookOpen, Sparkles } from "lucide-react"
 import { StreamingSection } from "../StreamingSection"
+import { TermHighlighter } from "../TermHighlighter"
 
 /**
  * Step4View — L4 本质总结（McKinsey/BCG 汇报风格）
@@ -9,9 +10,11 @@ import { StreamingSection } from "../StreamingSection"
 export function Step4View({
   data,
   streaming = false,
+  glossaryTerms = [],
 }: {
   data: Partial<Step4Answer> | null
   streaming?: boolean
+  glossaryTerms?: GlossaryTerm[]
 }) {
   const d = data ?? {}
 
@@ -48,7 +51,7 @@ export function Step4View({
       >
         {d.anchor && (
           <p className="text-sm text-foreground/85 leading-relaxed italic border-l-3 border-primary/50 pl-3">
-            {d.anchor}
+            <TermHighlighter text={d.anchor} terms={glossaryTerms} />
           </p>
         )}
       </StreamingSection>
@@ -65,19 +68,21 @@ export function Step4View({
       >
         {d.contrastPair && (
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-muted-foreground/30 bg-muted/20 p-3">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
-                Before
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-destructive/60" />
+              <div className="text-[10px] font-bold text-destructive uppercase tracking-wider mb-1.5 pl-2">
+                Before · 学前误区
               </div>
-              <p className="text-sm text-foreground/70 leading-relaxed">
+              <p className="text-sm text-foreground/70 leading-relaxed line-through decoration-destructive/30 pl-2">
                 {d.contrastPair.before}
               </p>
             </div>
-            <div className="rounded-lg border border-primary/40 bg-primary/5 p-3">
-              <div className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1.5">
-                After
+            <div className="rounded-lg border border-success/40 bg-success/5 p-3 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-success/70" />
+              <div className="text-[10px] font-bold text-success uppercase tracking-wider mb-1.5 pl-2">
+                After · 学后正解
               </div>
-              <p className="text-sm text-foreground/90 leading-relaxed font-medium">
+              <p className="text-sm text-foreground/90 leading-relaxed font-medium pl-2">
                 {d.contrastPair.after}
               </p>
             </div>
@@ -97,7 +102,7 @@ export function Step4View({
       >
         {d.frameworkNote && (
           <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line">
-            {d.frameworkNote}
+            <TermHighlighter text={d.frameworkNote} terms={glossaryTerms} />
           </p>
         )}
       </StreamingSection>

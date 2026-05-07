@@ -1,4 +1,4 @@
-import type { Step3Answer } from "../../types"
+import type { Step3Answer, GlossaryTerm } from "../../types"
 import { Layers, Sigma } from "lucide-react"
 import { PrincipleView } from "./PrincipleView"
 import { MathView } from "./MathView"
@@ -11,9 +11,11 @@ import { StreamingSection } from "../StreamingSection"
 export function Step3View({
   data,
   streaming = false,
+  glossaryTerms: _glossaryTerms = [],
 }: {
   data: Partial<Step3Answer> | null
   streaming?: boolean
+  glossaryTerms?: GlossaryTerm[]
 }) {
   const d = data ?? {}
 

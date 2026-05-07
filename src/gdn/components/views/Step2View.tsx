@@ -1,6 +1,7 @@
-import type { Step2Answer, ScenarioCard } from "../../types"
+import type { Step2Answer, ScenarioCard, GlossaryTerm } from "../../types"
 import { CheckCircle2, XCircle, Target } from "lucide-react"
 import { StreamingSection } from "../StreamingSection"
+import { TermHighlighter } from "../TermHighlighter"
 
 /**
  * Step2View — L2 场景选择
@@ -10,9 +11,11 @@ import { StreamingSection } from "../StreamingSection"
 export function Step2View({
   data,
   streaming = false,
+  glossaryTerms = [],
 }: {
   data: Partial<Step2Answer> | null
   streaming?: boolean
+  glossaryTerms?: GlossaryTerm[]
 }) {
   const d = data ?? {}
 
@@ -30,7 +33,7 @@ export function Step2View({
       >
         {d.intro && (
           <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
-            {d.intro}
+            <TermHighlighter text={d.intro} terms={glossaryTerms} />
           </p>
         )}
       </StreamingSection>
@@ -85,7 +88,7 @@ export function Step2View({
       >
         {d.selectionCriteria && (
           <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
-            {d.selectionCriteria}
+            <TermHighlighter text={d.selectionCriteria} terms={glossaryTerms} />
           </p>
         )}
       </StreamingSection>
