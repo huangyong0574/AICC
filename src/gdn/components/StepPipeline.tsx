@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   Sparkles, Target, Layers, Gem,
-  Loader2, CheckCircle2, ChevronDown, ArrowRight, AlertCircle,
+  Loader2, CheckCircle2, ChevronDown, AlertCircle, Zap,
 } from "lucide-react"
 import { toast } from "sonner"
 import type {
@@ -50,17 +50,28 @@ export function StepPipeline({
   value,
   onChange,
   onAllDone,
+  onTakeaway,
 }: {
   rawQuestion: string
   cfg: LlmConfig
   value: StepEntry[]
   onChange: (next: StepEntry[]) => void
   onAllDone?: (list: StepEntry[]) => void
+  onTakeaway?: (stepKey: string, takeaway: string) => void
 }) {
   const [activeIdx, setActiveIdx] = useState(0)
   const [streamBuf, setStreamBuf] = useState<string>("")
   const abortRef = useRef<AbortController | null>(null)
   const autoStartedRef = useRef(false)
+
+  // 用 ref 追踪最新 value，避免闭包过期导致 confirmed 状态丢失
+  const valueRef = useRef(value)
+  valueRef.current = value
+
+  // Takeaway 弹窗状态
+  const [takeawayText, setTakeawayText] = useState("")
+  const [showTakeaway, setShowTakeaway] = useState(false)
+  const pendingNextRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     if (!value || value.length === 0) {
@@ -78,7 +89,7 @@ export function StepPipeline({
   }, [rawQuestion])
 
   function update(idx: number, patch: Partial<StepEntry>) {
-    const next = value.map((q, i) => (i === idx ? { ...q, ...patch } : q))
+    const next = valueRef.current.map((q, i) => (i === idx ? { ...q, ...patch } : q))
     onChange(next)
     return next
   }
@@ -129,32 +140,26 @@ export function StepPipeline({
     if (!a) return ""
     switch (entry.key) {
       case "step1":
-        // 提取 valueLead 中 **高亮** 的第一个短语作为核心认知
+        if (a.takeaway) return a.takeaway
         const match = (a.valueLead || "").match(/\*\*(.+?)\*\*/)
         return match ? `核心类比：${match[1]}` : (a.valueLead || "").slice(0, 40)
       case "step2":
+        if (a.takeaway) return a.takeaway
         return a.selectionCriteria ? `选型判据：${a.selectionCriteria.slice(0, 50)}` : ""
       case "step3":
+        if (a.takeaway) return a.takeaway
         return a.principle?.coreIdea ? `核心机制：${a.principle.coreIdea.slice(0, 50)}` : ""
       case "step4":
+        if (typeof a.takeaway === "string") return a.takeaway
+        if (Array.isArray(a.takeaway)) return a.takeaway.join("；")
         return a.oneLiner || ""
       default:
         return ""
     }
   }
 
-  function confirmAndNext(idx: number) {
-    const next = update(idx, { confirmed: true })
-
-    // A1: 弹出认知小结 toast
-    const gain = extractCognitiveGain(next[idx])
-    if (gain) {
-      toast(`✓ ${META[STEP_ORDER[idx]].levelTitle}已掌握`, {
-        description: gain,
-        duration: 4000,
-      })
-    }
-
+  /** 进入下一步的实际逻辑（从弹窗回调或直接调用） */
+  function proceedToNext(idx: number, next: StepEntry[]) {
     if (idx < STEP_ORDER.length - 1) {
       const nextEntry = next[idx + 1]
       if (!nextEntry.answer && !nextEntry.streaming) {
@@ -165,6 +170,31 @@ export function StepPipeline({
     } else {
       if (onAllDone) onAllDone(next)
       toast.success("四大步骤讲解完成，去底部做费曼内化吧")
+    }
+  }
+
+  function confirmAndNext(idx: number) {
+    const next = update(idx, { confirmed: true })
+    const gain = extractCognitiveGain(next[idx])
+
+    if (gain) {
+      setTakeawayText(gain)
+      setShowTakeaway(true)
+      pendingNextRef.current = () => proceedToNext(idx, next)
+      // 通知外层：传递 stepKey + takeaway
+      if (onTakeaway) onTakeaway(STEP_ORDER[idx], gain)
+      return
+    }
+
+    // fallback：无 takeaway 时直接进入下一步
+    proceedToNext(idx, next)
+  }
+
+  function handleTakeawayDismiss() {
+    setShowTakeaway(false)
+    if (pendingNextRef.current) {
+      pendingNextRef.current()
+      pendingNextRef.current = null
     }
   }
 
@@ -185,6 +215,39 @@ export function StepPipeline({
           onConfirm={() => confirmAndNext(i)}
         />
       ))}
+
+      {/* Takeaway 居中弹窗 */}
+      {showTakeaway && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="mx-4 max-w-md w-full rounded-2xl bg-background shadow-2xl overflow-hidden animate-scale-in">
+            {/* 顶部渐变光条 */}
+            <div className="h-1.5 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-400" />
+            <div className="p-6 space-y-5">
+              {/* 图标 */}
+              <div className="flex items-center justify-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-50 to-orange-100 ring-1 ring-amber-200/60">
+                  <Sparkles className="h-6 w-6 text-amber-600" />
+                </div>
+              </div>
+              {/* 标题 + 正文 */}
+              <div className="space-y-3">
+                <div className="text-center text-base font-bold text-foreground">一句话带走</div>
+                <div className="text-[15px] text-foreground/85 leading-relaxed font-medium text-center">
+                  {takeawayText}
+                </div>
+              </div>
+              {/* 按钮 */}
+              <Button
+                variant="glow"
+                className="w-full"
+                onClick={handleTakeawayDismiss}
+              >
+                好的，那我带走！
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -274,20 +337,11 @@ function StepCard({
             <>
               {renderView(entry, glossaryTerms)}
               {!entry.confirmed && (
-                <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                  <div className="text-[11px] text-muted-foreground">
-                    {entry.key === "step4"
-                      ? "都讲到这了？确认后去底部做费曼 3 问内化"
-                      : "读懂这段了吗？确认后才会进入下一步"}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={onRerun}>重新生成</Button>
-                    <Button variant="glow" size="sm" onClick={onConfirm}>
-                      <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                      {entry.key === "step4" ? "确认，去做费曼内化" : `确认，继续步骤 ${idx + 2}`}
-                      <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                    </Button>
-                  </div>
+                <div className="flex justify-end pt-3 border-t border-border/50">
+                  <Button variant="glow" size="sm" onClick={onConfirm}>
+                    <Zap className="mr-1.5 h-4 w-4" />
+                    我收走了
+                  </Button>
                 </div>
               )}
             </>

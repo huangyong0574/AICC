@@ -52,7 +52,7 @@ export function FeynmanPrime({
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-foreground text-background">
             <Brain className="h-4 w-4" />
           </div>
-          费曼精髓-"输出倒逼输入"，看完我还问你这3个问题，嘿嘿~
+          费曼精髓 就是输出倒逼输入，看完我问你这3个问题，嘿嘿~
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-5 space-y-3">

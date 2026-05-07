@@ -22,10 +22,9 @@ import { LibraryDialog } from "./components/LibraryDialog"
 import { GraphDialog } from "./components/GraphDialog"
 
 const EXAMPLES = [
-  "什么是 GDN（Gated Delta Network）？",
-  "Transformer 的 Attention 为什么是 O(N²)？",
-  "Mamba / 状态空间模型（SSM）和 RNN 的区别",
-  "MoE（混合专家）的路由为什么有负载不均？",
+  { label: "GDN（Gated Delta Network）", url: "https://qwen.ai/blog?id=flashqla" },
+  { label: "Manifold-Constrained Hyper-Connections, mHC", url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/DeepSeek_V4.pdf" },
+  { label: "MOE（Mixture-of-Experts）", url: "https://arxiv.org/abs/1701.06538" },
 ]
 
 function genId() {
@@ -47,6 +46,12 @@ export function GdnApp() {
   const [warmupQuestions, setWarmupQuestions] = useState<FeynmanWarmupQuestion[]>([])
   const [warmupLoading, setWarmupLoading] = useState(false)
   const [warmupConfirmed, setWarmupConfirmed] = useState(false)
+
+  // 各步骤 takeaway → 预填费曼三问
+  const [stepTakeaways, setStepTakeaways] = useState<Record<string, string>>({})
+  const handleTakeaway = (stepKey: string, text: string) => {
+    setStepTakeaways(prev => ({ ...prev, [stepKey]: text }))
+  }
 
   const [showSettings, setShowSettings] = useState(false)
   const [showLibrary, setShowLibrary] = useState(false)
@@ -207,7 +212,7 @@ export function GdnApp() {
             </div>
             <div>
               <div className="text-sm font-semibold leading-tight tracking-tight">AI算法概念费曼学习法</div>
-              <div className="text-[10px] text-muted-foreground font-mono leading-tight">1页 + 4个步骤 + 3个问题，闭环1个概念</div>
+              <div className="text-[10px] text-muted-foreground font-mono leading-tight">1页+3个问题+4个步骤 = 1个概念小闭环</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -252,7 +257,7 @@ export function GdnApp() {
               AI算法概念费曼学习法
             </Badge>
             <h1 className="text-2xl md:text-4xl font-bold tracking-tight spectrum-text mb-4 whitespace-nowrap">
-              如果你不能简单地解释它，你就没有真正理解它。
+              如果你不能简单地解释它，你就没有真正理解它！
             </h1>
             <p className="text-xs md:text-sm text-muted-foreground leading-relaxed whitespace-nowrap">
               你是否和我一样，看到个算法概念很好奇，但是看论文又很难理解，期望这个网页对你有点帮助
@@ -270,21 +275,30 @@ export function GdnApp() {
               <Textarea
                 value={rawQuestion}
                 onChange={e => setRawQuestion(e.target.value)}
-                placeholder="例：什么是 GDN（Gated Delta Network）？"
+                placeholder="输入一个算法概念，如：GDN（Gated Delta Network）"
                 className="min-h-[90px]"
                 disabled={started}
               />
               <div className="flex items-center gap-2 flex-wrap text-[11px]">
-                <span className="text-muted-foreground">示例：</span>
+                <span className="text-muted-foreground shrink-0">示例：</span>
                 {EXAMPLES.map((ex, i) => (
-                  <button
-                    key={i}
-                    onClick={() => !started && setRawQuestion(ex)}
-                    disabled={started}
-                    className="rounded-full border border-border/60 bg-card/40 px-2.5 py-0.5 text-foreground/70 hover:border-primary/40 hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {ex}
-                  </button>
+                  <span key={i} className="relative group/ex">
+                    <button
+                      onClick={() => !started && setRawQuestion(ex.label)}
+                      disabled={started}
+                      className="rounded-full border border-border/60 bg-card/40 px-2.5 py-0.5 text-foreground/70 hover:border-primary/40 hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {ex.label}
+                    </button>
+                    <a
+                      href={ex.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="pointer-events-none group-hover/ex:pointer-events-auto absolute left-1/2 -translate-x-1/2 top-full mt-1.5 z-50 whitespace-nowrap rounded-md border border-border bg-popover px-2.5 py-1 text-[10px] text-muted-foreground shadow-md opacity-0 group-hover/ex:opacity-100 transition-opacity duration-150 hover:text-primary"
+                    >
+                      {ex.url.length > 50 ? ex.url.slice(0, 50) + "…" : ex.url}
+                    </a>
+                  </span>
                 ))}
               </div>
             </div>
@@ -336,6 +350,7 @@ export function GdnApp() {
                 cfg={cfg}
                 value={steps}
                 onChange={setSteps}
+                onTakeaway={handleTakeaway}
               />
             )}
 
@@ -346,6 +361,7 @@ export function GdnApp() {
                 context={steps.map(s => ({ key: s.key, answer: s.answer }))}
                 cfg={cfg}
                 warmupQuestions={warmupQuestions}
+                prefills={{ biz: stepTakeaways.step1, dev: stepTakeaways.step2, internal: stepTakeaways.step3 }}
                 onDigest={(d) => {
                   setFeynman(d)
                   // 费曼评估完成后，自动保存为离线资料

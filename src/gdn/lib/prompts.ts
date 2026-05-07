@@ -264,7 +264,8 @@ export function buildStep1Prompt(question?: string): QaPrompt {
   "source": {"title":"论文或文档标题","url":"arxiv 论文链接或全球 AI 公司官网技术文档链接（仅接受 arxiv.org / 公司官方域名）"},
   "glossaryTerms": [
     {"term":"专业术语名","plainHint":"用大白话/生活比喻通俗解释","techNote":"该术语在论文/文档中的技术含义"}
-  ]
+  ],
+  "takeaway": "用1-2句口语化的话，把概念名和核心类比串成一句'可以带走的话'。句式参考：'MOE混合专家模式原来就类似于医院的导诊台，把不同任务分配给最擅长的专家处理'。要求：让人一看就懂，能直接复述给别人听。"
 }
 注意：不要选择或输出 animationKey，动画展示由步骤3独占。`,
   }
@@ -281,7 +282,8 @@ export function buildStep2Prompt(question?: string): QaPrompt {
   "inapplicable": [
     {"scenario":"场景名称","description":"一句话场景说明","fit":"poor|unsuitable","reason":"为什么不适合（技术原因）","example":"具体业务举例（可选）"}
   ],
-  "selectionCriteria": "一句话判断标准：告诉读者如何自行判断自己的业务是否适用（≤60字）"
+  "selectionCriteria": "一句话判断标准：告诉读者如何自行判断自己的业务是否适用（≤60字）",
+  "takeaway": "用1句口语化的话，总结这个技术最适合什么场景、不适合什么场景。句式参考：'GDN最适合处理超长对话这种需要持续记忆的场景，但如果你的任务只是短文本分类，用传统Attention反而更简单直接'。要求：像程序员之间聊天一样自然，能让人快速判断要不要用。"
 }
 applicable 2条，inapplicable 2条。fit 取值：excellent=完美适配，good=较适合，neutral=一般，poor=不太适合，unsuitable=不适用。`,
   }
@@ -308,7 +310,8 @@ export function buildStep3Prompt(question?: string): QaPrompt {
     "calculationExample": "以实际 token（如 \"我 爱 你\" ）为例子，假设 d=4 维度，给出 k_t、v_t、α_t、β_t 的示例数值，然后分步展示完整演算过程（每步清晰展开，不限字数）",
     "trainFlow": "训练阶段完整流程说明（不限字数）",
     "inferFlow": "推理阶段完整流程说明（不限字数）"
-  }
+  },
+  "takeaway": "用1句口语化的话，把核心原理机制讲清楚，让懂技术的人听了觉得你真懂了。句式参考：'GDN的核心就是用一个门控信号动态决定每步该记多少新内容、忘多少旧内容，所以根本不需要回看所有历史token'。要求：像给产研同事做技术分享时的总结金句。"
 }`,
   }
 }

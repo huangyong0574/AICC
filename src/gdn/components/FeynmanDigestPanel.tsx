@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -28,6 +28,7 @@ export function FeynmanDigestPanel({
   context,
   cfg,
   warmupQuestions,
+  prefills,
   onDigest,
 }: {
   topic: string
@@ -35,11 +36,25 @@ export function FeynmanDigestPanel({
   context: DigestContext
   cfg: LlmConfig
   warmupQuestions: FeynmanWarmupQuestion[]
+  prefills?: { biz?: string; dev?: string; internal?: string }
   onDigest: (d: FeynmanDigest) => void
 }) {
   const [answers, setAnswers] = useState<FeynmanAnswers>({ biz: "", dev: "", internal: "" })
   const [loading, setLoading] = useState(false)
   const [digest, setDigest] = useState<FeynmanDigest | null>(null)
+
+  // 当各步骤 takeaway 到达时自动填入对应角色答案
+  useEffect(() => {
+    if (!prefills) return
+    setAnswers(prev => {
+      const next = { ...prev }
+      if (prefills.biz && !prev.biz) next.biz = prefills.biz
+      if (prefills.dev && !prev.dev) next.dev = prefills.dev
+      if (prefills.internal && !prev.internal) next.internal = prefills.internal
+      return next
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefills?.biz, prefills?.dev, prefills?.internal])
 
   const hasAny = Object.values(answers).some(v => v.trim().length > 0)
 
