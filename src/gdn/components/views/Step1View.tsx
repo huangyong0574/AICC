@@ -53,17 +53,20 @@ export function Step1View({
               <RichText text={d.officialDefinition} />
             </p>
             {d.source && (
-              <div className="flex items-center gap-1.5 pt-2 border-t border-border/30 mt-3">
-                <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
-                <a
-                  href={d.source.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-muted-foreground hover:text-primary truncate"
-                  title={d.source.url}
-                >
-                  {d.source.title}
-                </a>
+              <div className="pt-2 border-t border-border/30 mt-3">
+                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">引用论文</div>
+                <div className="flex items-center gap-1.5">
+                  <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <a
+                    href={d.source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-muted-foreground hover:text-primary truncate"
+                    title={d.source.url}
+                  >
+                    {d.source.title}
+                  </a>
+                </div>
               </div>
             )}
           </div>
@@ -92,13 +95,13 @@ export function Step1View({
                     <span className="text-[11px] font-semibold text-warning shrink-0 mt-0.5">
                       通俗类比
                     </span>
-                    <span className="text-foreground/80">{g.plainHint}</span>
+                    <span className="text-foreground/80"><RichText text={g.plainHint} /></span>
                   </div>
                   <div className="flex items-start gap-2 mt-1">
                     <span className="text-[11px] font-semibold text-primary shrink-0 mt-0.5">
                       技术视角
                     </span>
-                    <span className="text-foreground/60">{g.techNote}</span>
+                    <span className="text-foreground/60"><RichText text={g.techNote} /></span>
                   </div>
                 </div>
               </div>

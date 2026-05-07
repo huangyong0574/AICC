@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   Sparkles, Target, Layers, Gem,
-  Loader2, CheckCircle2, ChevronDown, Play, ArrowRight, AlertCircle,
+  Loader2, CheckCircle2, ChevronDown, ArrowRight, AlertCircle,
 } from "lucide-react"
 import { toast } from "sonner"
 import type {
@@ -294,11 +294,8 @@ function StepCard({
           )}
 
           {!entry.answer && !entry.streaming && !entry.error && (
-            <div className="flex items-center justify-center py-6">
-              <Button variant="outline" size="sm" onClick={onRerun}>
-                <Play className="mr-1.5 h-4 w-4" />
-                生成步骤 {idx + 1}
-              </Button>
+            <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+              等待上一步确认后自动生成…
             </div>
           )}
         </CardContent>

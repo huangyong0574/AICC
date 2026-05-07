@@ -6,7 +6,7 @@
   },
   "data": {
     "valueLead": "传统Transformer处理长序列时，注意力机制需计算所有词对关系，导致计算量随序列长度平方级增长。例如分析万字文档时，模型需反复比对每个词与其他词的关系，**如同让万人同时互相通话**，效率低下且易遗漏关键信息。GDN通过门控机制动态筛选关键交互，将计算复杂度降至线性，**让长文本处理如精准快递分拣般高效**。",
-    "officialDefinition": "**Gated Delta Network（GDN）**是一种改进的序列建模架构，通过可学习的**门控机制**动态调节相邻状态间的增量更新（Delta），替代传统自注意力的全局计算。其核心公式为 $h_t = h_{t-1} + g_t \\odot \\Delta h_t$，其中 $g_t$ 为门控权重，$\\Delta h_t$ 为状态增量，实现高效**长程依赖建模**。",
+    "officialDefinition": "**Gated Delta Network（GDN）**是一种改进的序列建模架构，通过可学习的**门控机制**动态调节相邻状态间的增量更新（Delta），替代传统自注意力的全局计算。其核心公式为 $h_t = h_{t-1} + g_t \\odot \\Delta h_t$，其中 $g_t$ 为门控权重，$\\Delta h_t$ 为状态增量，实现高效**长程依赖建模**。复杂度从 $O(n^2)$ 降至 $O(n*d)$，其中**n*d即序列长度×隐藏维度**。",
     "source": { "title": "Gated Delta Networks: Improving Mamba2 with Delta Rule", "url": "https://arxiv.org/abs/2412.06464" },
     "glossaryTerms": [
       {

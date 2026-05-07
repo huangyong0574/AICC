@@ -206,8 +206,8 @@ export function GdnApp() {
               <Sparkles className="h-4 w-4 text-background" />
             </div>
             <div>
-              <div className="text-sm font-semibold leading-tight tracking-tight">你的AI认知教练</div>
-              <div className="text-[10px] text-muted-foreground font-mono leading-tight">四大步骤流式 · 费曼内化 · Transformer 基线图谱</div>
+              <div className="text-sm font-semibold leading-tight tracking-tight">AI算法概念费曼学习法</div>
+              <div className="text-[10px] text-muted-foreground font-mono leading-tight">1页 + 4个步骤 + 3个问题，闭环1个概念</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -249,13 +249,13 @@ export function GdnApp() {
           <div className="relative max-w-2xl mx-auto">
             <Badge variant="outline" className="mb-4 rounded-full border-border text-muted-foreground bg-background font-normal">
               <Brain className="mr-1 h-3 w-3" />
-              你的AI认知教练
+              AI算法概念费曼学习法
             </Badge>
             <h1 className="text-2xl md:text-4xl font-bold tracking-tight spectrum-text mb-4 whitespace-nowrap">
               如果你不能简单地解释它，你就没有真正理解它。
             </h1>
             <p className="text-xs md:text-sm text-muted-foreground leading-relaxed whitespace-nowrap">
-              如果你和我一样，看到新技术想了解，但论文又不太懂，看看这个页面是否适合你
+              你是否和我一样，看到个算法概念很好奇，但是看论文又很难理解，期望这个网页对你有点帮助
             </p>
           </div>
         </section>

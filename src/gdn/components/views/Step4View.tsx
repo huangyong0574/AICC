@@ -2,6 +2,7 @@ import type { Step4Answer, GlossaryTerm } from "../../types"
 import { Gem, Anchor, ArrowLeftRight, BookOpen, Sparkles } from "lucide-react"
 import { StreamingSection } from "../StreamingSection"
 import { TermHighlighter } from "../TermHighlighter"
+import { RichText } from "../RichText"
 
 /**
  * Step4View — L4 本质总结（McKinsey/BCG 汇报风格）
@@ -33,7 +34,7 @@ export function Step4View({
         {d.oneLiner && (
           <div className="rounded-lg border border-primary/40 bg-primary/5 px-4 py-3">
             <p className="text-base font-bold text-foreground leading-relaxed text-center">
-              {d.oneLiner}
+              <RichText text={d.oneLiner} />
             </p>
           </div>
         )}
@@ -74,7 +75,7 @@ export function Step4View({
                 Before · 学前误区
               </div>
               <p className="text-sm text-foreground/70 leading-relaxed line-through decoration-destructive/30 pl-2">
-                {d.contrastPair.before}
+                <RichText text={d.contrastPair.before} />
               </p>
             </div>
             <div className="rounded-lg border border-success/40 bg-success/5 p-3 relative overflow-hidden">
@@ -83,7 +84,7 @@ export function Step4View({
                 After · 学后正解
               </div>
               <p className="text-sm text-foreground/90 leading-relaxed font-medium pl-2">
-                {d.contrastPair.after}
+                <RichText text={d.contrastPair.after} />
               </p>
             </div>
           </div>
@@ -129,7 +130,7 @@ export function Step4View({
                   {i + 1}
                 </span>
                 <span className="text-sm text-foreground/90 leading-relaxed font-medium">
-                  {item}
+                  <RichText text={item} />
                 </span>
               </div>
             ))}

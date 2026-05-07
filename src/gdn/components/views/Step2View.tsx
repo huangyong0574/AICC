@@ -2,6 +2,7 @@ import type { Step2Answer, ScenarioCard, GlossaryTerm } from "../../types"
 import { CheckCircle2, XCircle, Target } from "lucide-react"
 import { StreamingSection } from "../StreamingSection"
 import { TermHighlighter } from "../TermHighlighter"
+import { RichText } from "../RichText"
 
 /**
  * Step2View — L2 场景选择
@@ -126,16 +127,16 @@ function ScenarioCardView({
           {fitCfg.label}
         </span>
       </div>
-      <p className="text-xs text-foreground/70 leading-relaxed mb-2">{card.description}</p>
+      <p className="text-xs text-foreground/70 leading-relaxed mb-2"><RichText text={card.description} /></p>
       <div className="text-xs leading-snug">
         <span className={`font-medium ${positive ? "text-success/80" : "text-destructive/80"} mr-1`}>
           {positive ? "Why:" : "Why not:"}
         </span>
-        <span className="text-foreground/70">{card.reason}</span>
+        <span className="text-foreground/70"><RichText text={card.reason} /></span>
       </div>
       {card.example && (
         <div className="mt-1.5 text-[11px] text-foreground/60 italic border-l-2 border-primary/30 pl-2">
-          {card.example}
+          <RichText text={card.example} />
         </div>
       )}
     </div>

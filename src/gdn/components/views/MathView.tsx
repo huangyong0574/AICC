@@ -70,9 +70,9 @@ export function MathView({ data }: { data: MathAnswer }) {
                     <Formula tex={v.symbol} inline />
                   </Badge>
                 </td>
-                <td className="py-2 px-3 text-foreground/80 text-xs">{v.meaning}</td>
-                <td className="py-2 px-3 text-foreground/90 text-xs">{v.trainRole}</td>
-                <td className="py-2 px-3 text-foreground/90 text-xs">{v.inferRole}</td>
+                <td className="py-2 px-3 text-foreground/80 text-xs"><RichText text={v.meaning} /></td>
+                <td className="py-2 px-3 text-foreground/90 text-xs"><RichText text={v.trainRole} /></td>
+                <td className="py-2 px-3 text-foreground/90 text-xs"><RichText text={v.inferRole} /></td>
               </tr>
             ))}
           </tbody>
@@ -86,14 +86,14 @@ export function MathView({ data }: { data: MathAnswer }) {
             <GraduationCap className="h-4 w-4" />
             <span className="font-medium text-sm">训练阶段</span>
           </div>
-          <div className="text-xs leading-relaxed text-foreground/80">{data.trainFlow}</div>
+          <div className="text-xs leading-relaxed text-foreground/80"><RichText text={data.trainFlow} /></div>
         </div>
         <div className="rounded-md border border-border bg-background-secondary p-3">
           <div className="flex items-center gap-2 mb-2 text-foreground">
             <Rocket className="h-4 w-4" />
             <span className="font-medium text-sm">推理阶段</span>
           </div>
-          <div className="text-xs leading-relaxed text-foreground/80">{data.inferFlow}</div>
+          <div className="text-xs leading-relaxed text-foreground/80"><RichText text={data.inferFlow} /></div>
         </div>
       </div>
     </div>
