@@ -1,0 +1,60 @@
+{
+  "title": "算法概念知识图谱 E2E 测试报告",
+  "timestamp": "2026-05-08T10:36:40.464Z",
+  "duration": "45.5s",
+  "testUrl": "http://localhost:5180",
+  "testedConcepts": [
+    "Flash Attention",
+    "Mamba",
+    "DPO"
+  ],
+  "screenshotsDir": "/Users/huangyong/Desktop/AICC/test-screenshots/concepts-test",
+  "summary": {
+    "total": 5,
+    "passed": 4,
+    "warned": 1,
+    "failed": 0
+  },
+  "results": [
+    {
+      "phase": 0,
+      "status": "PASS",
+      "desc": "示例区域正常，共 7 个概念按钮",
+      "buttons": [
+        "离线预览",
+        "AI算法概念费曼学习法",
+        "GDN（Gated Delta Network）",
+        "Mamba（Selective SSM）",
+        "Ring Attention",
+        "mHC（Hyper-Connections）",
+        "KAN（Kolmogorov-Arnold Networks）"
+      ]
+    },
+    {
+      "phase": 1,
+      "concept": "Flash Attention",
+      "status": "PASS",
+      "desc": "输入:true 按钮可用:true 预热:true",
+      "btnOnPage": false
+    },
+    {
+      "phase": 2,
+      "concept": "Mamba",
+      "status": "PASS",
+      "desc": "输入:true 按钮可用:true 预热:true",
+      "btnOnPage": false
+    },
+    {
+      "phase": 3,
+      "concept": "DPO",
+      "status": "PASS",
+      "desc": "输入:true 按钮可用:true 预热:true",
+      "btnOnPage": false
+    },
+    {
+      "phase": 4,
+      "status": "WARN",
+      "desc": "页面展示 10 个示例（预期 5 个随机抽取）"
+    }
+  ]
+}

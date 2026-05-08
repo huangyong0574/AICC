@@ -45,7 +45,8 @@ export interface PrincipleStep {
 export interface PrincipleAnswer {
   coreIdea: string
   steps: PrincipleStep[]
-  animationKey: "gdn-gate" | "attention-on2" | "mamba-ssm" | "moe-route" | "generic-flow"
+  animationKey?: "gdn-gate" | "attention-on2" | "mamba-ssm" | "moe-route" | "generic-flow"
+  svg?: string              // LLM 动态生成的机制示意 SVG（优先渲染）
   note: string
 }
 

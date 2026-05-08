@@ -17,9 +17,16 @@ export function PrincipleView({ data }: { data: PrincipleAnswer }) {
         <div className="text-sm text-foreground/90"><RichText text={data.coreIdea} /></div>
       </div>
 
-      {/* 动画区 */}
-      <div className="rounded-lg border border-border/60 bg-card/40 p-4">
-        {renderAnim(data.animationKey)}
+      {/* 机制图：优先 LLM 动态 SVG，fallback 到预制动画 */}
+      <div className="rounded-lg border border-border/60 bg-card/40 p-4 overflow-hidden">
+        {data.svg ? (
+          <div
+            className="w-full [&>svg]:w-full [&>svg]:h-auto [&>svg]:max-h-[320px]"
+            dangerouslySetInnerHTML={{ __html: data.svg }}
+          />
+        ) : (
+          renderAnim(data.animationKey)
+        )}
       </div>
 
       {/* 步骤列表 */}
@@ -51,7 +58,7 @@ export function PrincipleView({ data }: { data: PrincipleAnswer }) {
   )
 }
 
-function renderAnim(key: PrincipleAnswer["animationKey"]) {
+function renderAnim(key?: PrincipleAnswer["animationKey"]) {
   switch (key) {
     case "gdn-gate":      return <MechanismAnim />
     case "attention-on2": return <AttentionOnTwoAnim />

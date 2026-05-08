@@ -20,18 +20,21 @@ import { CognitiveNavBar } from "./components/CognitiveNavBar"
 import { SettingsDialog } from "./components/SettingsDialog"
 import { LibraryDialog } from "./components/LibraryDialog"
 import { GraphDialog } from "./components/GraphDialog"
+import { ALGORITHM_CONCEPTS } from "./data/algorithm-concepts"
 
-const EXAMPLES = [
-  { label: "GDN（Gated Delta Network）", url: "https://qwen.ai/blog?id=flashqla" },
-  { label: "Manifold-Constrained Hyper-Connections, mHC", url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/DeepSeek_V4.pdf" },
-  { label: "MOE（Mixture-of-Experts）", url: "https://arxiv.org/abs/1701.06538" },
-]
+/** 从知识图谱中随机抽取 N 个概念作为示例（每次刷新页面随机） */
+function pickExamples(count: number) {
+  const shuffled = [...ALGORITHM_CONCEPTS].sort(() => Math.random() - 0.5)
+  return shuffled.slice(0, count).map(c => ({ label: c.label, url: c.url }))
+}
+
+const EXAMPLES = pickExamples(5)
 
 function genId() {
   return `note_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 }
 
-export function GdnApp() {
+export function FeynmanApp() {
   const [cfg, setCfg] = useState<LlmConfig>(DEFAULT_CFG)
   const [rawQuestion, setRawQuestion] = useState("")
   const [topic, setTopic] = useState("")
