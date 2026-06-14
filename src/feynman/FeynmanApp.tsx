@@ -5,8 +5,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Toaster, toast } from "sonner"
 import {
-  Sparkles, Settings, Library, Network, Play, Zap, MessageCircle, Brain, SquarePen,
+  Settings, Play, Zap, MessageCircle, Brain, SquarePen, ArrowLeft,
 } from "lucide-react"
+import { SiteHeader, type NavPage } from "../pages/SiteHeader"
 
 import type { FeynmanDigest, LlmConfig, Note, StepEntry, FeynmanWarmupQuestion } from "./types"
 import { DEFAULT_CFG, loadCfg, addNote, findCachedNote } from "./lib/storage"
@@ -41,9 +42,11 @@ interface FeynmanAppProps {
   initialQuestion?: string
   /** 学习完成后跳转到成稿编辑器，携带认知点 id */
   onGoToEditor?: (id?: string) => void
+  /** 平台全局导航（套 AICC SiteHeader 用） */
+  onNavigate?: (page: NavPage) => void
 }
 
-export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor }: FeynmanAppProps = {}) {
+export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigate }: FeynmanAppProps = {}) {
   const [cfg, setCfg] = useState<LlmConfig>(DEFAULT_CFG)
   const [rawQuestion, setRawQuestion] = useState(initialQuestion ?? "")
   const [topic, setTopic] = useState("")
@@ -215,42 +218,52 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor }: Feynman
     <div className="min-h-screen bg-background text-foreground">
       <Toaster position="top-right" theme="light" richColors />
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="relative h-8 w-8 rounded-md bg-foreground flex items-center justify-center">
-              <Sparkles className="h-4 w-4 text-background" />
-            </div>
-            <div>
-              <div className="text-sm font-semibold leading-tight tracking-tight">AI算法概念费曼学习法</div>
-              <div className="text-[10px] text-muted-foreground font-mono leading-tight">1页+3个问题+4个步骤 = 1个概念小闭环</div>
-            </div>
+      {/* AICC 全局导航壳（学习页不再是飞地） */}
+      <SiteHeader activePage="plan" onNavigate={onNavigate ?? (() => {})} />
+
+      {/* 来源上下文条：从哪来、学的哪个认知点、来源哪一周 */}
+      <div className="border-b border-border bg-background/60">
+        <div className="mx-auto max-w-6xl px-6 min-h-[44px] py-2 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5 text-[12.5px] min-w-0">
+            <button
+              onClick={() => onNavigate?.("plan")}
+              className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> 深度计划
+            </button>
+            {conceptId && (
+              <>
+                <span className="text-border">/</span>
+                <span
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] shrink-0"
+                  style={{ background: "hsl(var(--learning) / 0.12)", color: "hsl(var(--learning))" }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: "hsl(var(--learning))" }} />
+                  学习中
+                </span>
+                <span className="font-medium truncate">{initialQuestion || conceptId}</span>
+              </>
+            )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
+            {conceptId && /^\d{4}-W\d{2}/.test(conceptId) && (
+              <span className="font-mono text-[11px] text-muted-foreground">
+                来源 · {conceptId.match(/^\d{4}-W\d{2}/)?.[0]} 雷达
+              </span>
+            )}
             {cfg.offlineMock && (
-              <Badge variant="outline" className="gap-1 border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400" title="当前使用内置 GDN 样本数据，未调用真实 LLM">
+              <Badge variant="outline" className="gap-1 border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400" title="当前使用内置样本数据，未调用真实 LLM">
                 <Zap className="h-3 w-3" />
                 离线预览
               </Badge>
             )}
-            <Button variant="ghost" size="sm" disabled className="opacity-50 cursor-not-allowed relative" title="待上线">
-              <Library className="mr-1.5 h-4 w-4" />
-              笔记库
-              <span className="absolute -top-1.5 -right-1.5 text-[8px] bg-muted-foreground/15 text-muted-foreground px-1 py-px rounded-full leading-tight font-medium">soon</span>
-            </Button>
-            <Button variant="ghost" size="sm" disabled className="opacity-50 cursor-not-allowed relative" title="待上线">
-              <Network className="mr-1.5 h-4 w-4" />
-              图谱
-              <span className="absolute -top-1.5 -right-1.5 text-[8px] bg-muted-foreground/15 text-muted-foreground px-1 py-px rounded-full leading-tight font-medium">soon</span>
-            </Button>
             <Button variant="outline" size="sm" onClick={() => setShowSettings(true)}>
               <Settings className="mr-1.5 h-4 w-4" />
               设置
             </Button>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Cognitive Navigation Bar - appears once learning started */}
       {started && (
@@ -422,8 +435,8 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor }: Feynman
           </>
         )}
 
-        <footer className="text-center text-[11px] text-muted-foreground py-6">
-          Built with <span className="text-foreground">shadcn/ui · Radix UI · Tailwind</span> · 笔记仅存浏览器 localStorage
+        <footer className="text-center text-[11px] text-muted-foreground py-6 font-mono tracking-[0.04em]">
+          AICC · 费曼学习（learning 阶段）· 笔记仅存浏览器 localStorage
         </footer>
       </main>
 

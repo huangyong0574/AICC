@@ -148,7 +148,7 @@ User inputs natural language question (e.g. "GDN是什么意思？")  ← 计划
 | RadarArchivePage | `/radar` | 认知雷达**归档/全集合**：按周列出每期，时间轴卡片（期号/标题/日期/认知点数/前沿·成熟·已加入计划） | 入口 | `onNavigate` / `onOpenWeek(weekId)` |
 | RadarPage | `/radar/:weekId` | 某一**周切片**的雷达卡片（缺省 weekId 时取最新周） | **discovered→in-plan** | `weekId` / `onNavigate`；`addToPlan()`；learning/published 卡片删除需二次确认；含「← 归档」返回 |
 | PlanPage | `/plan` | 跨周深度计划看板 | in-plan/learning/published 看板 | `onOpenFeynman(id)` / `onOpenArticle(slug)` |
-| FeynmanApp | `/feynman` | 费曼四步穿透学习引擎 | **in-plan→learning** | `conceptId` / `initialQuestion` / `onGoToEditor(id)` |
+| FeynmanApp | `/feynman` | 费曼四步穿透学习引擎；**套 AICC SiteHeader + 来源上下文条**（← 深度计划 / 学习中 / 概念 / 来源周 / 设置），不再是飞地 | **in-plan→learning** | `conceptId` / `initialQuestion` / `onGoToEditor(id)` / `onNavigate` |
 | EditorPage | `/editor` | Markdown 编辑 + 实时预览 + 发布 | **learning→published** | `conceptId` / `onBack` / `onPublished(slug)` |
 | GraphPage | `/graph` | 认知图谱（**全局累积**：跨周全部认知点按概念去重，按来源周聚类、按状态着色）+ 第二大脑成长总览（已成稿/学习中/累积概念/积累天数，真实数据） | 累积 + 成长仪表盘 | `onNavigate`（`useRadarArchive` 取全部周；节点 click→雷达归档） |
 | ArticlePage | `/article/:slug` | 文章阅读页 | published 产物 | 先读 `aicc-article-md:<slug>`，回退 `public/content/<slug>.md` |
@@ -1182,6 +1182,12 @@ npm run preview
 - [x] **两级雷达 IA**：归档全集合（`/radar`）→ 周切片（`/radar/:weekId`），对齐产品链路②③
 - [x] **认知图谱全局累积**：GraphPage 跨周聚合全部认知点（按概念去重、按来源周聚类、按状态着色）
 - [x] **下线认知工作台**：占位数字/假图谱删除；「第二大脑成长总览」以真实数据并入认知图谱页；导航 6→5
+- [x] **费曼学习页外壳归一（第 1 层）**：套 AICC SiteHeader + 来源上下文条，删「笔记库/图谱 soon」假按钮、统一品牌页脚，学习页不再是飞地
+
+### P1 — 费曼学习页交互升级 + 数据归一（剩余）
+- [ ] **「先猜后揭」交互（第 2 层）**：每步先写猜想 → 提交后揭晓 AI 解答 + 认知差（命中/遗漏/偏差）→ 带走修正；需改 `StepPipeline` + `callStep`（gap 字段折进单次调用）+ 真·LLM 迭代
+- [ ] **示例归一**：自由模式示例改取雷达概念（弃用 `algorithm-concepts.ts` 旧 30 库）
+- [ ] **费曼数据并入平台**：`gdn_notes_v3`/`gdn_graph_v3` → `aicc-*`；内化成果直接喂平台认知图谱
 
 ### P1 — 让主线「真正闭环」（剩余高价值缺口）
 - [ ] **已发布文章的文章库**：编辑器发布写 localStorage（`aicc-article-md` + `aicc-published-articles`）；目前经「深度计划」已成稿筛选访问，可考虑独立文章库视图（或并入图谱页）

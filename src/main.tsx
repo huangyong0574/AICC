@@ -180,6 +180,7 @@ function App() {
       conceptId={activeConceptId}
       initialQuestion={activeConceptId ? (map[activeConceptId]?.title || '') : ''}
       onGoToEditor={handleGoToEditor}
+      onNavigate={handleNavigate}
     />
   )
 }
