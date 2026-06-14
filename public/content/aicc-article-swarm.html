@@ -1,0 +1,1677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swarm（OpenAI 多 Agent 编排框架）— AICC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  /* ============ shadcn/ui tokens ============ */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --border: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
+    --radius: 0.5rem;
+
+    --font-sans: 'Geist', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --font-serif: 'Noto Serif SC', Georgia, serif;
+    --font-mono: 'Geist Mono', 'SF Mono', Menlo, Consolas, monospace;
+  }
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+  body {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans);
+    font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  ::selection { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; }
+  svg { display: inline-block; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+
+  /* ============ Header ============ */
+  .site-header {
+    position: sticky; top: 0; z-index: 50;
+    background: hsl(var(--background) / 0.85);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .site-header .inner {
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-weight: 600; font-size: 15px; letter-spacing: -0.01em;
+  }
+  .brand-mark {
+    width: 28px; height: 28px;
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border-radius: calc(var(--radius) - 2px);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 13px;
+  }
+  .brand-version {
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    padding: 2px 8px; border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) - 2px); margin-left: 4px;
+  }
+  .nav-tabs {
+    display: inline-flex; align-items: center; gap: 2px;
+    background: hsl(var(--secondary));
+    padding: 4px; border-radius: calc(var(--radius) - 2px);
+  }
+  .nav-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px;
+    font-size: 13px; font-weight: 500;
+    color: hsl(var(--muted-foreground));
+    border-radius: calc(var(--radius) - 4px);
+    transition: all 0.15s ease;
+  }
+  .nav-tab:hover { color: hsl(var(--foreground)); }
+  .nav-tab.active {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    box-shadow: 0 1px 2px hsl(var(--foreground) / 0.06);
+  }
+  .nav-tab .lucide { width: 13px; height: 13px; }
+  .header-actions { display: inline-flex; align-items: center; gap: 8px; }
+  .icon-btn {
+    width: 36px; height: 36px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid transparent; background: transparent;
+    color: hsl(var(--foreground));
+    border-radius: calc(var(--radius) - 2px);
+    transition: background 0.15s ease;
+  }
+  .icon-btn:hover { background: hsl(var(--accent)); }
+  .icon-btn .lucide { width: 16px; height: 16px; }
+  .icon-btn .moon { display: none; }
+  .dark .icon-btn .sun { display: none; }
+  .dark .icon-btn .moon { display: inline-block; }
+  @media (max-width: 768px) { .nav-tabs { display: none; } }
+
+  /* ============ Breadcrumb ============ */
+  main { padding: 28px 0 96px; }
+  .breadcrumb {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 12px;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 32px;
+  }
+  .breadcrumb a { transition: color 0.15s ease; }
+  .breadcrumb a:hover { color: hsl(var(--foreground)); }
+  .breadcrumb .sep { opacity: 0.4; }
+  .breadcrumb .current { color: hsl(var(--foreground)); }
+
+  /* ============ Article Hero ============ */
+  .article-hero {
+    max-width: 780px; margin: 0 auto 56px;
+    text-align: center;
+  }
+  .article-hero .badge-row {
+    display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.02em; border-radius: 9999px;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--background)); color: hsl(var(--foreground));
+    line-height: 1.4;
+  }
+  .badge.badge-secondary { background: hsl(var(--secondary)); border-color: transparent; }
+  .badge .lucide { width: 12px; height: 12px; }
+
+  .article-hero h1 {
+    font-size: clamp(1.875rem, 4vw, 2.75rem);
+    font-weight: 600; letter-spacing: -0.028em;
+    line-height: 1.18;
+    margin-bottom: 14px;
+  }
+  .article-hero .subtitle {
+    font-size: 1.0625rem;
+    color: hsl(var(--muted-foreground));
+    max-width: 600px; margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  /* Status lifecycle indicator */
+  .lifecycle {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin-top: 30px;
+    max-width: 580px; margin-left: auto; margin-right: auto;
+  }
+  .lc-step {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    position: relative;
+  }
+  .lc-step + .lc-step::before {
+    content: ''; position: absolute;
+    left: -50%; right: 50%;
+    top: 7px;
+    height: 1px; background: hsl(var(--border));
+  }
+  .lc-step.done + .lc-step::before { background: hsl(var(--foreground) / 0.4); }
+  .lc-dot {
+    width: 14px; height: 14px; border-radius: 9999px;
+    background: hsl(var(--secondary));
+    border: 1.5px solid hsl(var(--border));
+    position: relative; z-index: 1;
+  }
+  .lc-step.active .lc-dot {
+    background: hsl(45 96% 50%);
+    border-color: hsl(45 96% 50%);
+    box-shadow: 0 0 0 4px hsl(45 96% 50% / 0.18);
+  }
+  .lc-step.done .lc-dot {
+    background: hsl(var(--foreground)); border-color: hsl(var(--foreground));
+  }
+  .lc-label {
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    letter-spacing: 0.02em;
+  }
+  .lc-step.active .lc-label { color: hsl(var(--foreground)); font-weight: 500; }
+
+  /* Meta bar */
+  .meta-bar {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin-top: 28px;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: hsl(var(--card));
+    flex-wrap: wrap;
+  }
+  .meta-bar .item {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 18px;
+    font-family: var(--font-mono); font-size: 12px;
+    color: hsl(var(--muted-foreground));
+    border-right: 1px solid hsl(var(--border));
+  }
+  .meta-bar .item:last-child { border-right: none; }
+  .meta-bar .item strong { color: hsl(var(--foreground)); font-weight: 600; }
+  .meta-bar .item .lucide { width: 13px; height: 13px; }
+  @media (max-width: 640px) {
+    .meta-bar .item { border-right: none; border-bottom: 1px solid hsl(var(--border)); width: 100%; justify-content: center; }
+    .meta-bar .item:last-child { border-bottom: none; }
+  }
+
+  /* ============ Article Layout ============ */
+  .article-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 72px;
+    align-items: start;
+  }
+  @media (max-width: 1024px) {
+    .article-layout { grid-template-columns: 1fr; gap: 32px; }
+    .article-toc { display: none; }
+  }
+
+  /* TOC */
+  .article-toc { position: sticky; top: 96px; align-self: start; }
+  .toc-label {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 12px; padding-bottom: 12px;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .article-toc ol { list-style: none; padding: 0; }
+  .article-toc li { margin: 1px 0; }
+  .article-toc a {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 8px;
+    align-items: baseline;
+    padding: 6px 10px;
+    font-size: 12.5px;
+    color: hsl(var(--muted-foreground));
+    border-radius: calc(var(--radius) - 2px);
+    transition: all 0.15s ease;
+    border-left: 2px solid transparent;
+    margin-left: -2px;
+  }
+  .article-toc a:hover { color: hsl(var(--foreground)); background: hsl(var(--accent)); }
+  .article-toc a.active {
+    color: hsl(var(--foreground));
+    border-left-color: hsl(var(--primary));
+    font-weight: 500;
+  }
+  .article-toc a .n {
+    font-family: var(--font-mono); font-size: 10.5px;
+    color: hsl(var(--muted-foreground));
+  }
+  .article-toc a.active .n { color: hsl(var(--foreground)); }
+  .toc-progress {
+    margin-top: 18px; padding-top: 14px;
+    border-top: 1px solid hsl(var(--border));
+  }
+  .toc-progress-label {
+    font-family: var(--font-mono); font-size: 10.5px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 8px;
+    display: flex; justify-content: space-between;
+  }
+  .toc-progress-bar {
+    height: 4px; background: hsl(var(--secondary));
+    border-radius: 9999px; overflow: hidden;
+  }
+  .toc-progress-bar .fill {
+    height: 100%; width: 0%;
+    background: hsl(var(--primary));
+    transition: width 0.2s ease;
+  }
+
+  /* ============ Section ============ */
+  .article-body { max-width: 720px; min-width: 0; }
+  .sec { margin-bottom: 64px; scroll-margin-top: 80px; }
+  .sec-head { margin-bottom: 22px; }
+  .sec-meta {
+    display: inline-flex; align-items: center; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .sec-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border-radius: calc(var(--radius) - 2px);
+    font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+  }
+  .sec-kicker {
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+  .sec-head h2 {
+    font-size: clamp(1.375rem, 2.4vw, 1.75rem);
+    font-weight: 600; letter-spacing: -0.02em;
+    line-height: 1.3;
+    margin-bottom: 6px;
+  }
+  .sec-head .sec-sub {
+    font-size: 14px;
+    color: hsl(var(--muted-foreground));
+    line-height: 1.7;
+  }
+
+  /* Prose */
+  .prose p, .prose li {
+    font-size: 15.5px; line-height: 1.8;
+    color: hsl(var(--foreground) / 0.88);
+  }
+  .prose p { margin-bottom: 16px; }
+  .prose strong { font-weight: 600; color: hsl(var(--foreground)); }
+  .prose code {
+    font-family: var(--font-mono); font-size: 13.5px;
+    padding: 1px 6px;
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+    border-radius: 4px;
+  }
+  .prose ol, .prose ul { padding-left: 0; list-style: none; margin: 16px 0; }
+  .prose ol { counter-reset: ol-num; }
+  .prose ol li {
+    counter-increment: ol-num;
+    padding-left: 32px; position: relative;
+    margin-bottom: 10px;
+  }
+  .prose ol li::before {
+    content: counter(ol-num, decimal-leading-zero);
+    position: absolute; left: 0; top: 0;
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    padding-top: 5px;
+  }
+  .prose ul li {
+    padding-left: 22px; position: relative;
+    margin-bottom: 8px;
+  }
+  .prose ul li::before {
+    content: ''; position: absolute;
+    left: 4px; top: 14px;
+    width: 5px; height: 5px;
+    background: hsl(var(--foreground));
+    border-radius: 9999px;
+  }
+
+  /* TL;DR card */
+  .tldr {
+    padding: 28px 30px;
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border-radius: var(--radius);
+    position: relative; overflow: hidden;
+  }
+  .tldr::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(circle at center, hsl(var(--primary-foreground) / 0.08) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(ellipse 100% 60% at top right, black 0%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse 100% 60% at top right, black 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .tldr > * { position: relative; z-index: 1; }
+  .tldr-label {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: hsl(var(--primary-foreground) / 0.7);
+    margin-bottom: 14px;
+  }
+  .tldr-label .lucide { width: 13px; height: 13px; }
+  .tldr p {
+    font-size: 22px; line-height: 1.5;
+    color: hsl(var(--primary-foreground));
+    letter-spacing: -0.01em;
+    font-weight: 500;
+  }
+
+  /* Plain language box */
+  .plain {
+    padding: 24px 28px;
+    background: hsl(var(--secondary));
+    border-radius: var(--radius);
+    border-left: 3px solid hsl(var(--foreground));
+  }
+  .plain p {
+    font-family: var(--font-serif);
+    font-size: 17px; line-height: 1.85;
+    color: hsl(var(--foreground));
+    margin-bottom: 14px;
+  }
+  .plain p:last-child { margin-bottom: 0; }
+
+  /* Abstractions grid (Swarm / Agent / Response / Result) */
+  .abstractions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+  }
+  @media (max-width: 640px) { .abstractions { grid-template-columns: 1fr; } }
+  .abs-card {
+    padding: 16px 18px;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    display: flex; flex-direction: column; gap: 6px;
+    transition: border-color 0.15s ease;
+  }
+  .abs-card:hover { border-color: hsl(var(--foreground) / 0.35); }
+  .abs-head {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .abs-icon {
+    width: 26px; height: 26px;
+    background: hsl(var(--secondary));
+    border-radius: calc(var(--radius) - 4px);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .abs-icon .lucide { width: 14px; height: 14px; }
+  .abs-name {
+    font-family: var(--font-mono); font-size: 13px; font-weight: 600;
+  }
+  .abs-desc {
+    font-size: 13.5px; color: hsl(var(--muted-foreground));
+    line-height: 1.65;
+  }
+
+  /* Diagram block */
+  .diagram-block {
+    margin: 20px 0;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: hsl(var(--card));
+  }
+  .diagram-toolbar {
+    padding: 10px 16px;
+    border-bottom: 1px solid hsl(var(--border));
+    display: flex; align-items: center; justify-content: space-between;
+    background: hsl(var(--background));
+  }
+  .diagram-toolbar .label {
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+  .diagram-toolbar .caption {
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+  }
+  .diagram-canvas {
+    padding: 28px 20px 20px;
+    background:
+      linear-gradient(hsl(var(--foreground) / 0.025) 1px, transparent 1px) 0 0/22px 22px,
+      linear-gradient(90deg, hsl(var(--foreground) / 0.025) 1px, transparent 1px) 0 0/22px 22px,
+      hsl(var(--background));
+  }
+  .diagram-canvas svg { width: 100%; height: auto; display: block; max-width: 520px; margin: 0 auto; }
+
+  /* SVG diagram styles */
+  .dg-box-fill { fill: hsl(var(--card)); }
+  .dg-box-fill-strong { fill: hsl(var(--primary)); }
+  .dg-box-fill-soft { fill: hsl(var(--secondary)); }
+  .dg-stroke { stroke: hsl(var(--foreground)); stroke-width: 1.2; fill: none; }
+  .dg-stroke-soft { stroke: hsl(var(--foreground) / 0.4); stroke-width: 1; fill: none; }
+  .dg-label { font-family: var(--font-sans); font-size: 12.5px; fill: hsl(var(--foreground)); font-weight: 500; }
+  .dg-label.sub { font-size: 10.5px; fill: hsl(var(--muted-foreground)); font-family: var(--font-mono); }
+  .dg-label.on-primary { fill: hsl(var(--primary-foreground)); }
+
+  /* State block (initial state) */
+  .state-block {
+    padding: 16px 18px;
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    font-family: var(--font-mono); font-size: 13px;
+    line-height: 1.85;
+    margin: 16px 0;
+  }
+  .state-block .k { color: hsl(var(--foreground)); font-weight: 600; }
+  .state-block .v { color: hsl(var(--muted-foreground)); }
+
+  /* Key insight callout */
+  .insight {
+    margin: 20px 0;
+    padding: 16px 20px;
+    border: 1px solid hsl(var(--border));
+    border-left: 3px solid hsl(var(--foreground));
+    border-radius: var(--radius);
+    background: hsl(var(--card));
+  }
+  .insight-label {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 8px;
+  }
+  .insight-label .lucide { width: 13px; height: 13px; }
+  .insight ul { padding: 0; list-style: none; margin: 0; }
+  .insight li { font-size: 14px; line-height: 1.75; padding-left: 0; }
+  .insight li + li { margin-top: 6px; padding-top: 6px; border-top: 1px dashed hsl(var(--border)); }
+  .insight li::before { display: none; }
+  .insight li strong { color: hsl(var(--foreground)); }
+
+  /* Analogy + compare (准确 vs 误导) */
+  .analogy-intro {
+    padding: 16px 20px;
+    background: hsl(var(--secondary));
+    border-radius: var(--radius);
+    font-family: var(--font-serif);
+    font-size: 16px;
+    color: hsl(var(--foreground));
+    margin-bottom: 16px;
+  }
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 640px) { .compare-grid { grid-template-columns: 1fr; } }
+  .compare-col {
+    padding: 18px 20px;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+  }
+  .compare-col-head {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px; padding-bottom: 10px;
+    border-bottom: 1px dashed hsl(var(--border));
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+  .compare-col-head .lucide { width: 13px; height: 13px; }
+  .compare-col-head.ok { color: hsl(142 76% 30%); }
+  .dark .compare-col-head.ok { color: hsl(142 76% 60%); }
+  .compare-col ul { list-style: none; padding: 0; margin: 0; }
+  .compare-col li {
+    padding: 6px 0 6px 18px;
+    position: relative;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: hsl(var(--foreground) / 0.88);
+  }
+  .compare-col li::before {
+    content: ''; position: absolute;
+    left: 0; top: 13px;
+    width: 6px; height: 6px;
+    border-radius: 9999px;
+    background: hsl(var(--foreground));
+  }
+  .compare-col.warn li::before { background: hsl(var(--muted-foreground)); }
+
+  /* Knowledge connection blocks */
+  .links-grid { display: grid; gap: 8px; }
+  .link-group {
+    padding: 14px 16px;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    background: hsl(var(--card));
+  }
+  .link-group-head {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed hsl(var(--border));
+  }
+  .link-group-head .lucide { width: 14px; height: 14px; color: hsl(var(--muted-foreground)); }
+  .link-group-head .ttl {
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+  .link-group-head .count {
+    margin-left: auto;
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+  }
+  .link-group-head .accent {
+    font-family: var(--font-sans);
+    font-size: 11px; font-weight: 500;
+    color: hsl(var(--foreground));
+    background: hsl(var(--secondary));
+    padding: 1px 6px; border-radius: 4px;
+    text-transform: none; letter-spacing: 0;
+  }
+  .link-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .link-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px;
+    background: hsl(var(--secondary));
+    color: hsl(var(--foreground));
+    border-radius: 9999px;
+    font-size: 12.5px;
+    transition: all 0.15s ease;
+  }
+  .link-pill:hover {
+    background: hsl(var(--accent));
+    transform: translateY(-1px);
+  }
+  .link-pill .lucide { width: 11px; height: 11px; opacity: 0.6; }
+
+  /* Scenario lists */
+  .scenarios-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 16px;
+  }
+  @media (max-width: 640px) { .scenarios-grid { grid-template-columns: 1fr; } }
+  .scenario-card {
+    padding: 16px 18px;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+  }
+  .scenario-card-head {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 10px; padding-bottom: 8px;
+    border-bottom: 1px dashed hsl(var(--border));
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+  .scenario-card-head .lucide { width: 13px; height: 13px; }
+  .scenario-card-head.fit { color: hsl(142 76% 30%); }
+  .dark .scenario-card-head.fit { color: hsl(142 76% 60%); }
+  .scenario-card ul { list-style: none; padding: 0; margin: 0; }
+  .scenario-card li {
+    padding: 5px 0 5px 16px;
+    position: relative;
+    font-size: 13px;
+    line-height: 1.7;
+    color: hsl(var(--foreground) / 0.85);
+  }
+  .scenario-card li::before {
+    content: ''; position: absolute;
+    left: 0; top: 13px;
+    width: 4px; height: 4px;
+    background: hsl(var(--muted-foreground));
+    border-radius: 9999px;
+  }
+
+  /* Gaps card */
+  .gaps-card {
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    padding: 8px;
+  }
+  .gap-item {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 14px;
+    align-items: start;
+    padding: 14px 14px;
+    border-radius: calc(var(--radius) - 2px);
+  }
+  .gap-item + .gap-item { border-top: 1px solid hsl(var(--border)); }
+  .gap-item .marker {
+    width: 36px; height: 24px;
+    border: 1px dashed hsl(var(--border));
+    color: hsl(var(--muted-foreground));
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 10.5px;
+    border-radius: calc(var(--radius) - 4px);
+    background: hsl(var(--background));
+    margin-top: 2px;
+  }
+  .gap-item .txt {
+    font-size: 14.5px; color: hsl(var(--foreground) / 0.85);
+    line-height: 1.7; font-style: italic;
+  }
+
+  /* Misconception cards */
+  .miscon-list { display: grid; gap: 16px; }
+  .miscon-card {
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: hsl(var(--card));
+  }
+  .miscon-wrong {
+    padding: 16px 20px;
+    background: hsl(var(--muted));
+    border-bottom: 1px solid hsl(var(--border));
+    position: relative;
+  }
+  .miscon-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 10.5px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 8px;
+  }
+  .miscon-tag .lucide { width: 12px; height: 12px; }
+  .miscon-wrong .txt {
+    font-size: 15px; line-height: 1.6;
+    color: hsl(var(--foreground) / 0.8);
+    text-decoration: line-through;
+    text-decoration-color: hsl(var(--foreground) / 0.3);
+    text-decoration-thickness: 1px;
+    font-style: italic;
+  }
+  .miscon-meta {
+    margin-top: 8px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+  }
+  .miscon-arrow {
+    display: flex; align-items: center; justify-content: center;
+    padding: 8px 0;
+    background: hsl(var(--background));
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .miscon-arrow .lucide {
+    width: 16px; height: 16px;
+    color: hsl(var(--muted-foreground));
+  }
+  .miscon-right {
+    padding: 16px 20px;
+  }
+  .miscon-right .txt {
+    font-size: 15px; line-height: 1.75;
+    color: hsl(var(--foreground));
+  }
+
+  /* Honest note callout */
+  .honest-note {
+    padding: 20px 22px;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+    border-radius: var(--radius);
+  }
+  .honest-note-label {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed hsl(var(--border));
+  }
+  .honest-note-label .lucide { width: 13px; height: 13px; }
+  .honest-note p {
+    font-size: 14px; line-height: 1.75;
+    color: hsl(var(--foreground) / 0.85);
+    margin-bottom: 12px;
+  }
+  .honest-note p:last-child { margin-bottom: 0; }
+  .honest-note .refs {
+    margin-top: 14px; padding-top: 12px;
+    border-top: 1px dashed hsl(var(--border));
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .honest-note .refs a {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: 12px;
+    color: hsl(var(--foreground));
+    transition: color 0.15s ease;
+  }
+  .honest-note .refs a:hover { color: hsl(var(--muted-foreground)); }
+  .honest-note .refs a .lucide { width: 12px; height: 12px; }
+
+  /* Self-check */
+  .selfcheck-status {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px;
+    background: hsl(var(--secondary));
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+  }
+  .selfcheck-status .lucide { width: 14px; height: 14px; color: hsl(var(--muted-foreground)); }
+  .selfcheck-status .label {
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+  .selfcheck-status .value {
+    margin-left: auto;
+    font-family: var(--font-mono); font-size: 12px;
+    color: hsl(var(--foreground));
+    font-weight: 500;
+  }
+
+  .selfcheck-list { display: grid; gap: 6px; }
+  .check-item {
+    display: grid;
+    grid-template-columns: 28px 1fr 24px;
+    gap: 12px; align-items: center;
+    padding: 14px 16px;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    background: hsl(var(--card));
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+  .check-item:hover { border-color: hsl(var(--foreground) / 0.35); }
+  .check-num {
+    width: 28px; height: 28px;
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+    border-radius: 9999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  }
+  .check-q {
+    font-size: 14px; line-height: 1.6;
+    color: hsl(var(--foreground) / 0.9);
+  }
+  .check-state {
+    width: 24px; height: 24px;
+    border: 1px dashed hsl(var(--border));
+    border-radius: 9999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: hsl(var(--muted-foreground));
+    font-family: var(--font-mono); font-size: 11px;
+  }
+
+  /* Progress & gaps two-column */
+  .pg-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  @media (max-width: 640px) { .pg-grid { grid-template-columns: 1fr; } }
+  .pg-card {
+    padding: 18px 20px;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+  }
+  .pg-card-head {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px; padding-bottom: 10px;
+    border-bottom: 1px dashed hsl(var(--border));
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+  .pg-card-head .lucide { width: 13px; height: 13px; }
+  .pg-card-head.progress { color: hsl(142 76% 30%); }
+  .dark .pg-card-head.progress { color: hsl(142 76% 60%); }
+  .pg-card ul { list-style: none; padding: 0; margin: 0; }
+  .pg-card li {
+    padding: 6px 0 6px 18px;
+    position: relative;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: hsl(var(--foreground) / 0.88);
+  }
+  .pg-card.progress li::before {
+    content: ''; position: absolute;
+    left: 0; top: 13px;
+    width: 5px; height: 5px;
+    background: hsl(var(--foreground));
+    border-radius: 9999px;
+  }
+  .pg-card.gaps li::before {
+    content: '·'; position: absolute;
+    left: 2px; top: 6px;
+    color: hsl(var(--muted-foreground));
+    font-size: 18px;
+  }
+
+  /* Article footer */
+  .article-footer {
+    margin-top: 80px;
+    padding-top: 40px;
+    border-top: 1px solid hsl(var(--border));
+    max-width: 720px;
+    margin-left: auto; margin-right: auto;
+  }
+  .next-prev {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 32px;
+  }
+  .np-card {
+    padding: 16px 18px;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    transition: all 0.15s ease;
+    display: block;
+  }
+  .np-card:hover { border-color: hsl(var(--foreground) / 0.4); }
+  .np-card .dir {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .np-card .dir .lucide { width: 12px; height: 12px; }
+  .np-card .ttl { font-size: 14px; font-weight: 600; line-height: 1.45; }
+  .np-card.next { text-align: right; }
+  @media (max-width: 640px) { .next-prev { grid-template-columns: 1fr; } }
+
+  /* Site footer */
+  .site-footer {
+    border-top: 1px solid hsl(var(--border));
+    padding: 28px 0;
+    margin-top: 80px;
+  }
+  .footer-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+  }
+  .footer-brand {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; color: hsl(var(--muted-foreground));
+  }
+  .footer-brand .brand-mark { width: 22px; height: 22px; font-size: 11px; }
+  .footer-meta {
+    font-family: var(--font-mono); font-size: 12px;
+    color: hsl(var(--muted-foreground));
+  }
+
+  @media (max-width: 640px) {
+    .container { padding: 0 1rem; }
+    .sec { margin-bottom: 48px; }
+    .tldr { padding: 22px 22px; }
+    .tldr p { font-size: 18px; }
+    .plain { padding: 20px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header class="site-header">
+  <div class="container inner">
+    <a href="aicc-dashboard.html" class="brand">
+      <span class="brand-mark">A</span>
+      <span>AICC</span>
+      <span class="brand-version">v1.0</span>
+    </a>
+    <nav class="nav-tabs" aria-label="主导航">
+      <a href="aicc-dashboard.html" class="nav-tab"><i data-lucide="layout-grid"></i>仪表盘</a>
+      <a href="aicc-dashboard.html" class="nav-tab active"><i data-lucide="library"></i>全部文章</a>
+      <a href="aicc-dashboard.html#graph" class="nav-tab"><i data-lucide="network"></i>知识图谱</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" aria-label="搜索"><i data-lucide="search"></i></button>
+      <button class="icon-btn" id="theme-toggle" aria-label="切换主题">
+        <i data-lucide="sun" class="sun"></i>
+        <i data-lucide="moon" class="moon"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ MAIN ============ -->
+<main>
+  <div class="container">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="aicc-dashboard.html">AICC</a>
+      <span class="sep">/</span>
+      <a href="aicc-dashboard.html#categories">全球热门 Agent 产品</a>
+      <span class="sep">/</span>
+      <span class="current">Swarm</span>
+    </nav>
+
+    <!-- Article Hero -->
+    <header class="article-hero">
+      <div class="badge-row">
+        <span class="badge badge-secondary">全球热门 Agent 产品</span>
+        <span class="badge">系列 一 · No.01</span>
+      </div>
+      <h1>Swarm（OpenAI 多 Agent 编排框架）</h1>
+      <p class="subtitle">从最小闭环角度理解多 Agent 协作：调度、工具调用、上下文更新、Handoff、循环退出。</p>
+
+      <!-- Lifecycle indicator -->
+      <div class="lifecycle">
+        <div class="lc-step active">
+          <span class="lc-dot"></span>
+          <span class="lc-label">草稿</span>
+        </div>
+        <div class="lc-step">
+          <span class="lc-dot"></span>
+          <span class="lc-label">24h 已自检</span>
+        </div>
+        <div class="lc-step">
+          <span class="lc-dot"></span>
+          <span class="lc-label">公开版已生成</span>
+        </div>
+      </div>
+
+      <!-- Meta -->
+      <div class="meta-bar">
+        <span class="item"><i data-lucide="calendar"></i>创建 <strong>2026·05·24</strong></span>
+        <span class="item"><i data-lucide="refresh-cw"></i>最后更新 <strong>2026·05·24</strong></span>
+        <span class="item"><i data-lucide="clock"></i><strong>8 min</strong> 阅读</span>
+        <span class="item"><i data-lucide="external-link"></i><a href="https://github.com/openai/swarm" style="color: hsl(var(--foreground));"><strong>openai/swarm</strong></a></span>
+      </div>
+    </header>
+
+    <!-- Layout -->
+    <div class="article-layout">
+
+      <!-- TOC -->
+      <aside class="article-toc" id="toc">
+        <div class="toc-label">目录 · 12 段</div>
+        <ol>
+          <li><a href="#s1"><span class="n">01</span>一句话理解</a></li>
+          <li><a href="#s2"><span class="n">02</span>解决什么问题</a></li>
+          <li><a href="#s3"><span class="n">03</span>讲给不懂的人</a></li>
+          <li><a href="#s4"><span class="n">04</span>状态推导</a></li>
+          <li><a href="#s5"><span class="n">05</span>类比与边界</a></li>
+          <li><a href="#s6"><span class="n">06</span>知识链接</a></li>
+          <li><a href="#s7"><span class="n">07</span>适用场景</a></li>
+          <li><a href="#s8"><span class="n">08</span>不懂的地方</a></li>
+          <li><a href="#s9"><span class="n">09</span>我的误解</a></li>
+          <li><a href="#s10"><span class="n">10</span>诚实附注</a></li>
+          <li><a href="#s11"><span class="n">11</span>24h 自检</a></li>
+          <li><a href="#s12"><span class="n">12</span>进步与不足</a></li>
+        </ol>
+        <div class="toc-progress">
+          <div class="toc-progress-label">
+            <span>READING</span>
+            <span id="progress-pct">0%</span>
+          </div>
+          <div class="toc-progress-bar">
+            <div class="fill" id="progress-fill"></div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Body -->
+      <article class="article-body">
+
+        <!-- ============ S1 · TL;DR ============ -->
+        <section class="sec" id="s1">
+          <header class="sec-head">
+            <div class="sec-meta">
+              <span class="sec-num">01</span>
+              <span class="sec-kicker">Feynman · TL;DR</span>
+            </div>
+            <h2>一句话理解</h2>
+          </header>
+
+          <div class="tldr">
+            <div class="tldr-label"><i data-lucide="sparkles"></i>核心断言</div>
+            <p>极简多 Agent 编排样板。</p>
+          </div>
+        </section>
+
+        <!-- ============ S2 · 解决什么问题 ============ -->
+        <section class="sec" id="s2">
+          <header class="sec-head">
+            <div class="sec-meta">
+              <span class="sec-num">02</span>
+              <span class="sec-kicker">Problem · 它解决什么问题</span>
+            </div>
+            <h2>它解决什么问题？</h2>
+            <p class="sec-sub">Swarm 解决的不是"如何做一个完整生产级 Agent 平台"，而是"多 Agent 协作最小闭环到底长什么样"。</p>
+          </header>
+
+          <div class="prose">
+            <p>在 Agent 系统里，常见问题包括：</p>
+            <ol>
+              <li>一个 Agent 什么时候该调用工具？</li>
+              <li>工具调用结果怎么回到大模型？</li>
+              <li>多个 Agent 之间怎么交接任务？</li>
+              <li>一轮任务执行到什么时候应该停止？</li>
+              <li>对话历史和业务上下文分别放在哪里？</li>
+            </ol>
+            <p>Swarm 用非常少的抽象把这些问题串起来：</p>
+          </div>
+
+          <div class="abstractions">
+            <div class="abs-card">
+              <div class="abs-head">
+                <div class="abs-icon"><i data-lucide="orbit"></i></div>
+                <div class="abs-name">Swarm</div>
+              </div>
+              <div class="abs-desc">负责调度。整个 Agent Loop 的执行入口。</div>
+            </div>
+            <div class="abs-card">
+              <div class="abs-head">
+                <div class="abs-icon"><i data-lucide="user-cog"></i></div>
+                <div class="abs-name">Agent</div>
+              </div>
+              <div class="abs-desc">定义角色、模型、指令和工具清单。</div>
+            </div>
+            <div class="abs-card">
+              <div class="abs-head">
+                <div class="abs-icon"><i data-lucide="package-2"></i></div>
+                <div class="abs-name">Response</div>
+              </div>
+              <div class="abs-desc">承载一次完整 run 后的整体结果。</div>
+            </div>
+            <div class="abs-card">
+              <div class="abs-head">
+                <div class="abs-icon"><i data-lucide="receipt"></i></div>
+                <div class="abs-name">Result</div>
+              </div>
+              <div class="abs-desc">封装单个工具函数的返回值、上下文变化与可能的 Handoff。</div>
+            </div>
+          </div>
+
+          <div class="prose" style="margin-top: 16px;">
+            <p>所以它的价值不是"大而全"，而是<strong>把 Agent 编排的骨架暴露得很清楚</strong>。</p>
+          </div>
+        </section>
+
+        <!-- ============ S3 · 讲给不懂的人 ============ -->
+        <section class="sec" id="s3">
+          <header class="sec-head">
+            <div class="sec-meta">
+              <span class="sec-num">03</span>
+              <span class="sec-kicker">Plain Language · 讲给不懂的人</span>
+            </div>
+            <h2>用最小例子讲给完全不懂的人</h2>
+          </header>
+
+          <div class="plain">
+            <p>可以把 Swarm 想成一个<strong>小型任务调度台</strong>。</p>
+            <p>用户提出任务后，调度台先叫来一个 Agent。这个 Agent 可以直接回答，也可以调用工具。如果工具执行后发现任务该交给另一个 Agent，工具就<strong>返回一个新的 Agent 对象</strong>。Swarm 接住这个对象，把当前负责人切换过去，然后让新 Agent 继续处理。</p>
+          </div>
+
+          <!-- Agent Loop diagram -->
+          <div class="diagram-block">
+            <div class="diagram-toolbar">
+              <span class="label">DIAGRAM · Agent Loop</span>
+              <span class="caption">这就是 Swarm 最核心的循环</span>
+            </div>
+            <div class="diagram-canvas">
+              <svg viewBox="0 0 480 620" preserveAspectRatio="xMidYMid meet" aria-label="Swarm Agent Loop 流程图">
+                <defs>
+                  <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="hsl(var(--foreground))" />
+                  </marker>
+                  <marker id="arr-soft" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="hsl(var(--muted-foreground))" />
+                  </marker>
+                </defs>
+
+                <!-- Step 1 -->
+                <rect class="dg-box-fill-soft" x="120" y="10" width="240" height="44" rx="6" />
+                <text class="dg-label" x="240" y="38" text-anchor="middle">用户提出任务</text>
+
+                <path class="dg-stroke" d="M240 54 L240 78" marker-end="url(#arr)" />
+
+                <!-- Step 2 -->
+                <rect class="dg-box-fill-strong" x="120" y="80" width="240" height="44" rx="6" />
+                <text class="dg-label on-primary" x="240" y="108" text-anchor="middle">Swarm 启动当前 Agent</text>
+
+                <path class="dg-stroke" d="M240 124 L240 148" marker-end="url(#arr)" />
+
+                <!-- Decision: 直接回答 or 调用工具 -->
+                <polygon class="dg-box-fill" points="240,150 360,200 240,250 120,200" stroke="hsl(var(--foreground))" stroke-width="1.2" fill="hsl(var(--card))" />
+                <text class="dg-label" x="240" y="195" text-anchor="middle">Agent 思考</text>
+                <text class="dg-label sub" x="240" y="212" text-anchor="middle">直接回答 / 调用工具？</text>
+
+                <!-- Direct answer (right branch — exit early) -->
+                <path class="dg-stroke-soft" d="M360 200 Q 430 200 430 550 L 380 550" marker-end="url(#arr-soft)" stroke-dasharray="3,3" />
+                <text class="dg-label sub" x="395" y="190" text-anchor="start">直接回答</text>
+
+                <path class="dg-stroke" d="M240 250 L240 274" marker-end="url(#arr)" />
+
+                <!-- Step 4 -->
+                <rect class="dg-box-fill" x="120" y="276" width="240" height="44" rx="6" stroke="hsl(var(--foreground))" stroke-width="1.2" fill="hsl(var(--card))" />
+                <text class="dg-label" x="240" y="304" text-anchor="middle">Swarm 执行真实函数</text>
+
+                <path class="dg-stroke" d="M240 320 L240 344" marker-end="url(#arr)" />
+
+                <!-- Step 5 -->
+                <rect class="dg-box-fill-soft" x="80" y="346" width="320" height="44" rx="6" />
+                <text class="dg-label" x="240" y="374" text-anchor="middle">工具结果写回 history + context</text>
+
+                <path class="dg-stroke" d="M240 390 L240 414" marker-end="url(#arr)" />
+
+                <!-- Decision: handoff -->
+                <polygon class="dg-box-fill" points="240,416 360,466 240,516 120,466" stroke="hsl(var(--foreground))" stroke-width="1.2" fill="hsl(var(--card))" />
+                <text class="dg-label" x="240" y="460" text-anchor="middle">返回新 Agent？</text>
+                <text class="dg-label sub" x="240" y="478" text-anchor="middle">Handoff</text>
+
+                <!-- Yes: switch active agent (left loop back to Swarm) -->
+                <path class="dg-stroke" d="M120 466 Q 40 466 40 102 L 120 102" marker-end="url(#arr)" stroke-dasharray="4,3" />
+                <text class="dg-label sub" x="55" y="460" text-anchor="start">是 · 切换</text>
+                <text class="dg-label sub" x="55" y="478" text-anchor="start">active_agent</text>
+
+                <!-- No: check max_turns -->
+                <path class="dg-stroke" d="M240 516 L240 540" marker-end="url(#arr)" />
+
+                <!-- Step 7 -->
+                <rect class="dg-box-fill" x="120" y="542" width="240" height="44" rx="6" stroke="hsl(var(--foreground))" stroke-width="1.2" fill="hsl(var(--card))" />
+                <text class="dg-label" x="240" y="564" text-anchor="middle">没有工具调用</text>
+                <text class="dg-label sub" x="240" y="580" text-anchor="middle">或达到 max_turns · 结束</text>
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ S4 · 数字推导 ============ -->
+        <section class="sec" id="s4">
+          <header class="sec-head">
+            <div class="sec-meta">
+              <span class="sec-num">04</span>
+              <span class="sec-kicker">Concrete · 状态推导</span>
+            </div>
+            <h2>一次 run() 的状态变化</h2>
+            <p class="sec-sub">Swarm 没有复杂数学骨架，但可以用一次运行的状态变化来理解。</p>
+          </header>
+
+          <div class="prose">
+            <p>假设一次 <code>run()</code> 初始状态是：</p>
+          </div>
+
+          <div class="state-block">
+            <div><span class="k">active_agent</span> <span class="v">=</span> SalesAgent</div>
+            <div><span class="k">history</span> <span class="v">=</span> [用户消息]</div>
+            <div><span class="k">context_variables</span> <span class="v">=</span> {"customer_type": "enterprise"}</div>
+            <div><span class="k">max_turns</span> <span class="v">=</span> 5</div>
+          </div>
+
+          <div class="prose">
+            <p>运行过程中可能发生：</p>
+            <ol>
+              <li><code>SalesAgent</code> 认为需要查询报价，返回 <code>tool_calls</code>。</li>
+              <li>Swarm 根据函数名找到真实 Python 函数并执行。</li>
+              <li>函数返回 <code>Result(value="报价已生成", context_variables={"quote_id": "Q001"})</code>。</li>
+              <li>Swarm 把工具结果追加到 <code>history</code>。</li>
+              <li>Swarm 把上下文更新为 <code>{"customer_type": "enterprise", "quote_id": "Q001"}</code>。</li>
+              <li>如果函数还返回 <code>SupportAgent</code>，则 <code>active_agent</code> 切换为 <code>SupportAgent</code>。</li>
+              <li>下一轮循环继续，直到 LLM 不再产生工具调用。</li>
+            </ol>
+          </div>
+
+          <div class="insight">
+            <div class="insight-label"><i data-lucide="lightbulb"></i>关键点</div>
+            <ul>
+              <li><strong>history</strong> 主要给 LLM 看 — 记录"说了什么、做了什么"。</li>
+              <li><strong>context_variables</strong> 主要给工具和代码看 — 记录"关键业务状态变成什么"。</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- ============ S5 · 类比 ============ -->
+        <section class="sec" id="s5">
+          <header class="sec-head">
+            <div class="sec-meta">
+              <span class="sec-num">05</span>
+              <span class="sec-kicker">Analogy · 类比与边界</span>
+            </div>
+            <h2>类比（含边界）</h2>
+            <p class="sec-sub">好类比能让人秒懂，坏类比会埋下错误的直觉——所以两边都要写清楚。</p>
+          </header>
+
+          <div class="analogy-intro">
+            类比：<strong>前台调度员 + 专家小组</strong>。
+          </div>
+
+          <div class="compare-grid">
+            <div class="compare-col">
+              <div class="compare-col-head ok">
+                <i data-lucide="check"></i>准确的地方
+              </div>
+              <ul>
+                <li>前台负责把任务派给合适的人。</li>
+                <li>每个专家有自己的身份、说明书和能力清单。</li>
+                <li>专家可以做事，也可以把任务转交给另一个专家。</li>
+                <li>任务过程会留下记录，方便下一位专家接着处理。</li>
+              </ul>
+            </div>
+            <div class="compare-col warn">
+              <div class="compare-col-head">
+                <i data-lucide="triangle-alert"></i>会误导的地方
+              </div>
+              <ul>
+                <li>Swarm 里的 Agent 不是独立进程，更像是一组带不同 instructions 和 tools 的配置对象。</li>
+                <li>Handoff 不是复杂工作流引擎，本质只是某个工具函数返回了一个新的 Agent。</li>
+                <li>Swarm 不自动判断"用户目标是否真正完成"，它主要根据是否还有工具调用决定循环是否继续。</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ S6 · 知识链接 ============ -->
+        <section class="sec" id="s6">
+          <header class="sec-head">
+            <div class="sec-meta">
+              <span class="sec-num">06</span>
+              <span class="sec-kicker">Connections · 知识链接</span>
+            </div>
+            <h2>上游与下游</h2>
+            <p class="sec-sub">这篇文章在我的知识图谱里和谁相邻。</p>
+          </header>
+
+          <div class="links-grid">
+            <div class="link-group">
+              <div class="link-group-head">
+                <i data-lucide="arrow-down-from-line"></i>
+                <span class="ttl">上游依赖 · 必须先懂</span>
+                <span class="count">2 项</span>
+              </div>
+              <div class="link-pills">
+                <a class="link-pill" href="#"><i data-lucide="link"></i>Function Calling</a>
+                <a class="link-pill" href="#"><i data-lucide="link"></i>Self-Attention</a>
+              </div>
+            </div>
+
+            <div class="link-group">
+              <div class="link-group-head">
+                <i data-lucide="arrow-down-from-line"></i>
+                <span class="ttl">上游依赖 · 最好再懂</span>
+                <span class="count">3 项</span>
+              </div>
+              <div class="link-pills">
+                <a class="link-pill" href="#"><i data-lucide="link"></i>Agent Loop</a>
+                <a class="link-pill" href="#"><i data-lucide="link"></i>Tool Calling</a>
+                <a class="link-pill" href="#"><i data-lucide="link"></i>Handoff</a>
+              </div>
+            </div>
+
+            <div class="link-group">
+              <div class="link-group-head">
+                <i data-lucide="arrow-up-from-line"></i>
+                <span class="ttl">下游延伸 · 懂了之后可以进入</span>
+                <span class="count">5 项</span>
+              </div>
+              <div class="link-pills">
+                <a class="link-pill" href="#"><i data-lucide="link"></i>LangGraph</a>
+                <a class="link-pill" href="#"><i data-lucide="link"></i>AutoGen</a>
+                <a class="link-pill" href="#"><i data-lucide="link"></i>OpenAI Agents SDK</a>
+                <a class="link-pill" href="#"><i data-lucide="link"></i>Agent 记忆机制</a>
+                <a class="link-pill" href="#"><i data-lucide="link"></i>Agent 任务验证机制</a>
+              </div>
+            </div>
+
+            <div class="link-group">
+              <div class="link-group-head">
+                <i data-lucide="file-text"></i>
+                <span class="ttl">对应原始笔记</span>
+                <span class="accent">obsidian</span>
+              </div>
+              <div class="link-pills">
+                <a class="link-pill" href="#"><i data-lucide="external-link"></i>Agent 开源项目学习 一 Swarm</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ S7 · 适用场景 ============ -->
+        <section class="sec" id="s7">
+          <header class="sec-head">
+            <div class="sec-meta">
+              <span class="sec-num">07</span>
+              <span class="sec-kicker">Scenarios · 适用场景</span>
+            </div>
+            <h2>出现在哪些模型 / 场景</h2>
+            <p class="sec-sub">Swarm 是 OpenAI 发布过的一个轻量级多 Agent 编排示例 / 框架，适合用来学习 Agent 系统的基础结构。</p>
+          </header>
+
+          <div class="scenarios-grid">
+            <div class="scenario-card">
+              <div class="scenario-card-head fit">
+                <i data-lucide="circle-check"></i>典型场景
+              </div>
+              <ul>
+                <li>学习多 Agent Handoff 的最小实现。</li>
+                <li>理解 Function Calling 在 Agent Loop 里的位置。</li>
+                <li>搭建客服、销售、技术支持等角色分工 Demo。</li>
+                <li>快速验证"一个 Agent 调工具后交给另一个 Agent"的流程。</li>
+                <li>作为理解更复杂框架的前置样板。</li>
+              </ul>
+            </div>
+            <div class="scenario-card">
+              <div class="scenario-card-head">
+                <i data-lucide="circle-x"></i>不适合直接承担
+              </div>
+              <ul>
+                <li>需要强状态机控制的复杂工作流。</li>
+                <li>需要长期记忆、断点恢复、权限隔离的生产系统。</li>
+                <li>需要严格结果验证、失败重试和审计日志的高可靠业务。</li>
+                <li>需要可视化编排和复杂并发调度的 Agent 平台。</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ S8 · 不懂的地方 ============ -->
+        <section class="sec" id="s8">
+          <header class="sec-head">
+            <div class="sec-meta">
+              <span class="sec-num">08</span>
+              <span class="sec-kicker">Gaps · 我还不懂的地方</span>
+            </div>
+            <h2>我现在还不懂 / 不确定的地方</h2>
+            <p class="sec-sub">诚实列出当前认知的盲区。不写出来就会被我自己忘掉。</p>
+          </header>
+
+          <div class="gaps-card">
+            <div class="gap-item">
+              <span class="marker">GAP · i</span>
+              <p class="txt">Swarm 的 streaming 机制在 Tool Call 和 Handoff 混合时如何保持输出一致性。</p>
+            </div>
+            <div class="gap-item">
+              <span class="marker">GAP · ii</span>
+              <p class="txt"><code>tool_choice</code> 不同策略对 Agent Loop 退出行为的具体影响。</p>
+            </div>
+            <div class="gap-item">
+              <span class="marker">GAP · iii</span>
+              <p class="txt">Handoff 后新 Agent 是否应该完整继承旧 <code>history</code>，以及如何控制 token 膨胀。</p>
+            </div>
+            <div class="gap-item">
+              <span class="marker">GAP · iv</span>
+              <p class="txt">如果工具函数异常、超时或返回格式不符合预期，最佳容错模式是什么。</p>
+            </div>
+            <div class="gap-item">
+              <span class="marker">GAP · v</span>
+              <p class="txt">如何在 Swarm 的极简结构上添加生产级 Guardrails，同时不破坏它的简洁性。</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ S9 · 我的误解 ============ -->
+        <section class="sec" id="s9">
+          <header class="sec-head">
+            <div class="sec-meta">
+              <span class="sec-num">09</span>
+              <span class="sec-kicker">Misconceptions · 我的误解</span>
+            </div>
+            <h2>我曾经的误解（如果有）</h2>
+            <p class="sec-sub">把错的写出来比把对的写出来更重要——错的更暴露盲区。</p>
+          </header>
+
+          <div class="miscon-list">
+
+            <!-- Misconception 1 -->
+            <div class="miscon-card">
+              <div class="miscon-wrong">
+                <div class="miscon-tag"><i data-lucide="x-circle"></i>误解 · i</div>
+                <p class="txt">Swarm 是一个完整的 Agent 产品平台。</p>
+                <div class="miscon-meta">修正日期 · 2026·05·24</div>
+              </div>
+              <div class="miscon-arrow"><i data-lucide="arrow-down"></i></div>
+              <div class="miscon-right">
+                <div class="miscon-tag" style="color: hsl(var(--foreground));"><i data-lucide="check-circle-2"></i>修正</div>
+                <p class="txt">Swarm 更像是一个<strong>教学价值很高的极简多 Agent 编排框架</strong>。它展示了 Agent、工具调用、上下文更新、Handoff 和循环退出的核心闭环，但没有内置长期记忆、显式目标验证、复杂状态机和生产级安全控制。</p>
+              </div>
+            </div>
+
+            <!-- Misconception 2 -->
+            <div class="miscon-card">
+              <div class="miscon-wrong">
+                <div class="miscon-tag"><i data-lucide="x-circle"></i>误解 · ii</div>
+                <p class="txt">Agent 之间的交接需要一个复杂的调度算法。</p>
+                <div class="miscon-meta">修正日期 · 2026·05·24</div>
+              </div>
+              <div class="miscon-arrow"><i data-lucide="arrow-down"></i></div>
+              <div class="miscon-right">
+                <div class="miscon-tag" style="color: hsl(var(--foreground));"><i data-lucide="check-circle-2"></i>修正</div>
+                <p class="txt">在 Swarm 里，Handoff 的本质很简单：<strong>一个工具函数返回新的 Agent 对象，Swarm 把 <code>active_agent</code> 指向它</strong>，下一轮循环就由新 Agent 继续。</p>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ============ S10 · 诚实附注 ============ -->
+        <section class="sec" id="s10">
+          <header class="sec-head">
+            <div class="sec-meta">
+              <span class="sec-num">10</span>
+              <span class="sec-kicker">Disclosure · 诚实附注</span>
+            </div>
+            <h2>诚实附注</h2>
+            <p class="sec-sub">这篇笔记的边界、引用和复用声明。</p>
+          </header>
+
+          <div class="honest-note">
+            <div class="honest-note-label"><i data-lucide="shield"></i>Honest Notes</div>
+            <p>这份笔记是基于我的原始学习笔记「Agent 开源项目学习 一 Swarm」改写成"全球热门 Agent 产品 / 项目学习"格式。</p>
+            <p>Swarm 在产品学习里的价值主要是<strong>"理解 Agent 编排原型"</strong>，不是评估一个成熟商业产品。若要做产品选型，需要进一步对比 LangGraph、AutoGen、CrewAI、OpenAI Agents SDK 等框架在状态管理、可观测性、部署、安全和生态上的差异。</p>
+            <p>此外，Agent 框架变化很快。公开写作或选型前，需要重新核对 Swarm 仓库状态、OpenAI Agents SDK 的更新，以及社区是否仍建议在新项目中使用 Swarm。</p>
+            <div class="refs">
+              <a href="#"><i data-lucide="file-text"></i>原始学习笔记 · Agent 开源项目学习 一 Swarm</a>
+              <a href="https://github.com/openai/swarm" target="_blank" rel="noopener"><i data-lucide="github"></i>github.com/openai/swarm</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ S11 · 24h 自检 ============ -->
+        <section class="sec" id="s11">
+          <header class="sec-head">
+            <div class="sec-meta">
+              <span class="sec-num">11</span>
+              <span class="sec-kicker">Self-Check · 24 小时自检</span>
+            </div>
+            <h2>24 小时自检记录</h2>
+            <p class="sec-sub">理解完之后等 24 小时再回来回答这些问题。如果答不上来，说明还没真懂。</p>
+          </header>
+
+          <div class="selfcheck-status">
+            <i data-lucide="clock"></i>
+            <span class="label">Status</span>
+            <span class="value">待自检 · 2026·05·25 之后回来填写</span>
+          </div>
+
+          <div class="selfcheck-list">
+            <div class="check-item">
+              <span class="check-num">Q1</span>
+              <span class="check-q">不看笔记，能否讲清楚 Swarm 的四个核心实体？</span>
+              <span class="check-state">·</span>
+            </div>
+            <div class="check-item">
+              <span class="check-num">Q2</span>
+              <span class="check-q">能否用一句话解释 Handoff 为什么只是"工具函数返回 Agent"？</span>
+              <span class="check-state">·</span>
+            </div>
+            <div class="check-item">
+              <span class="check-num">Q3</span>
+              <span class="check-q">能否区分 <code style="font-family:var(--font-mono);font-size:12px;padding:1px 5px;background:hsl(var(--secondary));border-radius:3px;">history</code> 和 <code style="font-family:var(--font-mono);font-size:12px;padding:1px 5px;background:hsl(var(--secondary));border-radius:3px;">context_variables</code>？</span>
+              <span class="check-state">·</span>
+            </div>
+            <div class="check-item">
+              <span class="check-num">Q4</span>
+              <span class="check-q">能否说清楚 Swarm 为什么没有显式目标验证机制？</span>
+              <span class="check-state">·</span>
+            </div>
+            <div class="check-item">
+              <span class="check-num">Q5</span>
+              <span class="check-q">能否判断什么场景不应该用 Swarm？</span>
+              <span class="check-state">·</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ S12 · 进步与不足 ============ -->
+        <section class="sec" id="s12">
+          <header class="sec-head">
+            <div class="sec-meta">
+              <span class="sec-num">12</span>
+              <span class="sec-kicker">Reflection · 进步与不足</span>
+            </div>
+            <h2>进步与不足</h2>
+            <p class="sec-sub">这次定稿相比上一版进步了什么，又留了哪些坑。</p>
+          </header>
+
+          <div class="pg-grid">
+            <div class="pg-card progress">
+              <div class="pg-card-head progress">
+                <i data-lucide="trending-up"></i>进步
+              </div>
+              <ul>
+                <li>从"源码解析"转成"产品 / 项目学习"视角，更强调定位、价值、适用场景和边界。</li>
+                <li>把 Swarm 的核心从代码细节提炼为 Agent 编排闭环：启动、调用工具、写回结果、Handoff、退出。</li>
+                <li>明确记录了它不是生产级平台，避免把示例框架误当完整产品。</li>
+              </ul>
+            </div>
+            <div class="pg-card gaps">
+              <div class="pg-card-head">
+                <i data-lucide="circle-dashed"></i>不足
+              </div>
+              <ul>
+                <li>还没有横向对比 LangGraph、AutoGen、CrewAI、OpenAI Agents SDK。</li>
+                <li>还没有补 Swarm streaming、异常处理、测试策略的细节。</li>
+                <li>还没有画出一张完整的 Agent Loop + Handoff 流程图。</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+      </article>
+    </div>
+
+    <!-- Next/Prev nav -->
+    <footer class="article-footer">
+      <div class="next-prev">
+        <a href="aicc-dashboard.html" class="np-card prev">
+          <span class="dir"><i data-lucide="arrow-left"></i>返回仪表盘</span>
+          <span class="ttl">AICC · 你的认知工作台</span>
+        </a>
+        <a href="#" class="np-card next">
+          <span class="dir">下一篇 · 系列 二<i data-lucide="arrow-right"></i></span>
+          <span class="ttl">LangGraph：状态机式 Agent 编排（即将定稿）</span>
+        </a>
+      </div>
+    </footer>
+
+  </div>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <span class="brand-mark">A</span>
+      <span>AICC · 你的 AI 认知工作台</span>
+    </div>
+    <div class="footer-meta">v1.0 · 2026·05·24</div>
+  </div>
+</footer>
+
+<script>
+  lucide.createIcons();
+
+  const toggle = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  const stored = localStorage.getItem('aicc-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (stored === 'dark' || (!stored && prefersDark)) root.classList.add('dark');
+  toggle.addEventListener('click', () => {
+    root.classList.toggle('dark');
+    localStorage.setItem('aicc-theme', root.classList.contains('dark') ? 'dark' : 'light');
+  });
+
+  const secs = document.querySelectorAll('.sec[id]');
+  const tocLinks = document.querySelectorAll('.article-toc a');
+  const setActive = (id) => {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  };
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) setActive(e.target.id); });
+  }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+  secs.forEach(s => io.observe(s));
+
+  const progressFill = document.getElementById('progress-fill');
+  const progressPct = document.getElementById('progress-pct');
+  const updateProgress = () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = Math.min(100, Math.max(0, (scrollTop / docHeight) * 100));
+    progressFill.style.width = pct + '%';
+    progressPct.textContent = Math.round(pct) + '%';
+  };
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  updateProgress();
+</script>
+
+</body>
+</html>

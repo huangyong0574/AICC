@@ -1,0 +1,56 @@
+[
+  {
+    "slug": "flash-attention",
+    "title": "Flash Attention 2 与 3 的工程实现差异",
+    "subtitle": "为什么 Attention 的瓶颈不是 FLOPs 而是 IO？",
+    "category": "LLM 算法原理",
+    "date": "2026-05-22",
+    "status": "已定稿",
+    "tags": ["attention", "flash-attention", "gpu", "cuda"]
+  },
+  {
+    "slug": "csa-compressed-sparse-attention",
+    "title": "CSA（Compressed Sparse Attention）",
+    "subtitle": "把长上下文压缩后再精准检索——DeepSeek-V4 的百万 Token 方案",
+    "category": "LLM 算法原理",
+    "date": "2026-05-24",
+    "status": "已定稿",
+    "tags": ["csa", "sparse-attention", "deepseek", "long-context"]
+  },
+  {
+    "slug": "swarm-agent-framework",
+    "title": "Swarm：OpenAI 极简多 Agent 编排框架",
+    "subtitle": "用最少的抽象，把 Agent 编排的骨架讲清楚",
+    "category": "全球热门 Agent 产品",
+    "date": "2026-05-24",
+    "status": "已定稿",
+    "tags": ["swarm", "openai", "agent", "multi-agent", "handoff"]
+  },
+  {
+    "slug": "mla-multi-head-latent-attention",
+    "title": "MLA（Multi-head Latent Attention）",
+    "subtitle": "DeepSeek 如何用低秩投影把 KV Cache 压缩到极致",
+    "category": "LLM 算法原理",
+    "date": "2026-05-21",
+    "status": "已定稿",
+    "tags": ["mla", "kv-cache", "deepseek", "low-rank"]
+  },
+  {
+    "slug": "langgraph-state-machine",
+    "title": "LangGraph：用状态机思维编排 Agent 工作流",
+    "subtitle": "从 DAG 到 Cycle Graph，LangChain 生态里最成熟的 Agent 编排层",
+    "category": "全球热门 Agent 产品",
+    "date": "2026-05-20",
+    "status": "已定稿",
+    "tags": ["langgraph", "langchain", "agent", "state-machine", "workflow"]
+  },
+  {
+    "slug": "rope-position-encoding",
+    "title": "RoPE 旋转位置编码：从公式到工程实现",
+    "subtitle": "为什么相对位置 = 绝对位置的旋转？把欧拉公式重新讲一遍",
+    "category": "LLM 算法原理",
+    "date": "2026-05-15",
+    "status": "审计中",
+    "tags": ["rope", "position-encoding", "llama", "transformer"]
+  }
+]

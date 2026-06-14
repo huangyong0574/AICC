@@ -263,6 +263,7 @@ function StepCard({
   onRerun: () => void
   onConfirm: () => void
 }) {
+  void idx
   const meta = META[entry.key]
   const Icon = meta.icon
   const [expanded, setExpanded] = useState(true)

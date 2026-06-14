@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 
-type Tone = "warning" | "primary" | "muted" | "success"
+type Tone = "warning" | "primary" | "muted" | "success" | "destructive"
 
 /**
  * 流式分段外壳：已就绪渲染 children，否则渲染骨架 + 叙事加载文案 + 跳动圆点。
@@ -95,6 +95,8 @@ function wrapperCls(tone: Tone) {
       return "rounded-lg border border-primary/30 bg-primary/5 p-4"
     case "success":
       return "rounded-lg border border-success/30 bg-success/5 p-4"
+    case "destructive":
+      return "rounded-lg border border-destructive/30 bg-destructive/5 p-4"
     case "muted":
       return "rounded-lg border border-border/60 bg-card/40 p-4"
   }
@@ -108,6 +110,8 @@ function toneTextCls(tone: Tone) {
       return "text-primary"
     case "success":
       return "text-success"
+    case "destructive":
+      return "text-destructive"
     case "muted":
       return "text-muted-foreground"
   }

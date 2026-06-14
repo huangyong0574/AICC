@@ -22,5 +22,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/main.tsx", "src/vite-env.d.ts", "src/feynman", "src/components/ui", "src/lib"]
+  "include": ["src/main.tsx", "src/vite-env.d.ts", "src/lucide-react.d.ts", "src/feynman", "src/components/ui", "src/lib", "src/pages"]
 }

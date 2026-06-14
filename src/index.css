@@ -44,6 +44,10 @@
     --ring: 0 0% 3.9%;
     --radius: 0.5rem;
 
+    /* === Radar Module 语义色（amber 研究前沿 / green 成熟可用）=== */
+    --frontier: 38 92% 50%;
+    --mature: 142 71% 38%;
+
     /* === Four-Layer Semantic Colors（克制低饱和，用于问题徽章区分）=== */
     --layer-1: 24 55% 42%;      /* 土褐 */
     --layer-1-glow: 24 55% 55%;
@@ -81,11 +85,59 @@
     --shadow-glow-accent: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-inner: inset 0 1px 0 rgb(255 255 255 / 0.6);
 
+    /* === Letter Theme Colors === */
+    --letter-paper: 40 33% 97%;
+    --letter-ink: 30 20% 18%;
+    --letter-muted: 30 10% 45%;
+    --letter-accent: 8 65% 45%;
+    --letter-accent-glow: 8 65% 55%;
+    --letter-border: 35 20% 88%;
+    --letter-warm: 35 40% 95%;
+    --letter-gold: 38 60% 55%;
+
     /* === Transitions === */
     --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-spring: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .dark {
+    --background: 0 0% 4%;
+    --background-secondary: 0 0% 7%;
+    --background-tertiary: 0 0% 11%;
+    --foreground: 0 0% 96%;
+    --foreground-muted: 0 0% 64%;
+
+    --card: 0 0% 7%;
+    --card-hover: 0 0% 10%;
+    --card-foreground: 0 0% 96%;
+
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 96%;
+
+    --primary: 0 0% 96%;
+    --primary-glow: 0 0% 90%;
+    --primary-foreground: 0 0% 9%;
+
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 96%;
+
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 64%;
+
+    --accent: 0 0% 14%;
+    --accent-glow: 0 0% 20%;
+    --accent-foreground: 0 0% 96%;
+
+    --border: 0 0% 16%;
+    --border-light: 0 0% 12%;
+    --input: 0 0% 16%;
+    --ring: 0 0% 83.9%;
+
+    /* === Radar Module 暗色模式（提亮 amber / green）=== */
+    --frontier: 38 92% 60%;
+    --mature: 142 71% 50%;
   }
 }
 
@@ -234,6 +286,13 @@
   70% { box-shadow: 0 0 0 8px hsl(var(--primary) / 0); }
   100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0); }
 }
+@keyframes radar-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px hsl(var(--mature) / 0.15); }
+  50% { box-shadow: 0 0 0 8px hsl(var(--mature) / 0.05); }
+}
+.animate-radar-pulse {
+  animation: radar-pulse 2s ease-in-out infinite;
+}
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
@@ -276,4 +335,68 @@
 }
 .animate-breathe {
   animation: breathe 3s ease-in-out infinite;
+}
+
+/* === Letter Page Styles === */
+.letter-paper {
+  background-color: hsl(var(--letter-paper));
+  background-image:
+    radial-gradient(ellipse at top, hsl(var(--letter-warm)) 0%, transparent 60%),
+    linear-gradient(180deg, hsl(var(--letter-paper)) 0%, hsl(40 30% 96%) 100%);
+}
+
+.letter-texture {
+  position: relative;
+}
+.letter-texture::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.letter-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, hsl(var(--letter-border)), transparent);
+}
+
+.letter-quote {
+  border-left: 3px solid hsl(var(--letter-accent));
+  background: linear-gradient(135deg, hsl(var(--letter-warm) / 0.6), hsl(var(--letter-paper)));
+}
+
+.letter-section-title {
+  color: hsl(var(--letter-accent));
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.letter-body {
+  color: hsl(var(--letter-ink));
+  line-height: 1.85;
+}
+
+.letter-highlight {
+  background: linear-gradient(180deg, transparent 60%, hsl(var(--letter-accent) / 0.15) 60%);
+}
+
+.wax-seal-glow {
+  filter: drop-shadow(0 4px 12px hsl(var(--letter-accent) / 0.25));
+}
+
+@keyframes letter-enter {
+  from { opacity: 0; transform: translateY(30px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes letter-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-letter-enter {
+  animation: letter-enter 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.animate-letter-fade {
+  animation: letter-fade 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }

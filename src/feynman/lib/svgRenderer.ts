@@ -32,7 +32,8 @@ const FONT_SUB = 11
  * 渲染 SVG：根据模板类型 + 节点数据
  */
 export function renderDiagramSvg(data: ConceptDiagram): string {
-  const { templateType, nodes, edges, caption } = data
+  const { templateType, nodes, edges } = data
+  void edges
 
   switch (templateType) {
     case "flowchart":
@@ -112,7 +113,8 @@ function renderFlowchart(nodes: ConceptDiagram["nodes"], edges: ConceptDiagram["
 }
 
 /** 2. 对比图模板：左右对比/新旧对比 */
-function renderComparison(nodes: ConceptDiagram["nodes"], edges: ConceptDiagram["edges"]): string {
+function renderComparison(nodes: ConceptDiagram["nodes"], _edges: ConceptDiagram["edges"]): string {
+  void _edges
   const W = 680
   const H = 340
 
@@ -223,7 +225,8 @@ function renderHierarchy(nodes: ConceptDiagram["nodes"], edges: ConceptDiagram["
 }
 
 /** 4. 循环图模板：环形流程 */
-function renderCycle(nodes: ConceptDiagram["nodes"], edges: ConceptDiagram["edges"]): string {
+function renderCycle(nodes: ConceptDiagram["nodes"], _edges: ConceptDiagram["edges"]): string {
+  void _edges
   const W = 680
   const H = 340
   const cx = W / 2
@@ -280,7 +283,8 @@ function renderCycle(nodes: ConceptDiagram["nodes"], edges: ConceptDiagram["edge
 }
 
 /** 5. 架构图模板：分层系统架构 */
-function renderArchitecture(nodes: ConceptDiagram["nodes"], edges: ConceptDiagram["edges"]): string {
+function renderArchitecture(nodes: ConceptDiagram["nodes"], _edges: ConceptDiagram["edges"]): string {
+  void _edges
   const W = 680
   const H = 360
 

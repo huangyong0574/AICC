@@ -33,12 +33,8 @@ function sectionStep1(a: Step1Answer): string {
 **术语拆解**：
 ${glossary}
 
-**示意图**：\`${a.diagram.animationKey}\` — ${a.diagram.caption}
-
----
-
-**闭环小练习**：${a.loop.prompt}
-${a.loop.userAnswer ? `\n> 你的回答：${a.loop.userAnswer}\n` : ""}`
+**来源**：${a.source.title} — ${a.source.url}
+`
 }
 
 function sectionStep2(a: Step2Answer): string {
@@ -61,26 +57,15 @@ ${applicable}
 ${inapplicable}
 
 **选型标准**：${a.selectionCriteria}
-
----
-
-**闭环小练习**：${a.loop.prompt}
-${a.loop.userAnswer ? `\n> 你的回答：${a.loop.userAnswer}\n` : ""}`
+`
 }
 
 function sectionStep3(a: Step3Answer): string {
-  const tlRows = a.timeline.map(t => `| ${t.era} | ${t.tech} | ${t.algo || ""} | ${t.formula ? "`" + t.formula + "`" : ""} | ${t.problem} | ${t.valueLimit || ""} |`).join("\n")
   const steps = a.principle.steps.map((s, i) => `${i + 1}. **${s.label}** ${s.symbol ? `\`${s.symbol}\`` : ""} — ${s.desc}`).join("\n")
   const vars = a.math.variables.map(v => `| \`${v.symbol}\` | ${v.meaning} | ${v.trainRole} | ${v.inferRole} |`).join("\n")
   return `## L3 深入原理
 
-### 3.1 技术演进时间轴
-
-| 年代 | 技术 | 算法原理 | 公式 | 技术问题 | 价值限制 |
-| --- | --- | --- | --- | --- | --- |
-${tlRows}
-
-### 3.2 分步静态帧演示
+### 3.1 分步静态帧演示
 
 **核心思想**：${a.principle.coreIdea}
 
@@ -88,7 +73,7 @@ ${steps}
 
 > 关键点：${a.principle.note}
 
-### 3.3 数学本质 Token 代入演算
+### 3.2 数学本质 Token 代入演算
 
 **公式**
 
@@ -108,11 +93,7 @@ ${vars}
 **训练阶段流程**：${a.math.trainFlow}
 
 **推理阶段流程**：${a.math.inferFlow}
-
----
-
-**闭环小练习**：${a.loop.prompt}
-${a.loop.userAnswer ? `\n> 你的回答：${a.loop.userAnswer}\n` : ""}`
+`
 }
 
 function sectionStep4(a: Step4Answer): string {
@@ -138,8 +119,8 @@ ${a.takeaway.map((t, i) => `${i + 1}. ${t}`).join("\n")}`
 function sectionFeynman(f: FeynmanDigest): string {
   const parts: string[] = ["## 费曼内化"]
   parts.push(`### 业务总监视角\n\n${f.answers.biz || "_（未作答）_"}\n`)
-  parts.push(`### CTO 视角\n\n${f.answers.cto || "_（未作答）_"}\n`)
-  parts.push(`### 开发者视角\n\n${f.answers.dev || "_（未作答）_"}\n`)
+  parts.push(`### 程序员小哥视角\n\n${f.answers.dev || "_（未作答）_"}\n`)
+  parts.push(`### 产研同学视角\n\n${f.answers.internal || "_（未作答）_"}\n`)
   parts.push(`### LLM 评估`)
   f.reviews.forEach(r => {
     parts.push(`- **${r.role}** 得分 ${r.score} · ${r.oneLine}`)
