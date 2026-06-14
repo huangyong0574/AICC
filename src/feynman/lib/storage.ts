@@ -18,7 +18,8 @@ export function loadCfg(): LlmConfig {
     if (raw) {
       const cached = { ...DEFAULT_CFG, ...JSON.parse(raw) } as LlmConfig
       // 迁移：旧默认 model 升级为当前默认 model（deepseek-v4-flash）
-      const LEGACY_MODELS = ["qwen3.6-plus", "qwen-plus", "deepseek-v4-pro"]
+      // 注意：仅迁移已下线的旧默认；deepseek-v4-pro 是 SettingsDialog 提供的有效「更强」选项，不能在此降级
+      const LEGACY_MODELS = ["qwen3.6-plus", "qwen-plus"]
       if (LEGACY_MODELS.includes(cached.model)) {
         cached.model = DEFAULT_CFG.model
         try { localStorage.setItem(LLM_KEY, JSON.stringify(cached)) } catch {}

@@ -295,7 +295,7 @@ export async function callStep<K extends StepKey>(
   const cur = BUILD_STEP_PROMPT[stepKey]()
   messages.push({
     role: "user",
-    content: `🔹 问题：${cur.question}\n\n请严格按以下 JSON Schema 输出（只返回 JSON）：\n${cur.schema}`,
+    content: `🔹 始终紧扣概念「${rawQuestion}」回答下面这一步，不要漂移到与步骤名（如 L1/L2/L3）字面同名的其他领域术语（例如自动驾驶分级）。\n步骤要求：${cur.question}\n\n请严格按以下 JSON Schema 输出（只返回 JSON）：\n${cur.schema}`,
   })
 
   // step1（类比理解）+ step2（场景选择）需联网获取真实案例；step3/step4 纯推理不需要
