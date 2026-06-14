@@ -348,9 +348,10 @@ type CognitionMap = Record<string /* id */, CognitionItem>
 **两级雷达 IA（对齐产品链路②③）**：`/radar` 归档全集合 → 点某期 → `/radar/{weekId}` 该周切片 → 选 1 个认知点 → 费曼。
 
 **摄取链路（Obsidian 中转 + AICC 侧集成；git 为唯一事实来源）**：
+> 该例程封装为项目级 skill `.claude/skills/aicc-radar`（在 Claude Code 手动 `/aicc-radar` 触发，可配 `/schedule` 定时）；以下是它执行的步骤。
 1. skill 把 ③ JSON 产到 Obsidian `AICC-Input/{weekId}.json`（与 MD 并列；skill **不**碰 git、**不**碰 ECS `content/radar`）。
 2. AICC 侧运行 `node scripts/ingest-radar.mjs <…/AICC-Input/{weekId}.json>`：校验 `RadarWeek` 契约 + id 规范 `{weekId}-{NN}-{slug}` → 复制到 `public/content/radar/{weekId}.json` → 扫描目录重建 `index.json`（按 weekId 降序）。
-3. `git commit + push`（事实来源更新）→ `npm run build` → 部署 `dist/`（含 `content/radar/`）到 ECS（增量 scp，保留 `weekly/` + `demo/`）。
+3. `git commit + push`（事实来源更新）→ `npm run build` → `bash scripts/deploy-dist.sh`（增量部署 `dist/`，含 `content/radar/`，保留 `weekly/` + `demo/`；ECS 密码走环境变量 `$AICC_ECS_PASS`，不入库）。
 4. 结果：归档页自动多出一期，**认知图谱 / 深度计划 / 费曼自由模式示例随之增长**。
 
 **状态机边界**：skill 只负责 `discovered` 层数据；`in-plan / learning / published` 存在用户浏览器 `aicc-cognition-state`（localStorage），skill 不触碰、也无法触碰。

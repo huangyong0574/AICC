@@ -8,6 +8,7 @@ dist-ssr
 # IDE / tooling / verification artifacts (not product code)
 .qoder/
 .vercel-tmp/
-.claude/
+.claude/*
+!.claude/skills/
 *.tsbuildinfo
 test-screenshots/

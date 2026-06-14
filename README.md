@@ -281,7 +281,12 @@ design/
 └── aicc-html-bundle/               # 设计稿源（HTML，归口为唯一来源，与 src/ 实现对照）
 
 scripts/
-└── ingest-radar.mjs                # 雷达摄取：AICC-Input/{weekId}.json → public/content/radar/ + 重建 index（见 SPEC §3.6）
+├── ingest-radar.mjs                # 雷达摄取：AICC-Input/{weekId}.json → public/content/radar/ + 重建 index（见 SPEC §3.6）
+└── deploy-dist.sh                  # 增量部署 dist 到 ECS（保留 weekly/+demo/，密码走 $AICC_ECS_PASS）
+
+.claude/
+└── skills/
+    └── aicc-radar/                 # 「AI 认知雷达周报」例程 skill（/aicc-radar：采集→认知点→ingest→部署）
 ```
 
 ---
@@ -385,7 +390,8 @@ AICC 采用「认知递进」的分层设计，对齐产品链路：
 | 设计稿归档 design/（唯一来源） | Done | P0 |
 | **雷达数据动态化**（skill 输出 JSON → 工程 `useLatestRadarWeek()` 加载） | Done | P0 |
 | 雷达摄取脚本 `ingest-radar` + `RadarWeek.generatedAt` 对齐（AICC 侧集成就绪，见 SPEC §3.6） | Done | P1 |
-| 定时任务 skill 补产 `{weekId}.json` 到 `AICC-Input/`（打通应用雷达/图谱自动增长） | Planned | P1 |
+| `aicc-radar` skill（Claude Code 端雷达周报例程：采集→认知点→ingest→commit/push→部署） | Done | P1 |
+| 定时雷达自动跑（Qoder 端补产 JSON，或本地 `/schedule` 跑 `aicc-radar`） | Planned | P1 |
 | ECS 生产部署 | Done | P0 |
 | **费曼「先猜后揭」**（每步先写猜想 → 揭晓 + 认知差：命中/遗漏/偏差） | Done | P1 |
 | 费曼概念模式锁定 + 示例归一（弃用旧 30 库，改取雷达概念） | Done | P1 |
