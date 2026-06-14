@@ -1,5 +1,12 @@
 # AICC — AI Cognition Connector
 
+<p align="center">
+  <img src="docs/cognitive-flywheel.svg" alt="AICC 认知闭环 · Cognitive Flywheel：感知 → 选择 → 内化 → 整合 → 再次感知" width="100%">
+</p>
+
+> **AICC 认知闭环（Cognitive Flywheel）** — 整个产品的大逻辑：
+> **① 感知**（认知雷达，全球扫描）→ **② 选择**（筛选高价值认知点）→ **③ 内化**（费曼学习法，复述·检验·补缺）→ **④ 整合**（知识图谱连接，动态迭代）→ **再次感知**。持续连接 · 持续验证 · 持续重构。
+
 **献给 AI 认知进化追求者的一封信 · 用费曼学习法穿透理解 AI 算法概念**
 
 [![React](https://img.shields.io/badge/React-18-61dafb?logo=react)](https://react.dev)
