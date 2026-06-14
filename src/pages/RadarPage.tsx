@@ -1,69 +1,64 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { radarWeekData } from '../data/radarData'
 import { RadarCard } from '../components/radar/RadarCard'
 import { RadarHero } from '../components/radar/RadarHero'
 import { RadarToolbar, type RadarFilter } from '../components/radar/RadarToolbar'
 import { SiteHeader, type NavPage } from './SiteHeader'
+import { useCognition } from '../lib/cognition'
 
 interface RadarPageProps {
   onNavigate: (page: NavPage) => void
 }
 
-const PLAN_STORAGE_KEY = 'aicc-deep-plan'
-
-function readPlanFromStorage(): Set<string> {
-  if (typeof window === 'undefined') return new Set()
-  try {
-    const raw = window.localStorage.getItem(PLAN_STORAGE_KEY)
-    if (!raw) return new Set()
-    const arr = JSON.parse(raw) as unknown
-    return Array.isArray(arr) ? new Set(arr.filter((v): v is string => typeof v === 'string')) : new Set()
-  } catch {
-    return new Set()
-  }
-}
-
-function writePlanToStorage(plan: Set<string>) {
-  try {
-    window.localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify([...plan]))
-  } catch {
-    /* localStorage 写入失败静默 */
-  }
-}
-
 export function RadarPage({ onNavigate }: RadarPageProps) {
   const [filter, setFilter] = useState<RadarFilter>('all')
-  const [plan, setPlan] = useState<Set<string>>(() => readPlanFromStorage())
-
-  // 跨 Tab 同步：监听 storage 事件
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === PLAN_STORAGE_KEY) {
-        setPlan(readPlanFromStorage())
-      }
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
-  }, [])
-
-  const togglePlan = useCallback((id: string) => {
-    setPlan(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      writePlanToStorage(next)
-      return next
-    })
-  }, [])
-
-  const handleClearPlan = useCallback(() => {
-    if (typeof window !== 'undefined' && !window.confirm('确定要清空本周深入计划吗？')) return
-    setPlan(new Set())
-    writePlanToStorage(new Set())
-  }, [])
+  const { map, addToPlan, remove } = useCognition()
 
   const { insights, weekId, dateRange } = radarWeekData
   const total = insights.length
+
+  // 计划状态来自认知状态机（aicc-cognition-state，state ≠ discovered 即在计划中）
+  const inPlan = useCallback(
+    (id: string) => !!map[id] && map[id].state !== 'discovered',
+    [map],
+  )
+
+  const togglePlan = useCallback(
+    (id: string) => {
+      const state = map[id]?.state
+      if (state && state !== 'discovered') {
+        // 仅「待启动(in-plan)」可在雷达页一键移除；学习中/已成稿含有学习进度或文章关联，
+        // 必须二次确认，避免误点一下就静默删掉这些数据。
+        if (state !== 'in-plan') {
+          const label = state === 'learning' ? '学习中' : '已成稿'
+          if (
+            typeof window !== 'undefined' &&
+            !window.confirm(`该认知点处于「${label}」，移除会丢失其学习进度 / 文章关联。确定移除？`)
+          )
+            return
+        }
+        remove(id)
+      } else {
+        const insight = insights.find(i => i.id === id)
+        addToPlan(id, {
+          title: insight?.title || id,
+          titleEn: insight?.eyebrow,
+          sourceWeek: weekId,
+        })
+      }
+    },
+    [map, remove, addToPlan, insights, weekId],
+  )
+
+  const planCount = useMemo(() => insights.filter(i => inPlan(i.id)).length, [insights, inPlan])
+
+  const handleClearPlan = useCallback(() => {
+    // 只清空「待启动」，学习中 / 已成稿（含进度与文章关联）保留，避免误清掉已完成的工作。
+    const removable = insights.filter(i => map[i.id]?.state === 'in-plan')
+    if (removable.length === 0) return
+    if (typeof window !== 'undefined' && !window.confirm('确定要清空本周「待启动」的认知点吗？学习中 / 已成稿不受影响。')) return
+    removable.forEach(i => remove(i.id))
+  }, [insights, map, remove])
 
   const frontierCount = useMemo(
     () => insights.filter(i => i.maturity === 'frontier').length,
@@ -87,7 +82,7 @@ export function RadarPage({ onNavigate }: RadarPageProps) {
           <RadarToolbar
             filter={filter}
             onFilterChange={setFilter}
-            planCount={plan.size}
+            planCount={planCount}
             total={total}
             frontierCount={frontierCount}
             matureCount={matureCount}
@@ -99,7 +94,7 @@ export function RadarPage({ onNavigate }: RadarPageProps) {
               <RadarCard
                 key={insight.id}
                 insight={insight}
-                inPlan={plan.has(insight.id)}
+                inPlan={inPlan(insight.id)}
                 onTogglePlan={() => togglePlan(insight.id)}
               />
             ))}

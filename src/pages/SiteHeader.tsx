@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
-import { LayoutGrid, Network, Radar, Search, Sun, Moon, ScrollText } from "lucide-react"
+import { LayoutGrid, Network, Radar, Search, Sun, Moon, ScrollText, BookmarkCheck, SquarePen } from "lucide-react"
 
-export type NavPage = "letter" | "dashboard" | "graph" | "article" | "radar"
+export type NavPage = "letter" | "dashboard" | "graph" | "article" | "radar" | "plan" | "editor"
 
 interface SiteHeaderProps {
   activePage: NavPage
@@ -34,8 +34,10 @@ export function SiteHeader({ activePage, onNavigate }: SiteHeaderProps) {
   const navTabs = [
     { id: "letter" as NavPage, icon: ScrollText, label: "产品文化" },
     { id: "dashboard" as NavPage, icon: LayoutGrid, label: "认知工作台" },
-    { id: "graph" as NavPage, icon: Network, label: "认知图谱" },
     { id: "radar" as NavPage, icon: Radar, label: "认知雷达" },
+    { id: "plan" as NavPage, icon: BookmarkCheck, label: "深度计划" },
+    { id: "graph" as NavPage, icon: Network, label: "认知图谱" },
+    { id: "editor" as NavPage, icon: SquarePen, label: "编辑器" },
   ]
 
   const isActive = (id: NavPage) => {

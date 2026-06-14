@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Toaster, toast } from "sonner"
 import {
-  Sparkles, Settings, Library, Network, Play, Zap, MessageCircle, Brain,
+  Sparkles, Settings, Library, Network, Play, Zap, MessageCircle, Brain, SquarePen,
 } from "lucide-react"
 
 import type { FeynmanDigest, LlmConfig, Note, StepEntry, FeynmanWarmupQuestion } from "./types"
@@ -34,9 +34,18 @@ function genId() {
   return `note_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 }
 
-export function FeynmanApp() {
+interface FeynmanAppProps {
+  /** 来自深度计划的认知点 id（用于 learning → published 流转） */
+  conceptId?: string
+  /** 进入时预填的问题（认知点中文标题） */
+  initialQuestion?: string
+  /** 学习完成后跳转到成稿编辑器，携带认知点 id */
+  onGoToEditor?: (id?: string) => void
+}
+
+export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor }: FeynmanAppProps = {}) {
   const [cfg, setCfg] = useState<LlmConfig>(DEFAULT_CFG)
-  const [rawQuestion, setRawQuestion] = useState("")
+  const [rawQuestion, setRawQuestion] = useState(initialQuestion ?? "")
   const [topic, setTopic] = useState("")
   const [tagsInput, setTagsInput] = useState("")
 
@@ -389,6 +398,24 @@ export function FeynmanApp() {
                 <CardContent className="pt-5 space-y-3">
                   <div className="text-xs text-muted-foreground">素材导出 / 沉淀</div>
                   <ExportBar note={currentNote} />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 学习完成 → 整理成文：进入成稿编辑器（learning → published 入口） */}
+            {onGoToEditor && (feynman || allConfirmed) && (
+              <Card className="border-primary/30">
+                <CardContent className="pt-5 flex items-center justify-between gap-4 flex-wrap">
+                  <div className="space-y-1">
+                    <div className="text-sm font-semibold">已讲透？整理成文，沉淀为文章</div>
+                    <div className="text-xs text-muted-foreground">
+                      {feynman ? "费曼内化已完成" : "四步已确认"}，进入成稿编辑器把它写成文章，发布后该认知点将标记为「已成稿」。
+                    </div>
+                  </div>
+                  <Button variant="glow" size="lg" onClick={() => onGoToEditor(conceptId)}>
+                    <SquarePen className="mr-2 h-4 w-4" />
+                    去成稿
+                  </Button>
                 </CardContent>
               </Card>
             )}

@@ -95,5 +95,10 @@ declare module 'lucide-react' {
   export const FileX: React.FC<LucideProps>
   export const Radar: React.FC<LucideProps>
   export const Bookmark: React.FC<LucideProps>
+  export const BookmarkCheck: React.FC<LucideProps>
+  export const BookmarkPlus: React.FC<LucideProps>
   export const Building2: React.FC<LucideProps>
+  export const CheckCircle: React.FC<LucideProps>
+  export const Loader: React.FC<LucideProps>
+  export const SquarePen: React.FC<LucideProps>
 }

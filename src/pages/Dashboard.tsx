@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react"
-import { FileText, Folder, GitFork, Flame, Bot, Cpu, GraduationCap, ArrowRight, Calendar, Clock, Settings2, ArrowUpRight } from "lucide-react"
+import { FileText, Folder, GitFork, Flame, Bot, Cpu, GraduationCap, ArrowRight, Calendar, Clock, Settings2, ArrowUpRight, Radar } from "lucide-react"
 import { SiteHeader } from "./SiteHeader"
 import type { NavPage } from "./SiteHeader"
+import { useCognition } from "../lib/cognition"
+import { radarWeekData } from "../data/radarData"
 
 interface ArticleEntry {
   slug: string
@@ -15,7 +17,6 @@ interface ArticleEntry {
 }
 
 interface DashboardProps {
-  activePage: "dashboard" | "graph"
   onNavigate: (page: NavPage) => void
   onOpenArticle: (slug: string) => void
 }
@@ -31,8 +32,18 @@ function BrandMark({ size = 22 }: { size?: number }) {
   )
 }
 
-export function Dashboard({ activePage, onNavigate, onOpenArticle }: DashboardProps) {
+export function Dashboard({ onNavigate, onOpenArticle }: DashboardProps) {
   const [articles, setArticles] = useState<ArticleEntry[]>([])
+  const { map } = useCognition()
+
+  // 本周雷达·深入计划：节点来自 radarData，命中认知状态机（state ≠ discovered）即“在计划”
+  const radarNodes = radarWeekData.insights.map((ins) => ({
+    id: ins.id,
+    num: String(ins.index).padStart(2, "0"),
+    label: ins.eyebrow,
+    inPlan: !!map[ins.id] && map[ins.id].state !== "discovered",
+  }))
+  const radarPlanCount = radarNodes.filter((n) => n.inPlan).length
 
   useEffect(() => {
     fetch("/content/articles.json")
@@ -41,15 +52,6 @@ export function Dashboard({ activePage, onNavigate, onOpenArticle }: DashboardPr
       .catch(() => setArticles([]))
   }, [])
 
-  // 当 activePage = "graph" 时进入即滚到知识图谱区
-  useEffect(() => {
-    if (activePage === "graph") {
-      const t = setTimeout(() => {
-        document.getElementById("graph")?.scrollIntoView({ behavior: "smooth", block: "start" })
-      }, 60)
-      return () => clearTimeout(t)
-    }
-  }, [activePage])
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })
@@ -57,7 +59,7 @@ export function Dashboard({ activePage, onNavigate, onOpenArticle }: DashboardPr
 
   return (
     <div className="min-h-screen bg-background text-foreground" style={{ fontFeatureSettings: "'rlig' 1, 'calt' 1" }}>
-      <SiteHeader activePage={activePage} onNavigate={onNavigate} />
+      <SiteHeader activePage="dashboard" onNavigate={onNavigate} />
 
       <main style={{ padding: "48px 0 96px" }}>
         <div className="max-w-screen-xl mx-auto px-6">
@@ -437,6 +439,40 @@ export function Dashboard({ activePage, onNavigate, onOpenArticle }: DashboardPr
                 </svg>
               </div>
 
+              {/* ===== Weekly Radar · Deep-Plan strip ===== */}
+              <div className="dash-radar-strip">
+                <style>{RADAR_STRIP_CSS}</style>
+                <div className="rs-head">
+                  <div className="rs-title">
+                    <Radar style={{ width: 14, height: 14 }} />
+                    本周雷达 · 深入计划
+                    <span className="rs-kicker">{radarWeekData.weekId}</span>
+                  </div>
+                  <div className="rs-meta">
+                    已选 <span className="num">{radarPlanCount}</span> / {radarNodes.length} ·{" "}
+                    <button onClick={() => onNavigate("radar")} className="rs-link">
+                      前往雷达页选择 →
+                    </button>
+                  </div>
+                </div>
+                <div className="rs-nodes">
+                  {radarNodes.map((n) => (
+                    <button
+                      key={n.id}
+                      onClick={() => onNavigate("radar")}
+                      className={`rs-node ${n.inPlan ? "in-plan" : ""}`}
+                    >
+                      <span className="rs-node-dot" />
+                      <span className="rs-node-num">{n.num}</span>
+                      <span className="rs-node-label">{n.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {radarPlanCount === 0 && (
+                  <div className="rs-empty">尚未选择本周深入认知点 · 未学习节点已置灰</div>
+                )}
+              </div>
+
               {/* Graph footer stats */}
               <div className="grid border-t border-border" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
                 {[
@@ -473,3 +509,29 @@ export function Dashboard({ activePage, onNavigate, onOpenArticle }: DashboardPr
     </div>
   )
 }
+
+/* 端口自 aicc-html-bundle/aicc-dashboard.html 的 radar-strip，作用域收敛到 .dash-radar-strip */
+const RADAR_STRIP_CSS = `
+.dash-radar-strip{border-top:1px solid hsl(var(--border));padding:18px 22px 22px;background:hsl(var(--background))}
+.dash-radar-strip .rs-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.dash-radar-strip .rs-title{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;letter-spacing:-0.01em}
+.dash-radar-strip .rs-kicker{font-family:var(--font-mono);font-size:10.5px;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;color:hsl(var(--muted-foreground));margin-left:6px;padding:2px 8px;border:1px solid hsl(var(--border));border-radius:calc(var(--radius) - 2px)}
+.dash-radar-strip .rs-meta{font-family:var(--font-mono);font-size:11px;color:hsl(var(--muted-foreground));display:inline-flex;align-items:center;gap:8px}
+.dash-radar-strip .rs-meta .num{color:hsl(var(--foreground));font-weight:600}
+.dash-radar-strip .rs-link{background:none;border:none;cursor:pointer;font-family:inherit;font-size:inherit;color:hsl(var(--foreground));border-bottom:1px solid hsl(var(--border));padding:0 0 1px;transition:border-color 0.15s}
+.dash-radar-strip .rs-link:hover{border-color:hsl(var(--foreground))}
+.dash-radar-strip .rs-nodes{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+@media (max-width:880px){.dash-radar-strip .rs-nodes{grid-template-columns:repeat(4,1fr)}}
+@media (max-width:540px){.dash-radar-strip .rs-nodes{grid-template-columns:repeat(2,1fr)}}
+.dash-radar-strip .rs-node{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px 12px;border:1px solid hsl(var(--border));border-radius:calc(var(--radius) - 2px);background:hsl(var(--card));text-align:center;transition:all 0.18s ease;opacity:0.45;filter:grayscale(0.6);cursor:pointer}
+.dash-radar-strip .rs-node:hover{opacity:0.75}
+.dash-radar-strip .rs-node.in-plan{opacity:1;filter:none;border-color:hsl(142 71% 38% / 0.5);background:linear-gradient(180deg,hsl(142 71% 38% / 0.04),hsl(var(--card)));box-shadow:0 0 0 3px hsl(142 71% 38% / 0.06)}
+.dark .dash-radar-strip .rs-node.in-plan{border-color:hsl(142 71% 50% / 0.5);background:linear-gradient(180deg,hsl(142 71% 50% / 0.06),hsl(var(--card)));box-shadow:0 0 0 3px hsl(142 71% 50% / 0.08)}
+.dash-radar-strip .rs-node-dot{position:relative;width:10px;height:10px;border-radius:9999px;background:hsl(var(--muted-foreground))}
+.dash-radar-strip .rs-node.in-plan .rs-node-dot{background:hsl(142 71% 38%);box-shadow:0 0 0 4px hsl(142 71% 38% / 0.18)}
+.dark .dash-radar-strip .rs-node.in-plan .rs-node-dot{background:hsl(142 71% 50%);box-shadow:0 0 0 4px hsl(142 71% 50% / 0.2)}
+.dash-radar-strip .rs-node-num{font-family:var(--font-mono);font-size:10.5px;font-weight:500;letter-spacing:0.08em;color:hsl(var(--muted-foreground))}
+.dash-radar-strip .rs-node-label{font-size:12px;font-weight:500;line-height:1.35;color:hsl(var(--foreground));word-break:break-word}
+.dash-radar-strip .rs-node.in-plan .rs-node-label{font-weight:600}
+.dash-radar-strip .rs-empty{font-size:12.5px;color:hsl(var(--muted-foreground));margin-top:12px;padding:10px 12px;border:1px dashed hsl(var(--border));border-radius:calc(var(--radius) - 2px);text-align:center}
+`
