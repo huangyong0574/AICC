@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
-import { useLatestRadarWeek } from '../data/radarData'
+import { ArrowLeft } from 'lucide-react'
+import { useRadarWeekById } from '../data/radarData'
 import { RadarCard } from '../components/radar/RadarCard'
 import { RadarHero } from '../components/radar/RadarHero'
 import { RadarToolbar, type RadarFilter } from '../components/radar/RadarToolbar'
@@ -8,13 +9,15 @@ import { useCognition } from '../lib/cognition'
 
 interface RadarPageProps {
   onNavigate: (page: NavPage) => void
+  /** 要展示的周；缺省取最新周 */
+  weekId?: string
 }
 
-export function RadarPage({ onNavigate }: RadarPageProps) {
+export function RadarPage({ onNavigate, weekId: weekIdProp }: RadarPageProps) {
   const [filter, setFilter] = useState<RadarFilter>('all')
   const { map, addToPlan, remove } = useCognition()
 
-  const { week } = useLatestRadarWeek()
+  const { week } = useRadarWeekById(weekIdProp)
   const { insights, weekId, dateRange } = week
   const total = insights.length
 
@@ -78,6 +81,12 @@ export function RadarPage({ onNavigate }: RadarPageProps) {
 
       <main className="py-16 sm:py-16">
         <div className="max-w-screen-xl mx-auto px-6">
+          <button
+            onClick={() => onNavigate('radar')}
+            className="inline-flex items-center gap-1.5 mb-6 font-mono text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft style={{ width: 14, height: 14 }} /> 认知雷达归档
+          </button>
           <RadarHero weekId={weekId} dateRange={dateRange} />
 
           <RadarToolbar

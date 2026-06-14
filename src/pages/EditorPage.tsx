@@ -171,7 +171,7 @@ export function EditorPage({ onBack, conceptId, onPublished }: EditorPageProps) 
         </div>
         <div className="app-header-right">
           <button className="btn btn-ghost" onClick={onBack}>
-            <ArrowLeft /> 工作台
+            <ArrowLeft /> 返回
           </button>
           <button className="btn btn-ghost" onClick={toggleDark} title="切换主题">
             {dark ? <Moon /> : <Sun />}

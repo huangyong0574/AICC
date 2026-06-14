@@ -35,12 +35,12 @@ discovered ──► in-plan ──► learning ──► published
 | 模块 | 路由 | 定位 | 在状态机中的角色 |
 |------|------|------|------|
 | **产品文化** (LetterHome) | `/` | 一封写给 AI 认知长期进化者的信：症状 / 信念 / 自省 / 防腐 | 价值观层 |
-| **认知工作台** (Dashboard) | `/dashboard` | 文章管理与深度阅读入口 + 本周雷达计划概览 | 总览 |
-| **认知雷达** (Radar) | `/radar` | AI 技术成熟度雷达，标「研究前沿 / 成熟可用」 | `discovered → in-plan` |
+| **认知雷达·归档** (RadarArchive) | `/radar` | 全集合：按周列出每期雷达（时间轴卡片），选一期进入 | 入口 |
+| **认知雷达·周切片** (Radar) | `/radar/:weekId` | 某周的认知点卡片，标「研究前沿 / 成熟可用」 | `discovered → in-plan` |
 | **深度计划** (Plan) | `/plan` | 跨周累积的深度学习计划，按状态筛选/计数 | `in-plan / learning / published` 看板 |
 | **费曼工作台** (Feynman) | `/feynman` | 单概念费曼四步穿透学习引擎 | `in-plan → learning` |
 | **文章编辑器** (Editor) | `/editor` | Markdown 实时预览 + 发布，把理解写成文章 | `learning → published` |
-| **认知图谱** (Graph) | `/graph` | 按状态机着色的概念网络（已成稿=绿 / 学习中=蓝 / 待启动=琥珀 / 未涉及=灰） | 累积可视化 |
+| **认知图谱** (Graph) | `/graph` | 全局累积的概念网络（跨周去重、按来源周聚类、按状态着色）+ 第二大脑成长总览 | 累积 + 成长仪表盘 |
 | **文章详情** (Article) | `/article/:slug` | 文章阅读页（先读本地草稿，回退 `public/content`） | `published` 产物 |
 
 核心学习引擎采用 **费曼四步穿透模型**：
@@ -57,21 +57,22 @@ Feynman Warm-up（3 角色提问）→ Step 1 直觉 → Step 2 场景 → Step 
 
 ```
 main.tsx (App Router · 手写 History 路由 + CognitionProvider)
-├── /              → LetterHome        # 产品文化 · 一封信
-├── /dashboard     → Dashboard         # 认知工作台（文章列表 + 本周雷达计划概览）
-├── /radar         → RadarPage         # 认知雷达（discovered → in-plan）
-├── /plan          → PlanPage          # 深度计划看板（in-plan / learning / published）
-├── /feynman       → FeynmanApp        # 费曼四步穿透学习引擎（in-plan → learning）
-├── /editor        → EditorPage        # 文章编辑器（learning → published）
-├── /graph         → GraphPage         # 认知图谱（按状态机着色）
-└── /article/:slug → ArticlePage       # 文章详情页（本地草稿优先，回退 public/content）
+├── /              → LetterHome         # 产品文化 · 一封信
+├── /radar         → RadarArchivePage   # 认知雷达归档/全集合（按周列出每期）
+├── /radar/:weekId → RadarPage          # 某周雷达切片（discovered → in-plan）
+├── /plan          → PlanPage           # 深度计划看板（in-plan / learning / published）
+├── /feynman       → FeynmanApp         # 费曼四步穿透学习引擎（in-plan → learning）
+├── /editor        → EditorPage         # 文章编辑器（learning → published）
+├── /graph         → GraphPage          # 认知图谱（全局累积 + 成长总览）
+└── /article/:slug → ArticlePage        # 文章详情页（本地草稿优先，回退 public/content）
+（/dashboard 旧链接 → 重定向到 /radar 归档；认知工作台已下线）
 ```
 
 整个 `<App>` 包裹在 `CognitionProvider`（`src/lib/cognition.tsx`）内，所有页面通过 `useCognition()` 共享同一份状态机数据。「当前认知点」`activeConceptId` 持久化到 `sessionStorage`，确保 `learning → published` 的回写不因刷新 / 直达 URL / 切换 tab 而断链。
 
 ### 导航系统
 
-`SiteHeader` 全局导航条包含六个 Tab：**产品文化** / **认知工作台** / **认知雷达** / **深度计划** / **认知图谱** / **编辑器**，支持深色模式切换。顶部「编辑器」为通用入口（写任意文章，不绑定认知点）；「去成稿」按钮才携带认知点 id 完成 `published` 回写。
+`SiteHeader` 全局导航条包含五个 Tab：**产品文化** / **认知雷达** / **深度计划** / **认知图谱** / **编辑器**，支持深色模式切换。顶部「编辑器」为通用入口（写任意文章，不绑定认知点）；「去成稿」按钮才携带认知点 id 完成 `published` 回写。（认知工作台已下线，其「第二大脑成长」总览并入认知图谱页。）
 
 ---
 
@@ -86,11 +87,11 @@ main.tsx (App Router · 手写 History 路由 + CognitionProvider)
 - **03 自省** — 人性弱点的诚实面对
 - **04 防腐** — 三条防腐行为约定（24h 后产出 MD / 评价题优于问答题 / 周度 LLM 审计）
 
-### 2. 认知工作台（Dashboard）
+### 2. 认知图谱（Graph）— 累积 + 第二大脑成长
 
-- 文章列表：展示 6 篇 AI 概念深度文章，支持按分类筛选
-- 知识图谱：已学习概念的可视化关联
-- 学习统计：概念覆盖率与学习进度
+- 全局累积：跨周聚合全部认知点（按概念去重、按来源周聚类、按状态着色），一眼看出「学到了什么、缺什么」
+- 第二大脑成长总览：累积概念 / 已成稿 / 学习中 / 积累天数 —— 全部取自真实状态机数据
+- （认知工作台已下线：原占位数字与假图谱删除，价值并入此页与深度计划）
 
 ### 3. AI 概念文章库
 
@@ -210,13 +211,13 @@ src/
 │   └── utils.ts                    # cn() 等工具
 ├── pages/                          # 多页面路由组件
 │   ├── LetterHome.tsx              # 产品文化 · 一封信
-│   ├── Dashboard.tsx               # 认知工作台（文章 + 本周雷达计划概览）
-│   ├── RadarPage.tsx               # 认知雷达（discovered → in-plan）
+│   ├── RadarArchivePage.tsx        # 认知雷达归档/全集合（周时间轴）
+│   ├── RadarPage.tsx               # 某周雷达切片（discovered → in-plan）
 │   ├── PlanPage.tsx                # 深度计划看板（跨周累积）
 │   ├── EditorPage.tsx              # 文章编辑器（learning → published）
-│   ├── GraphPage.tsx               # 认知图谱（按状态着色）
+│   ├── GraphPage.tsx               # 认知图谱（全局累积 + 第二大脑成长总览）
 │   ├── ArticlePage.tsx             # 文章详情页
-│   └── SiteHeader.tsx              # 全局导航条（6 Tab）
+│   └── SiteHeader.tsx              # 全局导航条（5 Tab）
 ├── components/
 │   ├── radar/                      # 认知雷达组件
 │   │   ├── RadarCard.tsx
@@ -337,12 +338,13 @@ All prompts are centralized in [`src/feynman/lib/prompts.ts`](src/feynman/lib/pr
 
 ### 多页面分层架构
 
-AICC 采用「认知递进」的分层设计：
+AICC 采用「认知递进」的分层设计，对齐产品链路：
 
-1. **产品文化**（Letter）— 价值观传递，建立认知共识
-2. **认知工作台**（Dashboard）— 文章阅读 + 知识图谱管理
-3. **认知雷达**（Radar）— AI 技术全景扫描与深度计划
-4. **费曼引擎**（Feynman）— 单概念的深度穿透学习
+1. **产品文化**（Letter）— 价值观传递，看全局
+2. **认知雷达**（Radar）— 归档全集合 → 选周切面 → 选 1 个认知点（discovered → in-plan）
+3. **费曼引擎**（Feynman）— 单概念的深度穿透学习（in-plan → learning）
+4. **成稿发布**（Editor）— 把理解写成文章（learning → published）
+5. **认知图谱**（Graph）— 全局累积 + 成长总览，未来支持每周回顾
 
 每个模块独立但相互关联，通过全局导航无缝切换。
 
@@ -358,8 +360,11 @@ AICC 采用「认知递进」的分层设计：
 
 | Feature | Status | Priority |
 |---------|--------|----------|
-| 多页面架构 + 全局导航（6 Tab） | Done | P0 |
+| 多页面架构 + 全局导航（5 Tab） | Done | P0 |
 | **认知状态机**（discovered→in-plan→learning→published） | Done | P0 |
+| 认知雷达两级 IA（归档全集合 → 周切片） | Done | P0 |
+| 认知图谱全局累积 + 第二大脑成长总览（真实数据） | Done | P0 |
+| 下线认知工作台（占位数字/假图谱，价值并入图谱） | Done | P0 |
 | 认知雷达（成熟度 + 加入计划） | Done | P0 |
 | 深度计划看板（跨周累积 + 状态筛选） | Done | P0 |
 | 文章编辑器（Markdown 预览 + 发布回写状态） | Done | P0 |

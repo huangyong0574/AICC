@@ -216,7 +216,7 @@ export async function loadLatestRadarWeek(): Promise<RadarWeek> {
 
 /**
  * React Hook：先以 seed 渲染（无加载闪烁），异步换成最新真实周。
- * RadarPage / GraphPage / Dashboard 共用。
+ * RadarPage 切片用（GraphPage 用 useRadarArchive 累积）。
  */
 export function useLatestRadarWeek(): { week: RadarWeek; loading: boolean } {
   const [week, setWeek] = useState<RadarWeek>(radarWeekData)
@@ -233,5 +233,69 @@ export function useLatestRadarWeek(): { week: RadarWeek; loading: boolean } {
       alive = false
     }
   }, [])
+  return { week, loading }
+}
+
+/** 归档页用：一周数据 + 其索引元信息 */
+export interface RadarArchiveWeek extends RadarWeek {
+  file: string
+  generatedAt?: string
+}
+
+/**
+ * React Hook：加载全部周（index + 各周 JSON），供归档页（RadarArchivePage）按时间轴列出。
+ * 顺序沿用 index.json（新→旧）。
+ */
+export function useRadarArchive(): { weeks: RadarArchiveWeek[]; loading: boolean } {
+  const [weeks, setWeeks] = useState<RadarArchiveWeek[]>([])
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      const idx = await loadRadarIndex()
+      const full = await Promise.all(
+        idx.map(async (e) => {
+          const w = await loadRadarWeek(e.file)
+          return w ? ({ ...w, file: e.file, generatedAt: e.generatedAt } as RadarArchiveWeek) : null
+        }),
+      )
+      const list = full.filter(Boolean) as RadarArchiveWeek[]
+      // 索引为空（如 fetch 失败）时回退到内置 seed，至少展示一期
+      if (alive) {
+        setWeeks(list.length ? list : [{ ...radarWeekData, file: '', generatedAt: undefined }])
+        setLoading(false)
+      }
+    })()
+    return () => {
+      alive = false
+    }
+  }, [])
+  return { weeks, loading }
+}
+
+/**
+ * React Hook：按 weekId 加载某一周切片（RadarPage 用）。
+ * 缺省 weekId（或查不到）时回退到最新周；最终回退到内置 seed。
+ */
+export function useRadarWeekById(weekId?: string): { week: RadarWeek; loading: boolean } {
+  const [week, setWeek] = useState<RadarWeek>(radarWeekData)
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      if (!weekId) {
+        const w = await loadLatestRadarWeek()
+        if (alive) { setWeek(w); setLoading(false) }
+        return
+      }
+      const idx = await loadRadarIndex()
+      const entry = idx.find((e) => e.weekId === weekId)
+      const w = entry ? await loadRadarWeek(entry.file) : null
+      if (alive) { setWeek(w || (await loadLatestRadarWeek())); setLoading(false) }
+    })()
+    return () => {
+      alive = false
+    }
+  }, [weekId])
   return { week, loading }
 }

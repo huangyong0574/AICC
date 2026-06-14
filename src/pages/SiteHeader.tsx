@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
-import { LayoutGrid, Network, Radar, Search, Sun, Moon, ScrollText, BookmarkCheck, SquarePen } from "lucide-react"
+import { Network, Radar, Search, Sun, Moon, ScrollText, BookmarkCheck, SquarePen } from "lucide-react"
 
-export type NavPage = "letter" | "dashboard" | "graph" | "article" | "radar" | "plan" | "editor"
+export type NavPage = "letter" | "graph" | "article" | "radar" | "plan" | "editor"
 
 interface SiteHeaderProps {
   activePage: NavPage
@@ -33,7 +33,6 @@ export function SiteHeader({ activePage, onNavigate }: SiteHeaderProps) {
 
   const navTabs = [
     { id: "letter" as NavPage, icon: ScrollText, label: "产品文化" },
-    { id: "dashboard" as NavPage, icon: LayoutGrid, label: "认知工作台" },
     { id: "radar" as NavPage, icon: Radar, label: "认知雷达" },
     { id: "plan" as NavPage, icon: BookmarkCheck, label: "深度计划" },
     { id: "graph" as NavPage, icon: Network, label: "认知图谱" },
@@ -41,7 +40,8 @@ export function SiteHeader({ activePage, onNavigate }: SiteHeaderProps) {
   ]
 
   const isActive = (id: NavPage) => {
-    if (activePage === "article" && id === "dashboard") return true
+    // 文章页归属于认知雷达体系（文章是某认知点的成稿产物）
+    if (activePage === "article" && id === "radar") return true
     return activePage === id
   }
 
@@ -57,7 +57,7 @@ export function SiteHeader({ activePage, onNavigate }: SiteHeaderProps) {
       <div className="max-w-screen-xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Brand */}
         <button
-          onClick={() => onNavigate("dashboard")}
+          onClick={() => onNavigate("radar")}
           className="inline-flex items-center gap-2.5 font-semibold text-[15px] tracking-[-0.01em]"
         >
           <span

@@ -184,11 +184,11 @@ export function ArticlePage({ slug, onNavigate }: ArticlePageProps) {
           {state === "ok" && data && (
             <>
               <nav className="breadcrumb" aria-label="面包屑">
-                <button onClick={() => onNavigate("dashboard")}>AICC</button>
+                <button onClick={() => onNavigate("radar")}>AICC</button>
                 <span className="sep">/</span>
                 {category && (
                   <>
-                    <button onClick={() => onNavigate("dashboard")}>{category}</button>
+                    <button onClick={() => onNavigate("radar")}>{category}</button>
                     <span className="sep">/</span>
                   </>
                 )}
@@ -285,7 +285,7 @@ export function ArticlePage({ slug, onNavigate }: ArticlePageProps) {
             >
               A
             </span>
-            <span>AICC · 你的 AI 认知工作台</span>
+            <span>AICC · AI 认知进化</span>
           </div>
           <div className="footer-meta">v1.0</div>
         </div>

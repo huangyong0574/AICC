@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import { SiteHeader, type NavPage } from "./SiteHeader"
 import { useCognition, type CognitionStateValue } from "../lib/cognition"
-import { useLatestRadarWeek } from "../data/radarData"
+import { useRadarArchive } from "../data/radarData"
 
 interface GraphPageProps {
   onNavigate: (page: NavPage) => void
@@ -10,18 +10,27 @@ interface GraphPageProps {
 type NodeState = CognitionStateValue
 
 interface GraphNode {
+  /** 代表 id（最新一周的那条） */
   id: string
+  /** 同一概念在各周出现的全部 id（按 slug 去重后聚合，用于取最远状态） */
+  ids: string[]
   num: string
   titleEn: string
   title: string
   cluster: string
 }
 
-/* 节点来自最新一周雷达数据（与认知状态机同一份 id），按成熟度聚类 */
-const CLUSTER_LABEL: Record<string, string> = {
-  frontier: "FRONTIER",
-  mature: "MATURE",
-  experimental: "EXPERIMENTAL",
+/* 节点 = 跨周累积的全部认知点（按概念 slug 去重），按"来源周"聚类 */
+const STATE_RANK: Record<NodeState, number> = {
+  discovered: 0,
+  "in-plan": 1,
+  learning: 2,
+  published: 3,
+}
+
+/** 概念 slug：去掉 id 的 `{weekId}-{NN}-` 前缀 */
+function conceptSlug(id: string): string {
+  return id.replace(/^\d{4}-W\d{2}-\d{2}-/, "")
 }
 
 function nodeColor(state: NodeState): string {
@@ -36,19 +45,59 @@ const VIEW_H = 560
 
 export function GraphPage({ onNavigate }: GraphPageProps) {
   const { map } = useCognition()
-  const { week } = useLatestRadarWeek()
+  const { weeks } = useRadarArchive()
 
-  const NODES: GraphNode[] = useMemo(
-    () =>
-      week.insights.map((ins) => ({
-        id: ins.id,
-        num: String(ins.index).padStart(2, "0"),
-        titleEn: ins.eyebrow,
-        title: ins.title,
-        cluster: ins.maturity,
-      })),
-    [week],
-  )
+  // 跨周累积所有认知点，按概念 slug 去重（同名概念合并为一个节点，聚合其全部周 id）
+  const NODES: GraphNode[] = useMemo(() => {
+    const bySlug = new Map<string, { ids: string[]; titleEn: string; title: string; cluster: string }>()
+    for (const w of weeks) {
+      for (const ins of w.insights) {
+        const slug = conceptSlug(ins.id)
+        const existing = bySlug.get(slug)
+        if (existing) existing.ids.push(ins.id)
+        else
+          bySlug.set(slug, {
+            ids: [ins.id],
+            titleEn: ins.eyebrow,
+            title: ins.title,
+            cluster: ins.id.match(/^\d{4}-W\d{2}/)?.[0] ?? ins.maturity,
+          })
+      }
+    }
+    return Array.from(bySlug.values()).map((n, i) => ({
+      id: n.ids[0],
+      ids: n.ids,
+      num: String(i + 1).padStart(2, "0"),
+      titleEn: n.titleEn,
+      title: n.title,
+      cluster: n.cluster,
+    }))
+  }, [weeks])
+
+  // 节点状态 = 其所有周 id 中最远的状态（discovered<in-plan<learning<published）
+  const stateOf = useMemo(() => {
+    return (node: GraphNode): NodeState => {
+      let best: NodeState = "discovered"
+      for (const id of node.ids) {
+        const s = map[id]?.state
+        if (s && STATE_RANK[s] > STATE_RANK[best]) best = s
+      }
+      return best
+    }
+  }, [map])
+
+  // 第二大脑成长总览（真实数据，取代旧工作台的硬编码数字）
+  const growth = useMemo(() => {
+    const items = Object.values(map)
+    const published = items.filter((v) => v.state === "published").length
+    const learning = items.filter((v) => v.state === "learning").length
+    const addedAts = items.map((v) => v.addedAt).filter((t): t is number => !!t)
+    const days =
+      addedAts.length > 0
+        ? Math.max(1, Math.ceil((Date.now() - Math.min(...addedAts)) / 86400000))
+        : 0
+    return { published, learning, concepts: NODES.length, days }
+  }, [map, NODES])
 
   // 聚类中心 + 节点布局（依赖 NODES，随最新一周数据变化）
   const { clusters, positions } = useMemo(() => {
@@ -79,8 +128,7 @@ export function GraphPage({ onNavigate }: GraphPageProps) {
     }
   }, [NODES])
 
-  const stateOf = (id: string): NodeState => map[id]?.state || "discovered"
-  const activatedCount = NODES.filter((n) => stateOf(n.id) !== "discovered").length
+  const activatedCount = NODES.filter((n) => stateOf(n) !== "discovered").length
 
   return (
     <div className="graph-page min-h-screen bg-background text-foreground">
@@ -94,11 +142,34 @@ export function GraphPage({ onNavigate }: GraphPageProps) {
               <span className="pulse" />
               <span>Knowledge Graph · 累积视图</span>
             </div>
-            <h1>累积图谱</h1>
+            <h1>累积图谱 · 第二大脑正在生长</h1>
             <p className="lede">
               把每周雷达的认知点沉淀为长期的知识网络。已加入计划的节点用色彩突出，未涉及的保持灰色，便于一眼看出“我学到了什么，缺什么”。
             </p>
           </section>
+
+          <div className="growth-grid">
+            <div className="growth-card">
+              <div className="g-label">累积概念</div>
+              <div className="g-value">{growth.concepts}</div>
+              <div className="g-sub">跨周去重</div>
+            </div>
+            <div className="growth-card published">
+              <div className="g-label">已成稿</div>
+              <div className="g-value">{growth.published}</div>
+              <div className="g-sub">费曼定稿</div>
+            </div>
+            <div className="growth-card learning">
+              <div className="g-label">学习中</div>
+              <div className="g-value">{growth.learning}</div>
+              <div className="g-sub">费曼工作台进行</div>
+            </div>
+            <div className="growth-card">
+              <div className="g-label">积累天数</div>
+              <div className="g-value">{growth.days}</div>
+              <div className="g-sub">自首次加入计划</div>
+            </div>
+          </div>
 
           <div className="toolbar">
             <div className="legend">
@@ -129,7 +200,7 @@ export function GraphPage({ onNavigate }: GraphPageProps) {
                     textAnchor="middle"
                     style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: 2, fill: "hsl(var(--muted-foreground))" }}
                   >
-                    {CLUSTER_LABEL[c.name] || c.name.toUpperCase()}
+                    {c.name}
                   </text>
                 </g>
               ))}
@@ -155,7 +226,7 @@ export function GraphPage({ onNavigate }: GraphPageProps) {
               {/* nodes */}
               {NODES.map((n) => {
                 const p = positions[n.id]
-                const st = stateOf(n.id)
+                const st = stateOf(n)
                 const color = nodeColor(st)
                 const r = st === "discovered" ? 11 : 14
                 return (
@@ -206,11 +277,11 @@ export function GraphPage({ onNavigate }: GraphPageProps) {
 
           <section className="week-section">
             <h2>
-              {week.weekId} <span className="badge">{week.dateRange}</span>
+              全部认知点 <span className="badge">{NODES.length} 个 · 跨周累积</span>
             </h2>
             <div className="week-strip">
               {NODES.map((n) => {
-                const st = stateOf(n.id)
+                const st = stateOf(n)
                 return (
                   <button key={n.id} className={`node-chip ${st}`} onClick={() => onNavigate("radar")}>
                     <span className="node-num">{n.num}</span>
@@ -242,6 +313,14 @@ const GRAPH_CSS = `
 .graph-page .hero-kicker .pulse{width:6px;height:6px;border-radius:9999px;background:hsl(var(--mature));box-shadow:0 0 0 4px hsl(var(--mature)/0.15)}
 .graph-page .page-hero h1{font-size:clamp(2.25rem,5vw,3.5rem);font-weight:600;letter-spacing:-0.04em;line-height:1.05;margin-bottom:18px}
 .graph-page .page-hero .lede{max-width:62ch;color:hsl(var(--muted-foreground));font-size:15.5px;line-height:1.7}
+.graph-page .growth-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:0 0 32px}
+@media(max-width:768px){.graph-page .growth-grid{grid-template-columns:repeat(2,1fr)}}
+.graph-page .growth-card{padding:18px 20px;border:1px solid hsl(var(--border));border-radius:var(--radius);background:hsl(var(--card))}
+.graph-page .growth-card .g-label{font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.18em;text-transform:uppercase;color:hsl(var(--muted-foreground));margin-bottom:10px}
+.graph-page .growth-card .g-value{font-family:var(--font-mono);font-size:34px;font-weight:500;letter-spacing:-0.04em;line-height:1;color:hsl(var(--foreground));font-feature-settings:'tnum' 1}
+.graph-page .growth-card .g-sub{margin-top:6px;font-size:11.5px;color:hsl(var(--muted-foreground))}
+.graph-page .growth-card.published .g-value{color:hsl(var(--published))}
+.graph-page .growth-card.learning .g-value{color:hsl(var(--learning))}
 .graph-page .toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid hsl(var(--border));flex-wrap:wrap}
 .graph-page .legend{display:inline-flex;align-items:center;gap:18px;flex-wrap:wrap;font-size:12px;color:hsl(var(--muted-foreground))}
 .graph-page .legend-item{display:inline-flex;align-items:center;gap:6px}

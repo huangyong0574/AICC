@@ -144,13 +144,13 @@ User inputs natural language question (e.g. "GDN是什么意思？")  ← 计划
 
 | Page | Route | 职责 | 状态机角色 | 关键 props / 入口 |
 |---|---|---|---|---|
-| LetterHome | `/` (`/philosophy`) | 产品文化·一封信（症状/信念/自省/防腐） | 价值观层 | `onEnter` / `onNavigate` |
-| Dashboard | `/dashboard` | 文章管理 + 本周雷达计划概览 | 总览 | `onNavigate` / `onOpenArticle` |
-| RadarPage | `/radar` | 技术成熟度雷达 | **discovered→in-plan** | `addToPlan()`；learning/published 卡片删除需二次确认 |
+| LetterHome | `/` (`/philosophy`) | 产品文化·一封信（症状/信念/自省/防腐） | 价值观层 | `onEnter`（→ 雷达归档）/ `onNavigate` |
+| RadarArchivePage | `/radar` | 认知雷达**归档/全集合**：按周列出每期，时间轴卡片（期号/标题/日期/认知点数/前沿·成熟·已加入计划） | 入口 | `onNavigate` / `onOpenWeek(weekId)` |
+| RadarPage | `/radar/:weekId` | 某一**周切片**的雷达卡片（缺省 weekId 时取最新周） | **discovered→in-plan** | `weekId` / `onNavigate`；`addToPlan()`；learning/published 卡片删除需二次确认；含「← 归档」返回 |
 | PlanPage | `/plan` | 跨周深度计划看板 | in-plan/learning/published 看板 | `onOpenFeynman(id)` / `onOpenArticle(slug)` |
 | FeynmanApp | `/feynman` | 费曼四步穿透学习引擎 | **in-plan→learning** | `conceptId` / `initialQuestion` / `onGoToEditor(id)` |
 | EditorPage | `/editor` | Markdown 编辑 + 实时预览 + 发布 | **learning→published** | `conceptId` / `onBack` / `onPublished(slug)` |
-| GraphPage | `/graph` | 认知图谱（按状态着色） | 累积可视化 | `onNavigate`（节点取自 radarData，按 cognition state 着色） |
+| GraphPage | `/graph` | 认知图谱（**全局累积**：跨周全部认知点按概念去重，按来源周聚类、按状态着色）+ 第二大脑成长总览（已成稿/学习中/累积概念/积累天数，真实数据） | 累积 + 成长仪表盘 | `onNavigate`（`useRadarArchive` 取全部周；节点 click→雷达归档） |
 | ArticlePage | `/article/:slug` | 文章阅读页 | published 产物 | 先读 `aicc-article-md:<slug>`，回退 `public/content/<slug>.md` |
 
 > 路由编排集中在 `main.tsx`：`pathToState`/`stateToPath` 双向映射，`handleOpenFeynman`/`handleGoToEditor`
@@ -334,12 +334,15 @@ type CognitionMap = Record<string /* id */, CognitionItem>
 
 `RadarInsight` 字段：`id`(=`{weekId}-{NN}-{slug}`) / index / eyebrow(英) / title(中) / tagline(一句话) / maturity(`frontier`🟡 \| `mature`🟢 \| `experimental`🔴) / corePrinciple / whyMatters / org / dateRange / sourceUrl。
 
-**下游：工程动态加载**（`src/data/radarData.ts`）
-- `useLatestRadarWeek()` → `fetch('/content/radar/index.json')` → 取 `weeks[0]` → 加载该周 JSON；任何环节失败回退内置 seed `radarWeekData`。
-- 消费方：`RadarPage` / `GraphPage` / `Dashboard`（均改为 hook 动态加载，不再 import 硬编码常量）。
-- **id 规范** `{weekId}-{NN}-{slug}` 使 PlanPage 编号、跨周分组、状态机存储自洽。
+**下游：工程动态加载**（`src/data/radarData.ts`，三个 hook）
+- `useRadarArchive()` → 读 `index.json` 全部周 + 各周 JSON → 归档页（`RadarArchivePage`）列每期卡片；**`GraphPage` 也用它做全局累积**。
+- `useRadarWeekById(weekId?)` → 按 weekId 查 index 取对应文件加载（缺省取最新周）→ 周切片页（`RadarPage`）。
+- `useLatestRadarWeek()` → 取 `weeks[0]` 最新周（保留，作兜底/未来概览用）。
+- 任何环节失败回退内置 seed `radarWeekData`。**id 规范** `{weekId}-{NN}-{slug}` 使归档周分组、PlanPage 编号、图谱按概念去重、状态机存储自洽。
 
-> 即：**skill 每周摄取 → 写 `public/content/radar/*.json` → 工程 fetch 渲染 → 加入计划进入状态机**。新增一周只需 skill 落一个 JSON + 更新 index，无需改代码。
+**两级雷达 IA（对齐产品链路②③）**：`/radar` 归档全集合 → 点某期 → `/radar/{weekId}` 该周切片 → 选 1 个认知点 → 费曼。
+
+> 即：**skill 每周摄取 → 写 `public/content/radar/*.json`（+ 更新 index）→ 归档页自动多出一期 → 进某期 → 加入计划进入状态机**。新增一周无需改代码。
 
 ---
 
@@ -375,13 +378,14 @@ AICC/
 │   │   └── utils.ts                 # cn() 等工具
 │   ├── pages/                       # 平台页面（每页对应一个路由/状态机角色）
 │   │   ├── LetterHome.tsx           # 产品文化·一封信
-│   │   ├── Dashboard.tsx            # 认知工作台（文章 + 本周雷达概览）
-│   │   ├── RadarPage.tsx            # 认知雷达（discovered→in-plan）
+│   │   ├── RadarArchivePage.tsx     # 认知雷达归档/全集合（周时间轴）
+│   │   ├── RadarPage.tsx            # 某周雷达切片（discovered→in-plan）
 │   │   ├── PlanPage.tsx             # 深度计划看板
 │   │   ├── EditorPage.tsx           # 文章编辑器（learning→published）
-│   │   ├── GraphPage.tsx            # 认知图谱（按状态着色）
+│   │   ├── GraphPage.tsx            # 认知图谱（全局累积 + 第二大脑成长总览）
 │   │   ├── ArticlePage.tsx          # 文章详情页
-│   │   └── SiteHeader.tsx           # 全局导航条（6 Tab）+ useDarkModeShared
+│   │   └── SiteHeader.tsx           # 全局导航条（5 Tab）+ useDarkModeShared
+│   │   # 注：认知工作台 Dashboard 已下线（数字/图谱为占位，价值并入图谱与计划）
 │   ├── components/
 │   │   ├── radar/                   # RadarCard / RadarHero / RadarToolbar / MaturityPill / PlanToggle
 │   │   └── ui/                      # shadcn/ui 基础组件
@@ -1174,11 +1178,15 @@ npm run preview
 - [x] 认知状态机 discovered→in-plan→learning→published 全链路打通
 - [x] 计划页 / 编辑器 / 图谱接入，`activeConceptId` 跨刷新保活
 - [x] 雷达删除护栏、编辑器 slug 冲突护栏
-- [x] **雷达数据动态化**：`ai-cognitive-radar` skill 输出 `public/content/radar/*.json`，工程 `useLatestRadarWeek()` 动态加载；id 规范 `{weekId}-{NN}-{slug}`（详见 §3.6）
+- [x] **雷达数据动态化**：`ai-cognitive-radar` skill 输出 `public/content/radar/*.json`，工程动态加载；id 规范 `{weekId}-{NN}-{slug}`（详见 §3.6）
+- [x] **两级雷达 IA**：归档全集合（`/radar`）→ 周切片（`/radar/:weekId`），对齐产品链路②③
+- [x] **认知图谱全局累积**：GraphPage 跨周聚合全部认知点（按概念去重、按来源周聚类、按状态着色）
+- [x] **下线认知工作台**：占位数字/假图谱删除；「第二大脑成长总览」以真实数据并入认知图谱页；导航 6→5
 
 ### P1 — 让主线「真正闭环」（剩余高价值缺口）
-- [ ] **已发布文章并入文章库 + 图谱**：编辑器发布写在 localStorage（`aicc-article-md`），而工作台文章库读 `public/content`；published 概念应成为文章库/图谱一等公民（统一来源）
-- [ ] **认知图谱统一数据源**：当前 GraphPage 用 radarData 单周节点；`gdn_graph_v3`（费曼内化）另一套；应合并为「累积 + 关系」的单一图谱模型
+- [ ] **已发布文章的文章库**：编辑器发布写 localStorage（`aicc-article-md` + `aicc-published-articles`）；目前经「深度计划」已成稿筛选访问，可考虑独立文章库视图（或并入图谱页）
+- [ ] **认知图谱关系边**：当前仅节点（按周聚类、按状态着色），无概念间关联；接 `gdn_graph_v3`（费曼内化产出的父节点/关系）渲染真实边
+- [ ] **每周回顾（链路⑤）**：在图谱上做「认知水平回顾 + 避免遗忘」的复习机制（间隔重复）
 - [ ] **防腐机制系统化**：把「24h 未成稿提醒 / 周度 LLM 审计 / 评价优于问答」从一封信的承诺变成实际功能（如防腐看板）
 
 ### P2 — 学习深度与质量

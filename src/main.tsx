@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react'
 import ReactDOM from 'react-dom/client'
 import { FeynmanApp } from './feynman/FeynmanApp'
 import { LetterHome } from './pages/LetterHome'
-import { Dashboard } from './pages/Dashboard'
 import { ArticlePage } from './pages/ArticlePage'
 import { RadarPage } from './pages/RadarPage'
+import { RadarArchivePage } from './pages/RadarArchivePage'
 import { PlanPage } from './pages/PlanPage'
 import { EditorPage } from './pages/EditorPage'
 import { GraphPage } from './pages/GraphPage'
@@ -12,34 +12,38 @@ import { CognitionProvider, useCognition } from './lib/cognition'
 import type { NavPage } from './pages/SiteHeader'
 import './index.css'
 
-type AppPage = 'letter' | 'dashboard' | 'graph' | 'article' | 'feynman' | 'radar' | 'plan' | 'editor'
+type AppPage = 'letter' | 'graph' | 'article' | 'feynman' | 'radar-archive' | 'radar' | 'plan' | 'editor'
 
 /** 跨刷新保留"当前认知点"，使 learning → published 回写不因整页重载而断链 */
 const ACTIVE_CONCEPT_KEY = 'aicc-active-concept'
 
-/* ── URL ↔ AppPage 映射 ── */
-function pathToState(pathname: string): { page: AppPage; slug: string } {
+/* ── URL ↔ AppPage 映射 ──
+ * 第二参数 param：article 时为 slug，radar 时为 weekId。 */
+function pathToState(pathname: string): { page: AppPage; slug: string; week: string } {
   const p = pathname.replace(/\/+$/, '') || '/'
-  if (p === '/' || p === '/philosophy') return { page: 'letter', slug: '' }
-  if (p === '/dashboard') return { page: 'dashboard', slug: '' }
-  if (p === '/graph') return { page: 'graph', slug: '' }
-  if (p === '/feynman') return { page: 'feynman', slug: '' }
-  if (p === '/radar') return { page: 'radar', slug: '' }
-  if (p === '/plan') return { page: 'plan', slug: '' }
-  if (p === '/editor') return { page: 'editor', slug: '' }
+  const none = { slug: '', week: '' }
+  if (p === '/' || p === '/philosophy') return { page: 'letter', ...none }
+  // 认知工作台已下线：旧 /dashboard 链接重定向到雷达归档
+  if (p === '/dashboard') return { page: 'radar-archive', ...none }
+  if (p === '/graph') return { page: 'graph', ...none }
+  if (p === '/feynman') return { page: 'feynman', ...none }
+  if (p === '/radar') return { page: 'radar-archive', ...none }
+  if (p.startsWith('/radar/')) return { page: 'radar', slug: '', week: p.slice('/radar/'.length) }
+  if (p === '/plan') return { page: 'plan', ...none }
+  if (p === '/editor') return { page: 'editor', ...none }
   if (p.startsWith('/article/')) {
     const slug = p.slice('/article/'.length)
-    return { page: 'article', slug: slug || 'flash-attention' }
+    return { page: 'article', slug: slug || 'flash-attention', week: '' }
   }
-  return { page: 'letter', slug: '' }
+  return { page: 'letter', ...none }
 }
 
-function stateToPath(page: AppPage, slug: string): string {
+function stateToPath(page: AppPage, slug: string, week: string): string {
   if (page === 'letter') return '/'
-  if (page === 'dashboard') return '/dashboard'
   if (page === 'graph') return '/graph'
   if (page === 'feynman') return '/feynman'
-  if (page === 'radar') return '/radar'
+  if (page === 'radar-archive') return '/radar'
+  if (page === 'radar') return week ? '/radar/' + week : '/radar'
   if (page === 'plan') return '/plan'
   if (page === 'editor') return '/editor'
   if (page === 'article') return '/article/' + slug
@@ -50,6 +54,8 @@ function App() {
   const { setState, map } = useCognition()
   const [page, setPage] = useState<AppPage>(() => pathToState(location.pathname).page)
   const [articleSlug, setArticleSlug] = useState<string>(() => pathToState(location.pathname).slug || 'flash-attention')
+  // 当前查看的雷达周（'' = 最新周）。深链 /radar/<week> 时从 URL 初始化。
+  const [radarWeek, setRadarWeek] = useState<string>(() => pathToState(location.pathname).week)
   // 当前正在学习/成稿的认知点 id（驱动 in-plan → learning → published 流转）
   // 持久化到 sessionStorage：刷新 /editor、/feynman 或直达 URL 时仍能拿到 conceptId 完成 published 回写。
   const [activeConceptId, setActiveConceptId] = useState<string>(
@@ -65,19 +71,25 @@ function App() {
   // 监听浏览器前进/后退
   useEffect(() => {
     const onPopState = () => {
-      const { page: p, slug } = pathToState(location.pathname)
+      const { page: p, slug, week } = pathToState(location.pathname)
       setPage(p)
       if (slug) setArticleSlug(slug)
+      setRadarWeek(week)
     }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
-  const navigateTo = useCallback((newPage: AppPage, slug?: string) => {
-    const s = slug || articleSlug
-    if (newPage === 'article' && slug) setArticleSlug(slug)
+  // param：article 时为 slug，radar 时为 weekId
+  const navigateTo = useCallback((newPage: AppPage, param?: string) => {
+    if (newPage === 'article' && param) setArticleSlug(param)
+    if (newPage === 'radar') setRadarWeek(param || '')
     setPage(newPage)
-    const path = stateToPath(newPage, newPage === 'article' ? s : '')
+    const path = stateToPath(
+      newPage,
+      newPage === 'article' ? (param || articleSlug) : '',
+      newPage === 'radar' ? (param || '') : '',
+    )
     if (location.pathname !== path) {
       history.pushState(null, '', path)
     }
@@ -85,9 +97,8 @@ function App() {
 
   const handleNavigate = useCallback((nav: NavPage) => {
     if (nav === 'letter') navigateTo('letter')
-    else if (nav === 'dashboard') navigateTo('dashboard')
     else if (nav === 'graph') navigateTo('graph')
-    else if (nav === 'radar') navigateTo('radar')
+    else if (nav === 'radar') navigateTo('radar-archive')
     else if (nav === 'plan') navigateTo('plan')
     else if (nav === 'editor') {
       // 顶部导航的「编辑器」是通用入口（写任意文章），不绑定认知点：清空 conceptId，
@@ -99,6 +110,11 @@ function App() {
 
   const handleOpenArticle = useCallback((slug: string) => {
     navigateTo('article', slug)
+  }, [navigateTo])
+
+  // 归档页 → 进入某一周切片
+  const handleOpenWeek = useCallback((weekId: string) => {
+    navigateTo('radar', weekId)
   }, [navigateTo])
 
   // in-plan → learning：记住认知点、置为「学习中」，再进费曼工作台
@@ -117,15 +133,7 @@ function App() {
   }, [navigateTo, setActiveConcept])
 
   if (page === 'letter') {
-    return <LetterHome onEnter={() => navigateTo('dashboard')} onNavigate={handleNavigate} />
-  }
-  if (page === 'dashboard') {
-    return (
-      <Dashboard
-        onNavigate={handleNavigate}
-        onOpenArticle={handleOpenArticle}
-      />
-    )
+    return <LetterHome onEnter={() => navigateTo('radar-archive')} onNavigate={handleNavigate} />
   }
   if (page === 'graph') {
     return <GraphPage onNavigate={handleNavigate} />
@@ -138,8 +146,11 @@ function App() {
       />
     )
   }
+  if (page === 'radar-archive') {
+    return <RadarArchivePage onNavigate={handleNavigate} onOpenWeek={handleOpenWeek} />
+  }
   if (page === 'radar') {
-    return <RadarPage onNavigate={handleNavigate} />
+    return <RadarPage weekId={radarWeek} onNavigate={handleNavigate} />
   }
   if (page === 'plan') {
     return (
@@ -154,7 +165,7 @@ function App() {
     return (
       <EditorPage
         conceptId={activeConceptId}
-        onBack={() => navigateTo('dashboard')}
+        onBack={() => navigateTo('radar-archive')}
         onPublished={(slug) => {
           // 发布完成：清空 conceptId，避免下一次进编辑器误写到这个已成稿的认知点
           setActiveConcept('')
