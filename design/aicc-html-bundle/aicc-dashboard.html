@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AICC · 你的认知工作台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  /* ============ shadcn/ui tokens ============ */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --border: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
+    --radius: 0.5rem;
+
+    --font-sans: 'Geist', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --font-mono: 'Geist Mono', 'SF Mono', Menlo, Consolas, monospace;
+  }
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+  body {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans);
+    font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  ::selection { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; }
+  svg { display: inline-block; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+
+  /* ============ Header ============ */
+  .site-header {
+    position: sticky; top: 0; z-index: 50;
+    background: hsl(var(--background) / 0.85);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .site-header .inner {
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-weight: 600; font-size: 15px; letter-spacing: -0.01em;
+  }
+  .brand-mark {
+    width: 28px; height: 28px;
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border-radius: calc(var(--radius) - 2px);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 13px;
+  }
+  .brand-version {
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    padding: 2px 8px; border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) - 2px); margin-left: 4px;
+  }
+  .nav-tabs {
+    display: inline-flex; align-items: center; gap: 2px;
+    background: hsl(var(--secondary));
+    padding: 4px; border-radius: calc(var(--radius) - 2px);
+  }
+  .nav-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px;
+    font-size: 13px; font-weight: 500;
+    color: hsl(var(--muted-foreground));
+    border-radius: calc(var(--radius) - 4px);
+    transition: all 0.15s ease;
+  }
+  .nav-tab:hover { color: hsl(var(--foreground)); }
+  .nav-tab.active {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    box-shadow: 0 1px 2px hsl(var(--foreground) / 0.06);
+  }
+  .nav-tab .lucide { width: 13px; height: 13px; }
+  .btn-new {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 34px; padding: 0 12px;
+    font-size: 13px; font-weight: 500;
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border-radius: calc(var(--radius) - 2px);
+    transition: opacity 0.15s ease;
+  }
+  .btn-new:hover { opacity: 0.9; }
+  .btn-new .lucide { width: 13px; height: 13px; }
+  @media (max-width: 768px) { .nav-tabs { display: none; } .btn-new span { display: none; } }
+  .header-actions { display: inline-flex; align-items: center; gap: 8px; }
+  .icon-btn {
+    width: 36px; height: 36px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid transparent; background: transparent;
+    color: hsl(var(--foreground));
+    border-radius: calc(var(--radius) - 2px);
+    transition: background 0.15s ease;
+  }
+  .icon-btn:hover { background: hsl(var(--accent)); }
+  .icon-btn .lucide { width: 16px; height: 16px; }
+  .icon-btn .moon { display: none; }
+  .dark .icon-btn .sun { display: none; }
+  .dark .icon-btn .moon { display: inline-block; }
+
+  @media (max-width: 768px) {
+    .nav-tabs { display: none; }
+  }
+
+  /* ============ Badge ============ */
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.02em; border-radius: 9999px;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--background)); color: hsl(var(--foreground));
+    line-height: 1.4;
+  }
+  .badge.badge-secondary {
+    background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground));
+    border-color: transparent;
+  }
+  .badge .lucide { width: 12px; height: 12px; }
+
+  /* ============ Button ============ */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 36px; padding: 0 14px;
+    font-size: 13px; font-weight: 500;
+    border-radius: calc(var(--radius) - 2px);
+    border: 1px solid transparent;
+    transition: all 0.15s ease; white-space: nowrap;
+  }
+  .btn-default {
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border-color: hsl(var(--primary));
+  }
+  .btn-default:hover { background: hsl(var(--primary) / 0.9); }
+  .btn-outline {
+    background: transparent; color: hsl(var(--foreground));
+    border-color: hsl(var(--border));
+  }
+  .btn-outline:hover { background: hsl(var(--accent)); }
+  .btn-ghost { background: transparent; }
+  .btn-ghost:hover { background: hsl(var(--accent)); }
+  .btn .lucide { width: 14px; height: 14px; }
+
+  /* ============ Page Hero ============ */
+  main { padding: 48px 0 96px; }
+
+  .page-hero { margin-bottom: 56px; }
+  .hero-kicker {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 14px;
+  }
+  .hero-kicker::before {
+    content: ''; display: inline-block;
+    width: 6px; height: 6px; border-radius: 9999px;
+    background: hsl(142 76% 36%);
+    box-shadow: 0 0 0 4px hsl(142 76% 36% / 0.15);
+  }
+  .page-hero h1 {
+    font-size: clamp(1.875rem, 4vw, 2.625rem);
+    font-weight: 600; letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  .page-hero .lede {
+    font-size: 1rem;
+    color: hsl(var(--muted-foreground));
+    max-width: 560px;
+    line-height: 1.7;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: 32px;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: hsl(var(--card));
+  }
+  .stat {
+    padding: 18px 22px;
+    border-right: 1px solid hsl(var(--border));
+  }
+  .stat:last-child { border-right: none; }
+  .stat-label {
+    font-family: var(--font-mono); font-size: 10.5px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .stat-label .lucide { width: 12px; height: 12px; }
+  .stat-value {
+    font-size: 26px; font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .stat-meta {
+    font-size: 11px; color: hsl(var(--muted-foreground));
+    margin-top: 4px;
+  }
+  @media (max-width: 768px) {
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .stat { border-right: none; border-bottom: 1px solid hsl(var(--border)); }
+    .stat:nth-child(odd) { border-right: 1px solid hsl(var(--border)); }
+    .stat:nth-last-child(-n+2) { border-bottom: none; }
+  }
+
+  /* ============ Section Heading ============ */
+  .section { margin-bottom: 64px; }
+  .section-head {
+    display: flex; align-items: end; justify-content: space-between;
+    gap: 24px; margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .section-head-left { min-width: 0; }
+  .section-meta {
+    display: inline-flex; align-items: center; gap: 10px;
+    margin-bottom: 8px;
+  }
+  .section-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 22px; padding: 0 8px;
+    background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground));
+    border-radius: calc(var(--radius) - 2px);
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  }
+  .section-kicker {
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+  .section-head h2 {
+    font-size: clamp(1.25rem, 2vw, 1.5rem);
+    font-weight: 600; letter-spacing: -0.015em;
+    line-height: 1.3;
+  }
+  .section-head-right { flex-shrink: 0; }
+
+  /* ============ Category Cards (Section 01) ============ */
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 900px) { .category-grid { grid-template-columns: 1fr; } }
+
+  .cat-card {
+    position: relative;
+    display: flex; flex-direction: column;
+    padding: 22px 24px 20px;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+    overflow: hidden;
+    cursor: pointer;
+    min-height: 220px;
+  }
+  .cat-card::before {
+    content: ''; position: absolute;
+    top: 0; right: 0; width: 120px; height: 120px;
+    background: radial-gradient(circle at top right, hsl(var(--foreground) / 0.04), transparent 70%);
+    pointer-events: none;
+  }
+  .cat-card:hover {
+    border-color: hsl(var(--foreground) / 0.45);
+    transform: translateY(-2px);
+  }
+  .cat-head {
+    display: flex; align-items: start; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .cat-icon {
+    width: 40px; height: 40px;
+    background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground));
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) - 2px);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .cat-icon .lucide { width: 18px; height: 18px; }
+  .cat-count {
+    display: inline-flex; align-items: baseline; gap: 4px;
+    font-family: var(--font-mono);
+    color: hsl(var(--muted-foreground));
+  }
+  .cat-count .n {
+    color: hsl(var(--foreground));
+    font-weight: 600; font-size: 18px;
+  }
+  .cat-count .unit { font-size: 11px; }
+  .cat-name-cn {
+    font-size: 1.0625rem; font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 2px;
+  }
+  .cat-name-en {
+    font-family: var(--font-mono); font-size: 11.5px;
+    color: hsl(var(--muted-foreground));
+    letter-spacing: 0.02em;
+    margin-bottom: 12px;
+  }
+  .cat-desc {
+    font-size: 13.5px;
+    color: hsl(var(--muted-foreground));
+    line-height: 1.65;
+    margin-bottom: auto;
+  }
+  .cat-foot {
+    margin-top: 18px; padding-top: 14px;
+    border-top: 1px dashed hsl(var(--border));
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px;
+    color: hsl(var(--muted-foreground));
+  }
+  .cat-foot .latest {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    flex: 1; min-width: 0;
+  }
+  .cat-foot .arr {
+    margin-left: 10px;
+    color: hsl(var(--foreground));
+    transition: transform 0.2s ease;
+  }
+  .cat-card:hover .cat-foot .arr { transform: translateX(2px); }
+  .cat-foot .arr .lucide { width: 13px; height: 13px; }
+
+  /* ============ Article Cards (Section 02) ============ */
+  .article-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 768px) { .article-grid { grid-template-columns: 1fr; } }
+
+  .article-card {
+    display: flex; flex-direction: column;
+    padding: 20px 22px;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    transition: all 0.15s ease;
+    cursor: pointer;
+    text-decoration: none; color: inherit;
+  }
+  .article-card:hover {
+    border-color: hsl(var(--foreground) / 0.4);
+    background: hsl(var(--accent) / 0.4);
+  }
+  .article-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 10px;
+  }
+  .article-head .meta {
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .article-cat-pill {
+    font-family: var(--font-mono); font-size: 10.5px;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+    border-radius: 9999px;
+  }
+  .article-status {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: var(--font-mono); font-size: 10.5px;
+    color: hsl(var(--muted-foreground));
+  }
+  .article-status .dot {
+    width: 6px; height: 6px; border-radius: 9999px;
+    background: hsl(142 76% 36%);
+  }
+  .article-status.draft .dot { background: hsl(var(--muted-foreground)); }
+  .article-title {
+    font-size: 15.5px; font-weight: 600;
+    letter-spacing: -0.005em;
+    line-height: 1.45;
+    margin-bottom: 8px;
+  }
+  .article-excerpt {
+    font-size: 13.5px;
+    color: hsl(var(--muted-foreground));
+    line-height: 1.65;
+    margin-bottom: 16px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .article-foot {
+    margin-top: auto; padding-top: 12px;
+    border-top: 1px solid hsl(var(--border));
+    display: flex; align-items: center; gap: 14px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+  }
+  .article-foot .item { display: inline-flex; align-items: center; gap: 5px; }
+  .article-foot .item .lucide { width: 12px; height: 12px; }
+  .article-foot .feynman {
+    margin-left: auto;
+    display: inline-flex; align-items: center; gap: 4px;
+    color: hsl(var(--foreground));
+  }
+  .article-foot .feynman .dots { display: inline-flex; gap: 2px; }
+  .article-foot .feynman .d {
+    width: 6px; height: 6px; border-radius: 9999px;
+    background: hsl(var(--foreground));
+  }
+  .article-foot .feynman .d.empty { background: hsl(var(--border)); }
+
+  /* ============ Knowledge Graph (Section 03) ============ */
+  .graph-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  /* ---- Weekly radar strip inside graph card ---- */
+  .radar-strip {
+    border-top: 1px solid hsl(var(--border));
+    padding: 18px 22px 22px;
+    background: hsl(var(--background));
+  }
+  .radar-strip-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+    flex-wrap: wrap; gap: 10px;
+  }
+  .radar-strip-title {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .radar-strip-title .lucide { width: 14px; height: 14px; }
+  .radar-strip-title .kicker {
+    font-family: var(--font-mono); font-size: 10.5px; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin-left: 6px;
+    padding: 2px 8px;
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) - 2px);
+  }
+  .radar-strip-meta {
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .radar-strip-meta .num {
+    color: hsl(var(--foreground)); font-weight: 600;
+  }
+  .radar-strip-meta a {
+    color: hsl(var(--foreground));
+    border-bottom: 1px solid hsl(var(--border));
+    padding-bottom: 1px;
+    transition: border-color 0.15s;
+  }
+  .radar-strip-meta a:hover { border-color: hsl(var(--foreground)); }
+  .radar-nodes {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 880px) {
+    .radar-nodes { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 540px) {
+    .radar-nodes { grid-template-columns: repeat(2, 1fr); }
+  }
+  .radar-node {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 8px;
+    padding: 14px 8px 12px;
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) - 2px);
+    background: hsl(var(--card));
+    text-align: center;
+    transition: all 0.18s ease;
+    opacity: 0.45;
+    filter: grayscale(0.6);
+  }
+  .radar-node.in-plan {
+    opacity: 1;
+    filter: none;
+    border-color: hsl(142 71% 38% / 0.5);
+    background: linear-gradient(180deg, hsl(142 71% 38% / 0.04), hsl(var(--card)));
+    box-shadow: 0 0 0 3px hsl(142 71% 38% / 0.06);
+  }
+  .dark .radar-node.in-plan {
+    border-color: hsl(142 71% 50% / 0.5);
+    background: linear-gradient(180deg, hsl(142 71% 50% / 0.06), hsl(var(--card)));
+    box-shadow: 0 0 0 3px hsl(142 71% 50% / 0.08);
+  }
+  .radar-node-dot {
+    position: relative;
+    width: 10px; height: 10px; border-radius: 9999px;
+    background: hsl(var(--muted-foreground));
+  }
+  .radar-node.in-plan .radar-node-dot {
+    background: hsl(142 71% 38%);
+    box-shadow: 0 0 0 4px hsl(142 71% 38% / 0.18);
+  }
+  .dark .radar-node.in-plan .radar-node-dot {
+    background: hsl(142 71% 50%);
+    box-shadow: 0 0 0 4px hsl(142 71% 50% / 0.2);
+  }
+  .radar-node-num {
+    font-family: var(--font-mono); font-size: 10.5px; font-weight: 500;
+    letter-spacing: 0.08em;
+    color: hsl(var(--muted-foreground));
+  }
+  .radar-node-label {
+    font-size: 12px; font-weight: 500;
+    line-height: 1.35;
+    color: hsl(var(--foreground));
+    word-break: break-word;
+  }
+  .radar-node.in-plan .radar-node-label { font-weight: 600; }
+  .radar-strip-empty {
+    font-size: 12.5px; color: hsl(var(--muted-foreground));
+    margin-top: 12px;
+    padding: 10px 12px;
+    border: 1px dashed hsl(var(--border));
+    border-radius: calc(var(--radius) - 2px);
+    text-align: center;
+  }
+  .graph-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid hsl(var(--border));
+    background: hsl(var(--background));
+  }
+  .graph-toolbar-left {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: var(--font-mono); font-size: 11.5px;
+    color: hsl(var(--muted-foreground));
+  }
+  .graph-toolbar-left strong {
+    color: hsl(var(--foreground));
+    font-weight: 600;
+  }
+  .graph-toolbar-right { display: inline-flex; align-items: center; gap: 6px; }
+  .legend {
+    display: inline-flex; align-items: center; gap: 14px;
+    font-family: var(--font-mono); font-size: 10.5px;
+    color: hsl(var(--muted-foreground));
+  }
+  .legend .item { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .swatch {
+    width: 8px; height: 8px; border-radius: 9999px;
+    background: hsl(var(--foreground));
+  }
+  .legend .swatch.lg { width: 12px; height: 12px; }
+  .legend .swatch.sm { width: 5px; height: 5px; background: hsl(var(--muted-foreground)); }
+
+  .graph-canvas {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background:
+      radial-gradient(circle at 50% 50%, hsl(var(--foreground) / 0.03), transparent 70%),
+      hsl(var(--background));
+    overflow: hidden;
+  }
+  .graph-canvas svg { width: 100%; height: 100%; display: block; }
+
+  .graph-foot {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border-top: 1px solid hsl(var(--border));
+  }
+  .graph-stat {
+    padding: 14px 18px;
+    border-right: 1px solid hsl(var(--border));
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  .graph-stat:last-child { border-right: none; }
+  .graph-stat .v {
+    font-family: var(--font-mono); font-size: 18px; font-weight: 600;
+    color: hsl(var(--foreground));
+  }
+  .graph-stat .l {
+    font-size: 12px; color: hsl(var(--muted-foreground));
+  }
+  @media (max-width: 768px) {
+    .graph-foot { grid-template-columns: 1fr; }
+    .graph-stat { border-right: none; border-bottom: 1px solid hsl(var(--border)); }
+    .graph-stat:last-child { border-bottom: none; }
+    .legend { display: none; }
+  }
+
+  /* SVG node + edge styling — uses CSS vars so dark mode auto-adapts */
+  .node-edge { stroke: hsl(var(--foreground) / 0.15); stroke-width: 1; fill: none; }
+  .node-edge.strong { stroke: hsl(var(--foreground) / 0.35); stroke-width: 1.2; }
+  .node-hub { fill: hsl(var(--primary)); }
+  .node-article { fill: hsl(var(--background)); stroke: hsl(var(--foreground)); stroke-width: 1.4; }
+  .node-concept { fill: hsl(var(--muted-foreground)); }
+  .node-label {
+    font-family: var(--font-sans); font-size: 11px;
+    fill: hsl(var(--foreground)); font-weight: 500;
+  }
+  .node-label.hub { font-size: 12px; font-weight: 600; fill: hsl(var(--foreground)); }
+  .node-label.sub { font-size: 9.5px; fill: hsl(var(--muted-foreground)); font-family: var(--font-mono); }
+
+  /* ============ Footer ============ */
+  .site-footer {
+    border-top: 1px solid hsl(var(--border));
+    padding: 28px 0;
+    margin-top: 64px;
+  }
+  .footer-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+  }
+  .footer-brand {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; color: hsl(var(--muted-foreground));
+  }
+  .footer-brand .brand-mark { width: 22px; height: 22px; font-size: 11px; }
+  .footer-meta {
+    font-family: var(--font-mono); font-size: 12px;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* ============ Mobile ============ */
+  @media (max-width: 640px) {
+    .container { padding: 0 1rem; }
+    .section-head { flex-direction: column; align-items: start; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header class="site-header">
+  <div class="container inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">A</span>
+      <span>AICC</span>
+      <span class="brand-version">v1.0</span>
+    </a>
+    <nav class="nav-tabs" aria-label="主导航">
+      <a href="index.html" class="nav-tab"><i data-lucide="scroll-text"></i>宪法</a>
+      <a href="aicc-dashboard.html" class="nav-tab active"><i data-lucide="layout-grid"></i>工作台</a>
+      <a href="radar/index.html" class="nav-tab"><i data-lucide="radar"></i>雷达</a>
+      <a href="plan.html" class="nav-tab"><i data-lucide="bookmark-check"></i>计划</a>
+      <a href="graph.html" class="nav-tab"><i data-lucide="network"></i>图谱</a>
+    </nav>
+    <div class="header-actions">
+      <a href="aicc-editor.html" class="btn-new"><i data-lucide="plus"></i><span>新建</span></a>
+      <button class="icon-btn" aria-label="搜索"><i data-lucide="search"></i></button>
+      <button class="icon-btn" id="theme-toggle" aria-label="切换主题">
+        <i data-lucide="sun" class="sun"></i>
+        <i data-lucide="moon" class="moon"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ MAIN ============ -->
+<main>
+  <div class="container">
+
+    <!-- Hero strip -->
+    <section class="page-hero">
+      <div class="hero-kicker">WORKBENCH · 你的认知工作台</div>
+      <h1>第二大脑 · 正在生长</h1>
+      <p class="lede">这里收纳着你已用费曼学习法定稿的 AI 认知，三个分类、N 篇文章、一张正在迭代的知识图谱。</p>
+
+      <div class="stats-bar">
+        <div class="stat">
+          <div class="stat-label"><i data-lucide="file-text"></i>定稿文章</div>
+          <div class="stat-value">24</div>
+          <div class="stat-meta">本月 +6</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label"><i data-lucide="folder"></i>分类</div>
+          <div class="stat-value">3</div>
+          <div class="stat-meta">支柱稳定</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label"><i data-lucide="git-fork"></i>知识节点</div>
+          <div class="stat-value">142</div>
+          <div class="stat-meta">38 条强关联</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label"><i data-lucide="flame"></i>复利天数</div>
+          <div class="stat-value">87</div>
+          <div class="stat-meta">连续产出中</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 01 · 分类 ============ -->
+    <section class="section" id="categories">
+      <div class="section-head">
+        <div class="section-head-left">
+          <div class="section-meta">
+            <span class="section-num">01</span>
+            <span class="section-kicker">Categories · 三个认知支柱</span>
+          </div>
+          <h2>分类</h2>
+        </div>
+        <div class="section-head-right">
+          <a href="#" class="btn btn-ghost">
+            管理分类
+            <i data-lucide="settings-2"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="category-grid">
+
+        <!-- Category 1 -->
+        <article class="cat-card">
+          <div class="cat-head">
+            <div class="cat-icon"><i data-lucide="bot"></i></div>
+            <div class="cat-count"><span class="n">9</span><span class="unit">篇</span></div>
+          </div>
+          <div class="cat-name-cn">全球热门 Agent 产品</div>
+          <div class="cat-name-en">Global Agent Products</div>
+          <p class="cat-desc">追踪 Cursor、Claude Code、Devin、Lovable 等头部 Agent 产品的形态、范式与协作模式。</p>
+          <div class="cat-foot">
+            <span class="latest">最新 · Claude Code Skills 工程手册</span>
+            <span class="arr"><i data-lucide="arrow-right"></i></span>
+          </div>
+        </article>
+
+        <!-- Category 2 -->
+        <article class="cat-card">
+          <div class="cat-head">
+            <div class="cat-icon"><i data-lucide="cpu"></i></div>
+            <div class="cat-count"><span class="n">11</span><span class="unit">篇</span></div>
+          </div>
+          <div class="cat-name-cn">LLM 算法原理</div>
+          <div class="cat-name-en">LLM Algorithm Principles</div>
+          <p class="cat-desc">从 Transformer 到 Flash Attention，从 RoPE 到测试时计算，把抽象论文拆成可解释的认知单元。</p>
+          <div class="cat-foot">
+            <span class="latest">最新 · Flash Attention 2 / 3 工程差异</span>
+            <span class="arr"><i data-lucide="arrow-right"></i></span>
+          </div>
+        </article>
+
+        <!-- Category 3 -->
+        <article class="cat-card">
+          <div class="cat-head">
+            <div class="cat-icon"><i data-lucide="graduation-cap"></i></div>
+            <div class="cat-count"><span class="n">4</span><span class="unit">篇</span></div>
+          </div>
+          <div class="cat-name-cn">AI Native 工作学习</div>
+          <div class="cat-name-en">AI Native Workflow</div>
+          <p class="cat-desc">第二大脑构筑、Obsidian + Claude 工作流、费曼学习法重述——把 AI 嵌进日常的方法论。</p>
+          <div class="cat-foot">
+            <span class="latest">最新 · 如何评价你与 AI 的协作密度</span>
+            <span class="arr"><i data-lucide="arrow-right"></i></span>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ============ SECTION 02 · 文章 ============ -->
+    <section class="section" id="articles">
+      <div class="section-head">
+        <div class="section-head-left">
+          <div class="section-meta">
+            <span class="section-num">02</span>
+            <span class="section-kicker">Articles · 已定稿的认知</span>
+          </div>
+          <h2>最新文章</h2>
+        </div>
+        <div class="section-head-right">
+          <a href="#" class="btn btn-outline">
+            查看全部
+            <i data-lucide="arrow-right"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="article-grid">
+
+        <a href="article.html?slug=flash-attention" class="article-card">
+          <div class="article-head">
+            <div class="meta">
+              <span class="article-cat-pill">LLM 算法</span>
+            </div>
+            <span class="article-status"><span class="dot"></span>已定稿</span>
+          </div>
+          <h3 class="article-title">Flash Attention 2 与 3 的工程实现差异</h3>
+          <p class="article-excerpt">把 IO-Aware 思想拆成 Tiling、Recomputation、Warp 调度三层，对照 Transformer 原始 Attention 的访存复杂度。</p>
+          <div class="article-foot">
+            <span class="item"><i data-lucide="calendar"></i>05·22</span>
+            <span class="item"><i data-lucide="clock"></i>14 min</span>
+            <span class="feynman">
+              <span>Feynman</span>
+              <span class="dots"><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d empty"></span></span>
+            </span>
+          </div>
+        </a>
+
+        <a href="article.html?slug=claude-code-skills" class="article-card">
+          <div class="article-head">
+            <div class="meta">
+              <span class="article-cat-pill">Agent 产品</span>
+            </div>
+            <span class="article-status"><span class="dot"></span>已定稿</span>
+          </div>
+          <h3 class="article-title">Claude Code Skills 工程手册：从声明到调用</h3>
+          <p class="article-excerpt">Skill 是怎样被语义检索触发的、SKILL.md 的最小骨架、与 MCP 的边界与协作。</p>
+          <div class="article-foot">
+            <span class="item"><i data-lucide="calendar"></i>05·19</span>
+            <span class="item"><i data-lucide="clock"></i>9 min</span>
+            <span class="feynman">
+              <span>Feynman</span>
+              <span class="dots"><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span></span>
+            </span>
+          </div>
+        </a>
+
+        <a href="article.html?slug=ai-collaboration-density" class="article-card">
+          <div class="article-head">
+            <div class="meta">
+              <span class="article-cat-pill">AI Native</span>
+            </div>
+            <span class="article-status"><span class="dot"></span>已定稿</span>
+          </div>
+          <h3 class="article-title">如何评价你与 AI 的协作密度</h3>
+          <p class="article-excerpt">提出三种「评价题」反馈机制，避免把对 AI 的赞同误以为是自己的理解。</p>
+          <div class="article-foot">
+            <span class="item"><i data-lucide="calendar"></i>05·17</span>
+            <span class="item"><i data-lucide="clock"></i>7 min</span>
+            <span class="feynman">
+              <span>Feynman</span>
+              <span class="dots"><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d empty"></span></span>
+            </span>
+          </div>
+        </a>
+
+        <a href="article.html?slug=rope-position-encoding" class="article-card">
+          <div class="article-head">
+            <div class="meta">
+              <span class="article-cat-pill">LLM 算法</span>
+            </div>
+            <span class="article-status draft"><span class="dot"></span>审计中</span>
+          </div>
+          <h3 class="article-title">RoPE 旋转位置编码：从公式到工程实现</h3>
+          <p class="article-excerpt">为什么相对位置 = 绝对位置的旋转？把欧拉公式重新讲一遍，再拆 LLaMA 的代码。</p>
+          <div class="article-foot">
+            <span class="item"><i data-lucide="calendar"></i>05·15</span>
+            <span class="item"><i data-lucide="clock"></i>12 min</span>
+            <span class="feynman">
+              <span>Feynman</span>
+              <span class="dots"><span class="d"></span><span class="d"></span><span class="d"></span><span class="d empty"></span><span class="d empty"></span></span>
+            </span>
+          </div>
+        </a>
+
+        <a href="article.html?slug=cursor-composer-agent" class="article-card">
+          <div class="article-head">
+            <div class="meta">
+              <span class="article-cat-pill">Agent 产品</span>
+            </div>
+            <span class="article-status"><span class="dot"></span>已定稿</span>
+          </div>
+          <h3 class="article-title">Cursor 1.0 · Composer 与 Background Agent</h3>
+          <p class="article-excerpt">从交互式补全到后台并行 Agent，IDE 形态的两种范式如何融合。</p>
+          <div class="article-foot">
+            <span class="item"><i data-lucide="calendar"></i>05·12</span>
+            <span class="item"><i data-lucide="clock"></i>10 min</span>
+            <span class="feynman">
+              <span>Feynman</span>
+              <span class="dots"><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d empty"></span></span>
+            </span>
+          </div>
+        </a>
+
+        <a href="article.html?slug=obsidian-claude-workflow" class="article-card">
+          <div class="article-head">
+            <div class="meta">
+              <span class="article-cat-pill">AI Native</span>
+            </div>
+            <span class="article-status"><span class="dot"></span>已定稿</span>
+          </div>
+          <h3 class="article-title">Obsidian + Claude 双向工作流</h3>
+          <p class="article-excerpt">把 MD 笔记作为 Source of Truth，让 Claude 做评价者而非代笔人的完整流程。</p>
+          <div class="article-foot">
+            <span class="item"><i data-lucide="calendar"></i>05·09</span>
+            <span class="item"><i data-lucide="clock"></i>8 min</span>
+            <span class="feynman">
+              <span>Feynman</span>
+              <span class="dots"><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span></span>
+            </span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- ============ SECTION 03 · 知识图谱 ============ -->
+    <section class="section" id="graph">
+      <div class="section-head">
+        <div class="section-head-left">
+          <div class="section-meta">
+            <span class="section-num">03</span>
+            <span class="section-kicker">Knowledge Graph · 你的认知版图</span>
+          </div>
+          <h2>知识图谱</h2>
+        </div>
+        <div class="section-head-right">
+          <a href="#" class="btn btn-default">
+            进入完整图谱
+            <i data-lucide="arrow-up-right"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="graph-card">
+        <div class="graph-toolbar">
+          <div class="graph-toolbar-left">
+            <span><strong>142</strong> 个节点</span>
+            <span>·</span>
+            <span><strong>38</strong> 条强关联</span>
+            <span>·</span>
+            <span>更新于 <strong>2 小时前</strong></span>
+          </div>
+          <div class="graph-toolbar-right">
+            <div class="legend">
+              <span class="item"><span class="swatch lg"></span>分类</span>
+              <span class="item"><span class="swatch" style="background:transparent;border:1.5px solid hsl(var(--foreground));"></span>文章</span>
+              <span class="item"><span class="swatch sm"></span>概念</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="graph-canvas">
+          <svg viewBox="0 0 800 450" preserveAspectRatio="xMidYMid meet" aria-label="知识图谱预览">
+            <!-- ============ Edges ============ -->
+            <g class="edges">
+              <!-- LLM cluster -->
+              <line class="node-edge strong" x1="220" y1="170" x2="140" y2="100" />
+              <line class="node-edge strong" x1="220" y1="170" x2="120" y2="200" />
+              <line class="node-edge strong" x1="220" y1="170" x2="170" y2="270" />
+              <line class="node-edge strong" x1="220" y1="170" x2="290" y2="90" />
+              <line class="node-edge strong" x1="220" y1="170" x2="310" y2="220" />
+              <line class="node-edge" x1="140" y1="100" x2="80" y2="50" />
+              <line class="node-edge" x1="120" y1="200" x2="60" y2="260" />
+              <line class="node-edge" x1="170" y1="270" x2="100" y2="340" />
+              <line class="node-edge" x1="290" y1="90" x2="370" y2="60" />
+
+              <!-- Agent cluster -->
+              <line class="node-edge strong" x1="560" y1="160" x2="490" y2="90" />
+              <line class="node-edge strong" x1="560" y1="160" x2="640" y2="100" />
+              <line class="node-edge strong" x1="560" y1="160" x2="680" y2="200" />
+              <line class="node-edge strong" x1="560" y1="160" x2="500" y2="240" />
+              <line class="node-edge" x1="490" y1="90" x2="420" y2="40" />
+              <line class="node-edge" x1="640" y1="100" x2="720" y2="50" />
+              <line class="node-edge" x1="680" y1="200" x2="745" y2="265" />
+              <line class="node-edge" x1="500" y1="240" x2="430" y2="300" />
+
+              <!-- AI Native cluster -->
+              <line class="node-edge strong" x1="400" y1="340" x2="330" y2="370" />
+              <line class="node-edge strong" x1="400" y1="340" x2="470" y2="370" />
+              <line class="node-edge strong" x1="400" y1="340" x2="400" y2="410" />
+              <line class="node-edge strong" x1="400" y1="340" x2="350" y2="290" />
+
+              <!-- Cross-cluster (concept bridges) -->
+              <line class="node-edge" x1="310" y1="220" x2="500" y2="240" />
+              <line class="node-edge" x1="350" y1="290" x2="430" y2="300" />
+              <line class="node-edge" x1="290" y1="90" x2="490" y2="90" stroke-dasharray="3,3" />
+              <line class="node-edge" x1="170" y1="270" x2="400" y2="340" stroke-dasharray="3,3" />
+              <line class="node-edge" x1="500" y1="240" x2="400" y2="340" stroke-dasharray="3,3" />
+            </g>
+
+            <!-- ============ Concept (small) nodes ============ -->
+            <g class="concepts">
+              <circle class="node-concept" cx="80" cy="50" r="3" />
+              <circle class="node-concept" cx="60" cy="260" r="3" />
+              <circle class="node-concept" cx="100" cy="340" r="3" />
+              <circle class="node-concept" cx="370" cy="60" r="3" />
+              <circle class="node-concept" cx="420" cy="40" r="3" />
+              <circle class="node-concept" cx="720" cy="50" r="3" />
+              <circle class="node-concept" cx="745" cy="265" r="3" />
+              <circle class="node-concept" cx="430" cy="300" r="3" />
+            </g>
+
+            <!-- ============ Article (medium) nodes ============ -->
+            <g class="articles">
+              <!-- LLM articles -->
+              <circle class="node-article" cx="140" cy="100" r="7" />
+              <text class="node-label sub" x="140" y="86" text-anchor="middle">Flash Attn</text>
+              <circle class="node-article" cx="120" cy="200" r="7" />
+              <text class="node-label sub" x="100" y="218" text-anchor="end">RoPE</text>
+              <circle class="node-article" cx="170" cy="270" r="7" />
+              <text class="node-label sub" x="170" y="288" text-anchor="middle">Test-Time</text>
+              <circle class="node-article" cx="290" cy="90" r="7" />
+              <text class="node-label sub" x="290" y="76" text-anchor="middle">o1 范式</text>
+              <circle class="node-article" cx="310" cy="220" r="7" />
+              <text class="node-label sub" x="328" y="224" text-anchor="start">MoE</text>
+
+              <!-- Agent articles -->
+              <circle class="node-article" cx="490" cy="90" r="7" />
+              <text class="node-label sub" x="490" y="76" text-anchor="middle">Cursor</text>
+              <circle class="node-article" cx="640" cy="100" r="7" />
+              <text class="node-label sub" x="640" y="86" text-anchor="middle">Claude Code</text>
+              <circle class="node-article" cx="680" cy="200" r="7" />
+              <text class="node-label sub" x="694" y="204" text-anchor="start">Devin</text>
+              <circle class="node-article" cx="500" cy="240" r="7" />
+              <text class="node-label sub" x="486" y="244" text-anchor="end">Lovable</text>
+
+              <!-- AI Native articles -->
+              <circle class="node-article" cx="330" cy="370" r="7" />
+              <text class="node-label sub" x="316" y="374" text-anchor="end">第二大脑</text>
+              <circle class="node-article" cx="470" cy="370" r="7" />
+              <text class="node-label sub" x="484" y="374" text-anchor="start">协作密度</text>
+              <circle class="node-article" cx="350" cy="290" r="7" />
+              <text class="node-label sub" x="350" y="277" text-anchor="middle">Obsidian</text>
+              <circle class="node-article" cx="400" cy="410" r="7" />
+              <text class="node-label sub" x="400" y="430" text-anchor="middle">费曼法</text>
+            </g>
+
+            <!-- ============ Category hubs (large) ============ -->
+            <g class="hubs">
+              <circle class="node-hub" cx="220" cy="170" r="16" />
+              <text class="node-label hub" x="220" y="148" text-anchor="middle">LLM 算法</text>
+
+              <circle class="node-hub" cx="560" cy="160" r="16" />
+              <text class="node-label hub" x="560" y="138" text-anchor="middle">Agent 产品</text>
+
+              <circle class="node-hub" cx="400" cy="340" r="16" />
+              <text class="node-label hub" x="400" y="318" text-anchor="middle">AI Native</text>
+            </g>
+          </svg>
+        </div>
+
+        <!-- ===== Weekly Radar · Deep-Plan strip ===== -->
+        <div class="radar-strip" id="radar-strip">
+          <div class="radar-strip-head">
+            <div class="radar-strip-title">
+              <i data-lucide="radar"></i>
+              本周雷达 · 深入计划
+              <span class="kicker">2026-W22</span>
+            </div>
+            <div class="radar-strip-meta">
+              已选 <span class="num" id="radar-plan-count">0</span> / 7 ·
+              <a href="radar/index.html">前往雷达页选择 →</a>
+            </div>
+          </div>
+          <div class="radar-nodes" id="radar-nodes">
+            <div class="radar-node" data-id="2026-W22-01-dynamic-workflows">
+              <span class="radar-node-dot"></span>
+              <span class="radar-node-num">01</span>
+              <span class="radar-node-label">Dynamic Workflows</span>
+            </div>
+            <div class="radar-node" data-id="2026-W22-02-rlvr">
+              <span class="radar-node-dot"></span>
+              <span class="radar-node-num">02</span>
+              <span class="radar-node-label">RLVR</span>
+            </div>
+            <div class="radar-node" data-id="2026-W22-03-code-sandbox">
+              <span class="radar-node-dot"></span>
+              <span class="radar-node-num">03</span>
+              <span class="radar-node-label">Code Sandbox</span>
+            </div>
+            <div class="radar-node" data-id="2026-W22-04-ppo-grpo">
+              <span class="radar-node-dot"></span>
+              <span class="radar-node-num">04</span>
+              <span class="radar-node-label">PPO / GRPO</span>
+            </div>
+            <div class="radar-node" data-id="2026-W22-05-multi-turn-rl">
+              <span class="radar-node-dot"></span>
+              <span class="radar-node-num">05</span>
+              <span class="radar-node-label">Multi-turn RL</span>
+            </div>
+            <div class="radar-node" data-id="2026-W22-06-tool-use">
+              <span class="radar-node-dot"></span>
+              <span class="radar-node-num">06</span>
+              <span class="radar-node-label">Tool Use</span>
+            </div>
+            <div class="radar-node" data-id="2026-W22-07-distributed-rl">
+              <span class="radar-node-dot"></span>
+              <span class="radar-node-num">07</span>
+              <span class="radar-node-label">Distributed RL</span>
+            </div>
+          </div>
+          <div class="radar-strip-empty" id="radar-strip-empty" style="display:none;">
+            尚未选择本周深入认知点 · 未学习节点已置灰
+          </div>
+        </div>
+
+        <div class="graph-foot">
+          <div class="graph-stat"><span class="v">3</span><span class="l">认知支柱（分类）</span></div>
+          <div class="graph-stat"><span class="v">24</span><span class="l">文章节点</span></div>
+          <div class="graph-stat"><span class="v">115</span><span class="l">概念节点 · 含跨域桥接</span></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <span class="brand-mark">A</span>
+      <span>AICC · 你的 AI 认知工作台</span>
+    </div>
+    <div class="footer-meta">v1.0 · Last sync 2 小时前</div>
+  </div>
+</footer>
+
+<script>
+  lucide.createIcons();
+
+  const toggle = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  const stored = localStorage.getItem('aicc-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (stored === 'dark' || (!stored && prefersDark)) root.classList.add('dark');
+  toggle.addEventListener('click', () => {
+    root.classList.toggle('dark');
+    localStorage.setItem('aicc-theme', root.classList.contains('dark') ? 'dark' : 'light');
+  });
+
+  /* ====== Sync deep-plan into knowledge graph radar strip ====== */
+  const PLAN_KEY = 'aicc-deep-plan';
+  function readPlan() {
+    try {
+      const raw = localStorage.getItem(PLAN_KEY);
+      return new Set(raw ? JSON.parse(raw) : []);
+    } catch { return new Set(); }
+  }
+  function syncRadarStrip() {
+    const plan = readPlan();
+    const nodes = document.querySelectorAll('#radar-nodes .radar-node');
+    let n = 0;
+    nodes.forEach(node => {
+      const inPlan = plan.has(node.dataset.id);
+      node.classList.toggle('in-plan', inPlan);
+      if (inPlan) n++;
+    });
+    const countEl = document.getElementById('radar-plan-count');
+    const emptyEl = document.getElementById('radar-strip-empty');
+    if (countEl) countEl.textContent = n;
+    if (emptyEl) emptyEl.style.display = (n === 0) ? 'block' : 'none';
+  }
+  window.addEventListener('storage', (e) => {
+    if (e.key === PLAN_KEY) syncRadarStrip();
+  });
+  // Re-sync when window regains focus (catches in-tab changes from same-origin pages)
+  window.addEventListener('focus', syncRadarStrip);
+  syncRadarStrip();
+</script>
+
+</body>
+</html>

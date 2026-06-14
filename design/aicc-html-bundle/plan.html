@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AICC · 我的深度计划</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --background: 0 0% 100%; --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%; --card-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%; --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%; --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%; --accent: 240 4.8% 95.9%;
+    --border: 240 5.9% 90%; --ring: 240 10% 3.9%; --radius: 0.5rem;
+    --frontier: 38 92% 50%; --mature: 142 71% 38%;
+    --learning: 217 91% 60%; --published: 142 71% 38%;
+    --font-sans: 'Geist','Noto Sans SC',-apple-system,system-ui,sans-serif;
+    --font-mono: 'Geist Mono','SF Mono',Menlo,monospace;
+  }
+  .dark {
+    --background: 240 10% 3.9%; --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%; --primary: 0 0% 98%; --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%; --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%; --accent: 240 3.7% 15.9%;
+    --border: 240 3.7% 15.9%; --ring: 240 4.9% 83.9%;
+    --frontier: 38 92% 60%; --mature: 142 71% 50%;
+    --learning: 217 91% 70%; --published: 142 71% 55%;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{background:hsl(var(--background));color:hsl(var(--foreground));font-family:var(--font-sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;font-feature-settings:'rlig' 1,'calt' 1}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:none;background:none}
+  .container{max-width:1200px;margin:0 auto;padding:0 1.5rem}
+
+  .site-header{position:sticky;top:0;z-index:50;background:hsl(var(--background)/0.85);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid hsl(var(--border))}
+  .site-header .inner{height:64px;display:flex;align-items:center;justify-content:space-between}
+  .brand{display:inline-flex;align-items:center;gap:10px;font-weight:600;font-size:15px;letter-spacing:-0.01em}
+  .brand-mark{width:28px;height:28px;background:hsl(var(--primary));color:hsl(var(--primary-foreground));border-radius:calc(var(--radius) - 2px);display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:600;font-size:13px}
+  .brand-version{font-family:var(--font-mono);font-size:11px;color:hsl(var(--muted-foreground));padding:2px 8px;border:1px solid hsl(var(--border));border-radius:calc(var(--radius) - 2px);margin-left:4px}
+  .nav-tabs{display:inline-flex;align-items:center;gap:2px;background:hsl(var(--secondary));padding:4px;border-radius:calc(var(--radius) - 2px)}
+  .nav-tab{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;font-size:13px;font-weight:500;color:hsl(var(--muted-foreground));border-radius:calc(var(--radius) - 4px);transition:all 0.15s ease}
+  .nav-tab:hover{color:hsl(var(--foreground))}
+  .nav-tab.active{background:hsl(var(--background));color:hsl(var(--foreground));box-shadow:0 1px 2px hsl(var(--foreground)/0.06)}
+  .nav-tab .lucide{width:13px;height:13px}
+  .header-actions{display:inline-flex;align-items:center;gap:8px}
+  .icon-btn{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;background:transparent;color:hsl(var(--foreground));border-radius:calc(var(--radius) - 2px);transition:background 0.15s ease}
+  .icon-btn:hover{background:hsl(var(--accent))}
+  .icon-btn .lucide{width:16px;height:16px}
+  .icon-btn .moon{display:none}
+  .dark .icon-btn .sun{display:none}
+  .dark .icon-btn .moon{display:inline-block}
+  @media (max-width:768px){.nav-tabs{display:none}}
+
+  main{padding:64px 0 96px}
+  .page-hero{margin-bottom:36px}
+  .hero-kicker{display:inline-flex;align-items:center;gap:9px;font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.18em;text-transform:uppercase;color:hsl(var(--muted-foreground));margin-bottom:18px}
+  .hero-kicker .pulse{width:6px;height:6px;border-radius:9999px;background:hsl(var(--learning));box-shadow:0 0 0 4px hsl(var(--learning)/0.15);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 4px hsl(var(--learning)/0.15)}50%{box-shadow:0 0 0 8px hsl(var(--learning)/0.05)}}
+  .page-hero h1{font-size:clamp(2.25rem,5vw,3.5rem);font-weight:600;letter-spacing:-0.04em;line-height:1.05;margin-bottom:18px}
+  .page-hero .lede{max-width:62ch;color:hsl(var(--muted-foreground));font-size:15.5px;line-height:1.7}
+
+  .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0 36px}
+  @media (max-width:768px){.summary-grid{grid-template-columns:repeat(2,1fr)}}
+  .stat-card{padding:18px 20px;border:1px solid hsl(var(--border));border-radius:var(--radius);background:hsl(var(--card))}
+  .stat-card .label{font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.18em;text-transform:uppercase;color:hsl(var(--muted-foreground));margin-bottom:10px;display:inline-flex;align-items:center;gap:6px}
+  .stat-card .label .lucide{width:12px;height:12px}
+  .stat-card .value{font-family:var(--font-mono);font-size:34px;font-weight:500;letter-spacing:-0.04em;line-height:1;color:hsl(var(--foreground));font-feature-settings:'tnum' 1}
+  .stat-card .sub{margin-top:6px;font-size:11.5px;color:hsl(var(--muted-foreground))}
+  .stat-card.in-plan .value{color:hsl(var(--frontier))}
+  .stat-card.learning .value{color:hsl(var(--learning))}
+  .stat-card.published .value{color:hsl(var(--published))}
+
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid hsl(var(--border));flex-wrap:wrap}
+  .filter-group{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .filter-label{font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:hsl(var(--muted-foreground));margin-right:8px}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;font-size:12.5px;font-weight:500;color:hsl(var(--muted-foreground));border:1px solid hsl(var(--border));border-radius:9999px;background:hsl(var(--card));transition:all 0.15s ease}
+  .chip:hover{color:hsl(var(--foreground));background:hsl(var(--accent))}
+  .chip.active{color:hsl(var(--primary-foreground));background:hsl(var(--primary));border-color:hsl(var(--primary))}
+  .chip .dot{width:6px;height:6px;border-radius:9999px}
+  .chip .dot.in-plan{background:hsl(var(--frontier))}
+  .chip .dot.learning{background:hsl(var(--learning))}
+  .chip .dot.published{background:hsl(var(--published))}
+
+  .plan-list{display:grid;grid-template-columns:1fr;gap:14px}
+  .plan-item{display:grid;grid-template-columns:80px 1fr auto;gap:18px;padding:18px 22px;border:1px solid hsl(var(--border));border-radius:var(--radius);background:hsl(var(--card));align-items:center;transition:border-color 0.18s ease,box-shadow 0.18s ease,transform 0.18s ease}
+  .plan-item:hover{border-color:hsl(var(--foreground)/0.18);box-shadow:0 8px 24px -12px hsl(var(--foreground)/0.15);transform:translateY(-1px)}
+  .plan-item.is-published{border-color:hsl(var(--published)/0.4);background:hsl(var(--published)/0.04)}
+  .plan-item.is-learning{border-left:3px solid hsl(var(--learning))}
+
+  .plan-num{font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:hsl(var(--muted-foreground));text-align:left;line-height:1.4;font-feature-settings:'tnum' 1}
+  .plan-num strong{display:block;font-size:13px;color:hsl(var(--foreground));font-weight:600;letter-spacing:0.04em;margin-top:2px}
+
+  .plan-body{min-width:0}
+  .plan-en{font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:hsl(var(--muted-foreground));margin-bottom:4px}
+  .plan-title{font-size:1.05rem;font-weight:600;letter-spacing:-0.01em;color:hsl(var(--foreground));margin-bottom:8px}
+  .plan-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:hsl(var(--muted-foreground))}
+  .plan-meta .badge{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border:1px solid hsl(var(--border));border-radius:9999px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.04em}
+  .plan-meta .badge .dot{width:5px;height:5px;border-radius:9999px}
+  .plan-meta .badge .dot.in-plan{background:hsl(var(--frontier))}
+  .plan-meta .badge .dot.learning{background:hsl(var(--learning))}
+  .plan-meta .badge .dot.published{background:hsl(var(--published))}
+
+  .plan-actions{display:inline-flex;align-items:center;gap:8px;flex-shrink:0}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:13px;font-weight:500;border-radius:calc(var(--radius) - 2px);border:1px solid hsl(var(--border));background:hsl(var(--background));color:hsl(var(--foreground));transition:all 0.15s ease;white-space:nowrap}
+  .btn:hover{background:hsl(var(--accent))}
+  .btn.primary{background:hsl(var(--primary));color:hsl(var(--primary-foreground));border-color:hsl(var(--primary))}
+  .btn.primary:hover{background:hsl(var(--primary)/0.9)}
+  .btn .lucide{width:13px;height:13px}
+  .btn-remove{padding:8px;color:hsl(var(--muted-foreground))}
+  .btn-remove:hover{color:hsl(var(--frontier));background:hsl(var(--frontier)/0.08)}
+
+  .empty-state{padding:64px 24px;text-align:center;border:1px dashed hsl(var(--border));border-radius:var(--radius);color:hsl(var(--muted-foreground))}
+  .empty-state .icon-wrap{width:56px;height:56px;border-radius:9999px;background:hsl(var(--secondary));display:inline-flex;align-items:center;justify-content:center;margin-bottom:18px}
+  .empty-state .icon-wrap .lucide{width:24px;height:24px;color:hsl(var(--muted-foreground))}
+  .empty-state h3{font-size:1.1rem;font-weight:600;color:hsl(var(--foreground));margin-bottom:8px}
+  .empty-state p{max-width:46ch;margin:0 auto 18px;font-size:14px}
+  .empty-state .btn{margin:0 auto}
+
+  footer{border-top:1px solid hsl(var(--border));padding:24px 0;font-size:12px;color:hsl(var(--muted-foreground));font-family:var(--font-mono);letter-spacing:0.04em;margin-top:48px}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container inner">
+    <a class="brand" href="./index.html">
+      <span class="brand-mark">A</span>
+      AICC
+      <span class="brand-version">v0.2</span>
+    </a>
+    <nav class="nav-tabs" aria-label="主导航">
+      <a href="./index.html" class="nav-tab"><i data-lucide="scroll-text"></i>宪法</a>
+      <a href="./aicc-dashboard.html" class="nav-tab"><i data-lucide="layout-grid"></i>工作台</a>
+      <a href="./radar/index.html" class="nav-tab"><i data-lucide="radar"></i>雷达</a>
+      <a href="./plan.html" class="nav-tab active"><i data-lucide="bookmark-check"></i>计划</a>
+      <a href="./graph.html" class="nav-tab"><i data-lucide="network"></i>图谱</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" id="theme-toggle" aria-label="切换主题">
+        <i data-lucide="sun" class="sun"></i>
+        <i data-lucide="moon" class="moon"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+    <section class="page-hero">
+      <div class="hero-kicker"><span class="pulse"></span><span>Deep Learning Plan · 跨周累积</span></div>
+      <h1>我的深度计划</h1>
+      <p class="lede">从每周雷达中挑选出值得深入的认知点，沉淀到这里。配合费曼学习法工作台，把"知道"转化为"能讲清楚"。</p>
+    </section>
+
+    <div class="summary-grid">
+      <div class="stat-card">
+        <div class="label"><i data-lucide="layers"></i>计划总数</div>
+        <div class="value" data-summary="total">0</div>
+        <div class="sub">跨周累积</div>
+      </div>
+      <div class="stat-card in-plan">
+        <div class="label"><i data-lucide="bookmark"></i>待启动</div>
+        <div class="value" data-summary="in-plan">0</div>
+        <div class="sub">已加入，未开始</div>
+      </div>
+      <div class="stat-card learning">
+        <div class="label"><i data-lucide="loader"></i>学习中</div>
+        <div class="value" data-summary="learning">0</div>
+        <div class="sub">费曼工作台进行中</div>
+      </div>
+      <div class="stat-card published">
+        <div class="label"><i data-lucide="check-circle-2"></i>已成稿</div>
+        <div class="value" data-summary="published">0</div>
+        <div class="sub">已生成文章</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="filter-group">
+        <span class="filter-label">筛选</span>
+        <button class="chip active" data-filter="all">全部</button>
+        <button class="chip" data-filter="in-plan"><span class="dot in-plan"></span>待启动</button>
+        <button class="chip" data-filter="learning"><span class="dot learning"></span>学习中</button>
+        <button class="chip" data-filter="published"><span class="dot published"></span>已成稿</button>
+      </div>
+      <div style="display:inline-flex;align-items:center;gap:10px">
+        <span style="font-family:var(--font-mono);font-size:11px;color:hsl(var(--muted-foreground));letter-spacing:0.04em">按加入时间排序 · 新→旧</span>
+      </div>
+    </div>
+
+    <div class="plan-list" id="plan-list"></div>
+
+    <div class="empty-state" id="empty-state" style="display:none">
+      <div class="icon-wrap"><i data-lucide="bookmark-plus"></i></div>
+      <h3>计划列表为空</h3>
+      <p>从认知雷达页面挑选感兴趣的认知点，点击"加入深度计划"，它们将出现在这里。</p>
+      <a class="btn primary" href="./radar/index.html"><i data-lucide="radar"></i>前往认知雷达</a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container">AICC · Deep Learning Plan · 数据存储于本地浏览器</div>
+</footer>
+
+<script>
+  // ---- theme ----
+  const THEME_KEY = 'aicc-theme';
+  const root = document.documentElement;
+  function applyTheme(t){ if(t==='dark') root.classList.add('dark'); else root.classList.remove('dark'); }
+  applyTheme(localStorage.getItem(THEME_KEY) || 'light');
+  document.getElementById('theme-toggle').addEventListener('click', ()=>{
+    const cur = root.classList.contains('dark') ? 'dark' : 'light';
+    const nxt = cur==='dark' ? 'light' : 'dark';
+    localStorage.setItem(THEME_KEY, nxt); applyTheme(nxt);
+  });
+
+  // ---- state ----
+  const STATE_KEY = 'aicc-cognition-state';
+  const PLAN_KEY = 'aicc-deep-plan';
+
+  function readState(){
+    try { return JSON.parse(localStorage.getItem(STATE_KEY) || '{}'); }
+    catch { return {}; }
+  }
+  function writeState(obj){
+    localStorage.setItem(STATE_KEY, JSON.stringify(obj));
+    const planIds = Object.entries(obj)
+      .filter(([_, v]) => v && v.state && v.state !== 'discovered')
+      .map(([k]) => k);
+    localStorage.setItem(PLAN_KEY, JSON.stringify(planIds));
+  }
+
+  const STATE_LABELS = {
+    'in-plan': '待启动',
+    'learning': '学习中',
+    'published': '已成稿'
+  };
+
+  let currentFilter = 'all';
+
+  function render(){
+    const state = readState();
+    const items = Object.entries(state)
+      .filter(([_, v]) => v && v.state && v.state !== 'discovered')
+      .map(([id, v]) => ({ id, ...v }))
+      .sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+
+    // summary counts
+    document.querySelector('[data-summary="total"]').textContent = items.length;
+    document.querySelector('[data-summary="in-plan"]').textContent = items.filter(i => i.state === 'in-plan').length;
+    document.querySelector('[data-summary="learning"]').textContent = items.filter(i => i.state === 'learning').length;
+    document.querySelector('[data-summary="published"]').textContent = items.filter(i => i.state === 'published').length;
+
+    // filter
+    const visible = currentFilter === 'all' ? items : items.filter(i => i.state === currentFilter);
+    const list = document.getElementById('plan-list');
+    const empty = document.getElementById('empty-state');
+
+    if (items.length === 0) {
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      empty.querySelector('h3').textContent = '计划列表为空';
+      empty.querySelector('p').textContent = '从认知雷达页面挑选感兴趣的认知点，点击"加入深度计划"，它们将出现在这里。';
+      if (window.lucide) lucide.createIcons();
+      return;
+    }
+    if (visible.length === 0) {
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      empty.querySelector('h3').textContent = '该筛选条件下没有项';
+      empty.querySelector('p').textContent = '尝试切换筛选条件，或前往认知雷达加入新的认知点。';
+      if (window.lucide) lucide.createIcons();
+      return;
+    }
+    empty.style.display = 'none';
+
+    list.innerHTML = visible.map(item => {
+      const weekMatch = item.id.match(/^(\d{4}-W\d{2})-(\d{2})/);
+      const week = weekMatch ? weekMatch[1] : '';
+      const idx = weekMatch ? weekMatch[2] : '';
+      const enTitle = item.titleEn || item.id.split('-').slice(3).join(' ').replace(/\b\w/g, c => c.toUpperCase());
+      const zhTitle = item.title || item.id;
+      const sourceWeek = item.sourceWeek || (week ? week.replace('W24', '2026-06-12') : '');
+      const radarUrl = item.sourceFile ? `./radar/${item.sourceFile}` : './radar/2026-06-12.html';
+
+      let primaryAction = '';
+      if (item.state === 'in-plan') {
+        primaryAction = `<a class="btn primary" href="./feynman/index.html?id=${encodeURIComponent(item.id)}"><i data-lucide="bookmark-check"></i>开始费曼学习</a>`;
+      } else if (item.state === 'learning') {
+        primaryAction = `<a class="btn primary" href="./feynman/index.html?id=${encodeURIComponent(item.id)}"><i data-lucide="loader"></i>继续学习</a>`;
+      } else if (item.state === 'published') {
+        const slug = item.slug || '';
+        primaryAction = `<a class="btn primary" href="./article.html?slug=${encodeURIComponent(slug)}"><i data-lucide="book-open"></i>查看文章</a>`;
+      }
+
+      return `
+        <article class="plan-item is-${item.state}">
+          <div class="plan-num">
+            ${week}
+            <strong>· ${idx}</strong>
+          </div>
+          <div class="plan-body">
+            <div class="plan-en">${enTitle}</div>
+            <div class="plan-title">${zhTitle}</div>
+            <div class="plan-meta">
+              <span class="badge"><span class="dot ${item.state}"></span>${STATE_LABELS[item.state] || item.state}</span>
+              <span><a href="${radarUrl}" style="color:hsl(var(--muted-foreground));text-decoration:underline;text-decoration-color:hsl(var(--border));text-underline-offset:3px">来源：${sourceWeek || week} 雷达</a></span>
+              ${item.addedAt ? `<span>加入：${new Date(item.addedAt).toLocaleDateString('zh-CN')}</span>` : ''}
+            </div>
+          </div>
+          <div class="plan-actions">
+            ${primaryAction}
+            <button class="btn btn-remove" data-remove="${item.id}" title="移除"><i data-lucide="x"></i></button>
+          </div>
+        </article>
+      `;
+    }).join('');
+
+    list.querySelectorAll('[data-remove]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-remove');
+        const s = readState();
+        if (s[id]) { delete s[id]; writeState(s); render(); }
+      });
+    });
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // filter chips
+  document.querySelectorAll('[data-filter]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('[data-filter]').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      currentFilter = chip.getAttribute('data-filter');
+      render();
+    });
+  });
+
+  window.addEventListener('storage', render);
+  window.addEventListener('focus', render);
+  render();
+</script>
+</body>
+</html>

@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>献给和我一样的 AI 认知长期进化者</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  /* ============ shadcn/ui Design Tokens ============ */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
+    --radius: 0.5rem;
+
+    --font-sans: 'Geist', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --font-mono: 'Geist Mono', 'SF Mono', Menlo, Consolas, monospace;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+
+  /* ============ Reset ============ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+  body {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  ::selection { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; }
+  svg { display: inline-block; }
+
+  /* ============ Layout ============ */
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+
+  /* ============ Header ============ */
+  .site-header {
+    position: sticky; top: 0; z-index: 50;
+    background: hsl(var(--background) / 0.85);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .site-header .inner {
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-weight: 600; font-size: 15px; letter-spacing: -0.01em;
+  }
+  .brand-mark {
+    width: 28px; height: 28px;
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border-radius: calc(var(--radius) - 2px);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 13px;
+  }
+  .brand-version {
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    padding: 2px 8px; border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) - 2px);
+    margin-left: 4px;
+  }
+  .nav-tabs {
+    display: inline-flex; align-items: center; gap: 2px;
+    background: hsl(var(--secondary));
+    padding: 4px; border-radius: calc(var(--radius) - 2px);
+  }
+  .nav-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px;
+    font-size: 13px; font-weight: 500;
+    color: hsl(var(--muted-foreground));
+    border-radius: calc(var(--radius) - 4px);
+    transition: all 0.15s ease;
+  }
+  .nav-tab:hover { color: hsl(var(--foreground)); }
+  .nav-tab.active {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    box-shadow: 0 1px 2px hsl(var(--foreground) / 0.06);
+  }
+  .nav-tab .lucide { width: 13px; height: 13px; }
+  .btn-new {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 34px; padding: 0 12px;
+    font-size: 13px; font-weight: 500;
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border-radius: calc(var(--radius) - 2px);
+    transition: opacity 0.15s ease;
+  }
+  .btn-new:hover { opacity: 0.9; }
+  .btn-new .lucide { width: 13px; height: 13px; }
+  @media (max-width: 768px) { .nav-tabs { display: none; } .btn-new span { display: none; } }
+  .header-actions { display: inline-flex; align-items: center; gap: 8px; }
+  .icon-btn {
+    width: 36px; height: 36px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid transparent; background: transparent;
+    color: hsl(var(--foreground));
+    border-radius: calc(var(--radius) - 2px);
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .icon-btn:hover { background: hsl(var(--accent)); }
+  .icon-btn .lucide { width: 16px; height: 16px; }
+  .icon-btn .moon { display: none; }
+  .dark .icon-btn .sun { display: none; }
+  .dark .icon-btn .moon { display: inline-block; }
+
+  /* ============ Badge ============ */
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.02em; border-radius: 9999px;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--background)); color: hsl(var(--foreground));
+    line-height: 1.4;
+  }
+  .badge.badge-secondary {
+    background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground));
+    border-color: transparent;
+  }
+  .badge .lucide { width: 12px; height: 12px; }
+
+  /* ============ Button ============ */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 40px; padding: 0 16px;
+    font-size: 14px; font-weight: 500;
+    border-radius: calc(var(--radius) - 2px);
+    border: 1px solid transparent;
+    transition: all 0.15s ease; white-space: nowrap;
+  }
+  .btn-default {
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border-color: hsl(var(--primary));
+  }
+  .btn-default:hover { background: hsl(var(--primary) / 0.9); }
+  .btn-outline {
+    background: transparent; color: hsl(var(--foreground));
+    border-color: hsl(var(--border));
+  }
+  .btn-outline:hover { background: hsl(var(--accent)); }
+  .btn-lg { height: 48px; padding: 0 28px; font-size: 15px; }
+  .btn .lucide { width: 16px; height: 16px; }
+
+  /* ============ Hero ============ */
+  .hero {
+    position: relative;
+    padding: 128px 0 96px;
+    text-align: center; overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at center, hsl(var(--foreground) / 0.06) 1px, transparent 1px);
+    background-size: 24px 24px;
+    mask-image: radial-gradient(ellipse 60% 60% at center, black 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse 60% 60% at center, black 30%, transparent 80%);
+    pointer-events: none;
+  }
+  .hero-inner { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; }
+  .hero .badge { margin-bottom: 28px; }
+  .hero h1 {
+    font-size: clamp(2rem, 5.6vw, 4.5rem);
+    line-height: 1.05; font-weight: 600;
+    letter-spacing: -0.045em;
+    margin-bottom: 28px;
+    white-space: nowrap;
+    background: linear-gradient(180deg, hsl(var(--foreground)) 0%, hsl(var(--foreground) / 0.75) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  @media (max-width: 960px) {
+    .hero h1 {
+      white-space: normal;
+      font-size: clamp(1.75rem, 6.4vw, 2.75rem);
+      letter-spacing: -0.025em;
+      line-height: 1.15;
+    }
+  }
+  .hero .lede {
+    font-size: clamp(0.95rem, 1.3vw, 1.05rem);
+    color: hsl(var(--muted-foreground));
+    line-height: 1.7;
+    max-width: 520px; margin: 0 auto 36px;
+  }
+  .hero-actions { display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+  /* ============ Main Layout ============ */
+  main { padding: 80px 0 64px; }
+  .layout {
+    display: grid; grid-template-columns: 220px 1fr; gap: 72px;
+    align-items: start;
+  }
+  @media (max-width: 1024px) {
+    .layout { grid-template-columns: 1fr; gap: 32px; }
+    .toc { display: none; }
+  }
+
+  /* ============ TOC ============ */
+  .toc { position: sticky; top: 96px; align-self: start; }
+  .toc-label {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 12px; padding-bottom: 12px;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .toc ol { list-style: none; padding: 0; }
+  .toc li { margin: 2px 0; }
+  .toc a {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 10px;
+    align-items: baseline;
+    padding: 8px 10px;
+    font-size: 13px;
+    color: hsl(var(--muted-foreground));
+    border-radius: calc(var(--radius) - 2px);
+    transition: all 0.15s ease;
+    border-left: 2px solid transparent;
+    margin-left: -2px;
+  }
+  .toc a:hover { color: hsl(var(--foreground)); background: hsl(var(--accent)); }
+  .toc a.active {
+    color: hsl(var(--foreground));
+    border-left-color: hsl(var(--primary));
+    font-weight: 500;
+  }
+  .toc a .num {
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+  }
+  .toc a.active .num { color: hsl(var(--foreground)); }
+
+  /* ============ Content ============ */
+  .content { max-width: 720px; min-width: 0; }
+  .section { padding: 28px 0 64px; }
+  .section:first-child { padding-top: 0; }
+  .section + .section { border-top: 1px solid hsl(var(--border)); padding-top: 64px; }
+
+  .section-head { margin-bottom: 32px; }
+  .section-meta {
+    display: inline-flex; align-items: center; gap: 10px;
+    margin-bottom: 16px;
+  }
+  .section-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 24px; min-width: 32px; padding: 0 8px;
+    background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground));
+    border-radius: calc(var(--radius) - 2px);
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .section-kicker {
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+  .section-preamble {
+    font-size: 14px; color: hsl(var(--muted-foreground));
+    margin-bottom: 6px; letter-spacing: -0.005em;
+  }
+  .section h2 {
+    font-size: clamp(1.5rem, 2.6vw, 2rem);
+    font-weight: 600; letter-spacing: -0.02em;
+    line-height: 1.3;
+  }
+  .section h2 strong { font-weight: 600; }
+  .section-sub {
+    margin-top: 10px;
+    font-size: 15px;
+    color: hsl(var(--muted-foreground));
+    line-height: 1.7;
+  }
+
+  /* ============ Problem cards (Section 01) ============ */
+  .problem-grid { display: grid; gap: 8px; }
+  .problem-card {
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    gap: 16px;
+    padding: 18px 20px;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    background: hsl(var(--card));
+    transition: all 0.15s ease;
+  }
+  .problem-card:hover {
+    border-color: hsl(var(--foreground) / 0.35);
+    background: hsl(var(--accent) / 0.4);
+  }
+  .problem-card .icon-pill {
+    width: 40px; height: 40px;
+    background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground));
+    border-radius: calc(var(--radius) - 2px);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .problem-card .icon-pill .lucide { width: 18px; height: 18px; }
+  .problem-card .body { min-width: 0; }
+  .problem-card .ttl {
+    font-size: 15px; font-weight: 600;
+    letter-spacing: -0.005em;
+    margin-bottom: 4px;
+  }
+  .problem-card .dsc {
+    font-size: 13.5px; line-height: 1.7;
+    color: hsl(var(--muted-foreground));
+  }
+  .problem-card .pin {
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    padding-top: 2px;
+  }
+
+  /* ============ Belief list (Section 02) ============ */
+  .belief-grid { display: grid; gap: 8px; }
+  .belief-item {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 16px 18px;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    background: hsl(var(--card));
+    transition: border-color 0.15s ease;
+  }
+  .belief-item:hover { border-color: hsl(var(--foreground) / 0.35); }
+  .belief-item .check-pill {
+    width: 36px; height: 36px;
+    border-radius: 9999px;
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .belief-item .check-pill .lucide { width: 16px; height: 16px; }
+  .belief-item .txt {
+    font-size: 15px;
+    line-height: 1.6;
+    color: hsl(var(--foreground));
+  }
+  .belief-item .key {
+    font-weight: 600;
+    padding: 1px 6px;
+    background: hsl(var(--secondary));
+    border-radius: 4px;
+    margin: 0 2px;
+  }
+  .belief-item .seq {
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* ============ Weakness list (Section 03) — muted/confessional ============ */
+  .weakness-card {
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    padding: 8px;
+  }
+  .weakness-item {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 14px;
+    border-radius: calc(var(--radius) - 2px);
+    transition: background 0.15s ease;
+  }
+  .weakness-item + .weakness-item {
+    border-top: 1px solid hsl(var(--border));
+  }
+  .weakness-item .marker {
+    width: 28px; height: 28px;
+    border-radius: 9999px;
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--muted-foreground));
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  }
+  .weakness-item .txt {
+    font-size: 14.5px;
+    color: hsl(var(--foreground) / 0.82);
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  /* ============ Practice (Section 04) — primary/dark callout ============ */
+  .practice-callout {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border-radius: var(--radius);
+    padding: 28px 28px 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .practice-callout::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at center, hsl(var(--primary-foreground) / 0.06) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(ellipse 100% 60% at top right, black 0%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse 100% 60% at top right, black 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .practice-callout > * { position: relative; z-index: 1; }
+  .practice-head {
+    display: flex; align-items: center; gap: 10px;
+    padding-bottom: 16px; margin-bottom: 16px;
+    border-bottom: 1px solid hsl(var(--primary-foreground) / 0.15);
+  }
+  .practice-head .lucide { width: 18px; height: 18px; opacity: 0.85; }
+  .practice-head .ttl {
+    font-size: 14px; font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .practice-head .tag {
+    margin-left: auto;
+    font-family: var(--font-mono); font-size: 10.5px;
+    letter-spacing: 0.16em;
+    color: hsl(var(--primary-foreground) / 0.6);
+  }
+  .practice-item {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 16px;
+    padding: 18px 0;
+    align-items: start;
+  }
+  .practice-item + .practice-item {
+    border-top: 1px solid hsl(var(--primary-foreground) / 0.1);
+  }
+  .practice-item .step {
+    width: 28px; height: 28px;
+    border-radius: calc(var(--radius) - 2px);
+    background: hsl(var(--primary-foreground) / 0.12);
+    color: hsl(var(--primary-foreground));
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    margin-top: 2px;
+  }
+  .practice-item .txt {
+    font-size: 14.5px;
+    line-height: 1.75;
+    color: hsl(var(--primary-foreground) / 0.94);
+  }
+  .practice-item .txt code {
+    font-family: var(--font-mono); font-size: 12.5px;
+    padding: 1px 6px;
+    background: hsl(var(--primary-foreground) / 0.16);
+    color: hsl(var(--primary-foreground));
+    border-radius: 4px;
+  }
+  .practice-item .txt strong {
+    font-weight: 600;
+    color: hsl(var(--primary-foreground));
+    background: hsl(var(--primary-foreground) / 0.1);
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+
+  /* ============ CTA Section ============ */
+  .cta-section {
+    margin-top: 72px;
+    padding: 48px 40px;
+    text-align: center;
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) + 2px);
+    background: hsl(var(--card));
+  }
+  .cta-tagline {
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 16px;
+  }
+  .cta-headline {
+    font-size: clamp(1.375rem, 2.4vw, 1.75rem);
+    font-weight: 600; letter-spacing: -0.02em;
+    line-height: 1.4;
+    margin-bottom: 28px;
+  }
+  .cta-footnote {
+    margin-top: 18px;
+    font-size: 13px;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* ============ Footer ============ */
+  .site-footer {
+    border-top: 1px solid hsl(var(--border));
+    padding: 32px 0;
+    margin-top: 64px;
+  }
+  .footer-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+  }
+  .footer-meta {
+    font-family: var(--font-mono); font-size: 12px;
+    color: hsl(var(--muted-foreground));
+  }
+  .footer-brand {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; color: hsl(var(--muted-foreground));
+  }
+  .footer-brand .brand-mark { width: 22px; height: 22px; font-size: 11px; }
+
+  /* ============ Mobile ============ */
+  @media (max-width: 640px) {
+    .container { padding: 0 1rem; }
+    .hero { padding: 72px 0 56px; }
+    main { padding: 40px 0 64px; }
+    .section + .section { padding-top: 48px; }
+    .section { padding-bottom: 48px; }
+    .practice-callout { padding: 24px 20px 4px; }
+    .cta-section { padding: 36px 22px; }
+    .problem-card { grid-template-columns: 36px 1fr; }
+    .problem-card .pin { display: none; }
+    .belief-item { grid-template-columns: 32px 1fr; }
+    .belief-item .seq { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header class="site-header">
+  <div class="container inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">A</span>
+      <span>AICC</span>
+      <span class="brand-version">v1.0</span>
+    </a>
+    <nav class="nav-tabs" aria-label="主导航">
+      <a href="index.html" class="nav-tab active"><i data-lucide="scroll-text"></i>宪法</a>
+      <a href="aicc-dashboard.html" class="nav-tab"><i data-lucide="layout-grid"></i>工作台</a>
+      <a href="radar/index.html" class="nav-tab"><i data-lucide="radar"></i>雷达</a>
+      <a href="plan.html" class="nav-tab"><i data-lucide="bookmark-check"></i>计划</a>
+      <a href="graph.html" class="nav-tab"><i data-lucide="network"></i>图谱</a>
+    </nav>
+    <div class="header-actions">
+      <a href="aicc-editor.html" class="btn-new"><i data-lucide="plus"></i><span>新建</span></a>
+      <button class="icon-btn" id="theme-toggle" aria-label="切换主题">
+        <i data-lucide="sun" class="sun"></i>
+        <i data-lucide="moon" class="moon"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="container hero-inner">
+    <span class="badge">
+      <i data-lucide="sparkles"></i>
+      A COGNITION PROTOCOL · v1.0
+    </span>
+    <h1>献给和我一样的 AI 认知长期进化者</h1>
+    <p class="lede">一份关于「输出你的理解，而非 AI 的理解」的诚实约定</p>
+    <div class="hero-actions">
+      <a href="#section-1" class="btn btn-default btn-lg">
+        开始阅读
+        <i data-lucide="arrow-down"></i>
+      </a>
+      <a href="#cta" class="btn btn-outline btn-lg">
+        进入 AICC
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MAIN ============ -->
+<main>
+  <div class="container layout">
+
+    <!-- TOC -->
+    <aside class="toc" id="toc">
+      <div class="toc-label">目录</div>
+      <ol>
+        <li><a href="#section-1"><span class="num">01</span><span>症状</span></a></li>
+        <li><a href="#section-2"><span class="num">02</span><span>信念</span></a></li>
+        <li><a href="#section-3"><span class="num">03</span><span>自省</span></a></li>
+        <li><a href="#section-4"><span class="num">04</span><span>防腐</span></a></li>
+      </ol>
+    </aside>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- Section 01 — 症状 -->
+      <section class="section" id="section-1">
+        <header class="section-head">
+          <div class="section-meta">
+            <span class="section-num">01</span>
+            <span class="section-kicker">Symptom · 症状</span>
+          </div>
+          <p class="section-preamble">和我一样，</p>
+          <h2>渴望 AI 认知进化但正经历这些：</h2>
+        </header>
+
+        <div class="problem-grid">
+          <article class="problem-card">
+            <div class="icon-pill"><i data-lucide="unlink"></i></div>
+            <div class="body">
+              <div class="ttl">AI 认知断裂</div>
+              <div class="dsc">阅读 LLM 论文或 AI 技术论文的算法原理与数学公式晦涩难懂，认知负荷高到想让你放弃……</div>
+            </div>
+            <div class="pin">01</div>
+          </article>
+          <article class="problem-card">
+            <div class="icon-pill"><i data-lucide="target"></i></div>
+            <div class="body">
+              <div class="ttl">AI 认知单点</div>
+              <div class="dsc">理解一个 AI 技术点往往顾不上与已有知识点链接，忽略行业应用场景的匹配。</div>
+            </div>
+            <div class="pin">02</div>
+          </article>
+          <article class="problem-card">
+            <div class="icon-pill"><i data-lucide="clock-fading"></i></div>
+            <div class="body">
+              <div class="ttl">AI 认知丢失</div>
+              <div class="dsc">通过 ChatBox 等学习完某个知识点，信息丢失到遗忘，无法形成长期复利。</div>
+            </div>
+            <div class="pin">03</div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Section 02 — 信念 -->
+      <section class="section" id="section-2">
+        <header class="section-head">
+          <div class="section-meta">
+            <span class="section-num">02</span>
+            <span class="section-kicker">Belief · 信念</span>
+          </div>
+          <p class="section-preamble">和我一样，</p>
+          <h2>如果你相信以下 3 个判断</h2>
+        </header>
+
+        <div class="belief-grid">
+          <div class="belief-item">
+            <span class="check-pill"><i data-lucide="check"></i></span>
+            <p class="txt">AI 认知是行业工作者的<span class="key">认知基石</span></p>
+            <span class="seq">01</span>
+          </div>
+          <div class="belief-item">
+            <span class="check-pill"><i data-lucide="check"></i></span>
+            <p class="txt">AI 时代可以构建自己的<span class="key">第二大脑</span></p>
+            <span class="seq">02</span>
+          </div>
+          <div class="belief-item">
+            <span class="check-pill"><i data-lucide="check"></i></span>
+            <p class="txt">AI 时代时刻<span class="key">警惕 AI 外包你的理解</span></p>
+            <span class="seq">03</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 03 — 自省 -->
+      <section class="section" id="section-3">
+        <header class="section-head">
+          <div class="section-meta">
+            <span class="section-num">03</span>
+            <span class="section-kicker">Honesty · 自省</span>
+          </div>
+          <p class="section-preamble">和我一样，</p>
+          <h2>如果你诚实面对人性的弱点</h2>
+        </header>
+
+        <div class="weakness-card">
+          <div class="weakness-item">
+            <span class="marker">i</span>
+            <p class="txt">期待短期的正向及时反馈</p>
+          </div>
+          <div class="weakness-item">
+            <span class="marker">ii</span>
+            <p class="txt">问了 AI 就觉得自己学会了</p>
+          </div>
+          <div class="weakness-item">
+            <span class="marker">iii</span>
+            <p class="txt">想让利益方看看我在学习</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 04 — 防腐设计 -->
+      <section class="section" id="section-4">
+        <header class="section-head">
+          <div class="section-meta">
+            <span class="section-num">04</span>
+            <span class="section-kicker">Practice · 防腐</span>
+          </div>
+          <h2>防腐行为设计</h2>
+          <p class="section-sub">输出你的理解、非 AI 的理解，分享你的进步同不足。</p>
+        </header>
+
+        <div class="practice-callout">
+          <div class="practice-head">
+            <i data-lucide="shield-check"></i>
+            <span class="ttl">三条防腐行为约定</span>
+            <span class="tag">PROTOCOL</span>
+          </div>
+
+          <div class="practice-item">
+            <span class="step">01</span>
+            <p class="txt">如果请 AI <strong>教学</strong>，那么请认为理解后 <code>24 小时</code> 后再产出 MD。</p>
+          </div>
+          <div class="practice-item">
+            <span class="step">02</span>
+            <p class="txt">如果请 AI <strong>反馈</strong>，要让 AI <code>做评价题</code> 而不是让 AI 做问答题，同样认为理解后 <code>24 小时</code> 后再产出 MD。</p>
+          </div>
+          <div class="practice-item">
+            <span class="step">03</span>
+            <p class="txt">如果 AI 更新知识图谱，<code>每一周 LLM 审计知识库和知识图谱</code>，检查是否有知识冲突，并让 AI <strong>提问和评价定稿</strong>，分享你的认知基线。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <div class="cta-section" id="cta">
+        <p class="cta-tagline">If You Are Like Me</p>
+        <p class="cta-headline">不要靠意志力，要用机制对抗腐蚀。</p>
+        <a href="aicc-dashboard.html" class="btn btn-default btn-lg">
+          进入 AICC 学习系统
+          <i data-lucide="arrow-right"></i>
+        </a>
+        <p class="cta-footnote">很欢迎你的批评、挑战与补充</p>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <span class="brand-mark">A</span>
+      <span>AICC · A Cognition Protocol</span>
+    </div>
+    <div class="footer-meta">v1.0 · 2026 · 05</div>
+  </div>
+</footer>
+
+<script>
+  lucide.createIcons();
+
+  // Theme toggle
+  const toggle = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  const stored = localStorage.getItem('aicc-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (stored === 'dark' || (!stored && prefersDark)) root.classList.add('dark');
+  toggle.addEventListener('click', () => {
+    root.classList.toggle('dark');
+    localStorage.setItem('aicc-theme', root.classList.contains('dark') ? 'dark' : 'light');
+  });
+
+  // TOC scroll-spy
+  const sections = document.querySelectorAll('.section[id]');
+  const tocLinks = document.querySelectorAll('.toc a');
+  const setActive = (id) => {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  };
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) setActive(e.target.id); });
+  }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 });
+  sections.forEach(s => io.observe(s));
+</script>
+
+</body>
+</html>

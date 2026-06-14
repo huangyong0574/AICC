@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>加载中… — AICC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@4/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  /* ============ shadcn/ui Design Tokens ============ */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
+    --radius: 0.5rem;
+    --font-sans: 'Geist', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --font-serif: 'Noto Serif SC', Georgia, serif;
+    --font-mono: 'Geist Mono', 'SF Mono', Menlo, Consolas, monospace;
+  }
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+
+  /* ============ Reset ============ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+  body {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans);
+    font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  ::selection { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; }
+  svg { display: inline-block; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+
+  /* ============ Header ============ */
+  .site-header {
+    position: sticky; top: 0; z-index: 50;
+    background: hsl(var(--background) / 0.85);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .site-header .inner {
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-weight: 600; font-size: 15px; letter-spacing: -0.01em;
+  }
+  .brand-mark {
+    width: 28px; height: 28px;
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border-radius: calc(var(--radius) - 2px);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 13px;
+  }
+  .brand-version {
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    padding: 2px 8px; border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) - 2px); margin-left: 4px;
+  }
+  .nav-tabs {
+    display: inline-flex; align-items: center; gap: 2px;
+    background: hsl(var(--secondary));
+    padding: 4px; border-radius: calc(var(--radius) - 2px);
+  }
+  .nav-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px;
+    font-size: 13px; font-weight: 500;
+    color: hsl(var(--muted-foreground));
+    border-radius: calc(var(--radius) - 4px);
+    transition: all 0.15s ease;
+  }
+  .nav-tab:hover { color: hsl(var(--foreground)); }
+  .nav-tab.active {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    box-shadow: 0 1px 2px hsl(var(--foreground) / 0.06);
+  }
+  .nav-tab .lucide { width: 13px; height: 13px; }
+  .btn-new {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 34px; padding: 0 12px;
+    font-size: 13px; font-weight: 500;
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border-radius: calc(var(--radius) - 2px);
+    transition: opacity 0.15s ease;
+  }
+  .btn-new:hover { opacity: 0.9; }
+  .btn-new .lucide { width: 13px; height: 13px; }
+  @media (max-width: 768px) { .nav-tabs { display: none; } .btn-new span { display: none; } }
+  .header-actions { display: inline-flex; align-items: center; gap: 8px; }
+  .icon-btn {
+    width: 36px; height: 36px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid transparent; background: transparent;
+    color: hsl(var(--foreground));
+    border-radius: calc(var(--radius) - 2px);
+    transition: background 0.15s ease;
+  }
+  .icon-btn:hover { background: hsl(var(--accent)); }
+  .icon-btn .lucide { width: 16px; height: 16px; }
+  .icon-btn .moon { display: none; }
+  .dark .icon-btn .sun { display: none; }
+  .dark .icon-btn .moon { display: inline-block; }
+
+  /* ============ Main ============ */
+  main { padding: 28px 0 96px; }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 12px;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 32px;
+  }
+  .breadcrumb a { color: hsl(var(--muted-foreground)); transition: color 0.15s ease; }
+  .breadcrumb a:hover { color: hsl(var(--foreground)); }
+  .breadcrumb .sep { opacity: 0.4; }
+  .breadcrumb .current { color: hsl(var(--foreground)); }
+
+  /* ============ Article Hero ============ */
+  .article-hero {
+    max-width: 760px; margin: 0 auto 56px;
+    text-align: center;
+  }
+  .article-hero .badge-row {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-bottom: 24px;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.02em; border-radius: 9999px;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--background)); color: hsl(var(--foreground));
+    line-height: 1.4;
+  }
+  .badge.badge-secondary { background: hsl(var(--secondary)); border-color: transparent; }
+  .badge .dot { width: 6px; height: 6px; border-radius: 9999px; background: hsl(142 76% 36%); }
+  .article-hero h1 {
+    font-size: clamp(1.875rem, 4vw, 2.625rem);
+    font-weight: 600; letter-spacing: -0.025em;
+    line-height: 1.2; margin-bottom: 16px;
+  }
+  .article-hero .subtitle {
+    font-size: 1.0625rem;
+    color: hsl(var(--muted-foreground));
+    max-width: 580px; margin: 0 auto; line-height: 1.7;
+  }
+  .meta-bar {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin-top: 32px;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius); overflow: hidden;
+    background: hsl(var(--card)); flex-wrap: wrap;
+  }
+  .meta-bar .item {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 18px;
+    font-family: var(--font-mono); font-size: 12px;
+    color: hsl(var(--muted-foreground));
+    border-right: 1px solid hsl(var(--border));
+  }
+  .meta-bar .item:last-child { border-right: none; }
+  .meta-bar .item strong { color: hsl(var(--foreground)); font-weight: 600; }
+  .meta-bar .item .lucide { width: 13px; height: 13px; }
+  @media (max-width: 640px) {
+    .meta-bar .item { border-right: none; border-bottom: 1px solid hsl(var(--border)); width: 100%; justify-content: center; }
+    .meta-bar .item:last-child { border-bottom: none; }
+  }
+
+  /* ============ Article Layout ============ */
+  .article-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 72px; align-items: start;
+  }
+  @media (max-width: 1024px) {
+    .article-layout { grid-template-columns: 1fr; gap: 32px; }
+    .article-toc { display: none; }
+  }
+
+  /* TOC */
+  .article-toc { position: sticky; top: 96px; }
+  .toc-label {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 12px; padding-bottom: 12px;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .article-toc ol { list-style: none; padding: 0; }
+  .article-toc li { margin: 1px 0; }
+  .article-toc a {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 8px; align-items: baseline;
+    padding: 7px 10px;
+    font-size: 13px;
+    color: hsl(var(--muted-foreground));
+    border-radius: calc(var(--radius) - 2px);
+    transition: all 0.15s ease;
+    border-left: 2px solid transparent;
+    margin-left: -2px;
+  }
+  .article-toc a:hover { color: hsl(var(--foreground)); background: hsl(var(--accent)); }
+  .article-toc a.active {
+    color: hsl(var(--foreground));
+    border-left-color: hsl(var(--primary));
+    font-weight: 500;
+  }
+  .article-toc a .toc-num {
+    font-family: var(--font-mono); font-size: 10px;
+    color: hsl(var(--muted-foreground));
+  }
+  .article-toc a.active .toc-num { color: hsl(var(--foreground)); }
+  .toc-progress { margin-top: 20px; padding-top: 16px; border-top: 1px solid hsl(var(--border)); }
+  .toc-progress-label {
+    font-family: var(--font-mono); font-size: 10.5px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 8px;
+    display: flex; justify-content: space-between;
+  }
+  .toc-progress-bar { height: 4px; background: hsl(var(--secondary)); border-radius: 9999px; overflow: hidden; }
+  .toc-progress-bar .fill { height: 100%; width: 0%; background: hsl(var(--primary)); transition: width 0.2s ease; }
+
+  /* ============ Article Body ============ */
+  .article-body { max-width: 720px; min-width: 0; }
+
+  /* Section blocks with step numbers */
+  .section-block { margin-bottom: 64px; scroll-margin-top: 80px; }
+  .section-header { margin-bottom: 24px; }
+  .section-meta {
+    display: inline-flex; align-items: center; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .step-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border-radius: calc(var(--radius) - 2px);
+    font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+  }
+  .step-kicker {
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+  .section-block h2 {
+    font-size: clamp(1.375rem, 2.4vw, 1.75rem);
+    font-weight: 600; letter-spacing: -0.02em;
+    line-height: 1.3; margin-bottom: 6px;
+  }
+
+  /* Prose */
+  .article-body h3 {
+    font-size: 1.125rem; font-weight: 600;
+    letter-spacing: -0.01em; line-height: 1.4;
+    margin: 32px 0 14px;
+    padding-top: 20px;
+    border-top: 1px solid hsl(var(--border));
+  }
+  .article-body h4 {
+    font-size: 1rem; font-weight: 600;
+    margin: 20px 0 8px;
+  }
+  .article-body p {
+    font-size: 15.5px; line-height: 1.8;
+    color: hsl(var(--foreground) / 0.88);
+    margin-bottom: 16px;
+  }
+  .article-body strong { font-weight: 600; color: hsl(var(--foreground)); }
+  .article-body em { font-style: italic; }
+  .article-body a {
+    color: hsl(var(--foreground));
+    text-decoration: underline;
+    text-decoration-color: hsl(var(--border));
+    text-underline-offset: 3px;
+    transition: text-decoration-color 0.15s ease;
+  }
+  .article-body a:hover { text-decoration-color: hsl(var(--foreground)); }
+
+  /* Inline code */
+  .article-body code {
+    font-family: var(--font-mono); font-size: 13.5px;
+    padding: 2px 7px;
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+    border-radius: 4px;
+    border: 1px solid hsl(var(--border));
+  }
+
+  /* Code blocks with toolbar + syntax highlight */
+  .code-block {
+    margin: 24px 0;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: hsl(var(--card));
+  }
+  .code-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px;
+    background: hsl(var(--muted));
+    border-bottom: 1px solid hsl(var(--border));
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    letter-spacing: 0.06em;
+  }
+  .code-head .lang {
+    display: inline-flex; align-items: center; gap: 6px;
+    text-transform: uppercase;
+  }
+  .code-head .lucide { width: 12px; height: 12px; }
+  .code-head .copy-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: var(--font-mono); font-size: 10px;
+    color: hsl(var(--muted-foreground));
+    background: none; border: 1px solid hsl(var(--border));
+    padding: 2px 8px; border-radius: 4px;
+    cursor: pointer; transition: all 0.15s ease;
+  }
+  .code-head .copy-btn:hover { background: hsl(var(--background)); color: hsl(var(--foreground)); }
+  .article-body pre {
+    margin: 0; padding: 16px 18px;
+    font-family: var(--font-mono); font-size: 13px;
+    line-height: 1.65;
+    color: hsl(var(--foreground) / 0.92);
+    background: hsl(var(--card));
+    overflow-x: auto;
+    border: none; border-radius: 0;
+  }
+  .article-body pre code {
+    padding: 0; background: none; font-size: inherit;
+    border-radius: 0; border: none;
+  }
+  .article-body pre code.hljs { background: transparent; padding: 0; }
+  .article-body > pre, .section-block > pre {
+    margin: 24px 0;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+
+  /* ============ Mermaid Diagrams ============ */
+  .mermaid-block {
+    margin: 28px 0;
+    padding: 32px 24px;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    background: hsl(var(--secondary));
+    text-align: center;
+    overflow-x: auto;
+  }
+  .mermaid-block svg {
+    max-width: 100%;
+    height: auto;
+  }
+  .mermaid-block .mermaid-caption {
+    margin-top: 16px;
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.04em;
+    color: hsl(var(--muted-foreground));
+    text-transform: uppercase;
+  }
+
+  /* Lists */
+  .article-body ul, .article-body ol { padding-left: 0; list-style: none; margin: 16px 0; }
+  .article-body ul li, .article-body ol li {
+    padding-left: 22px; position: relative;
+    margin-bottom: 10px;
+    font-size: 15.5px; line-height: 1.8;
+    color: hsl(var(--foreground) / 0.88);
+  }
+  .article-body ul li::before {
+    content: ''; position: absolute;
+    left: 4px; top: 14px;
+    width: 5px; height: 5px;
+    background: hsl(var(--foreground));
+    border-radius: 9999px;
+  }
+  .article-body ol { counter-reset: list-counter; }
+  .article-body ol li { counter-increment: list-counter; }
+  .article-body ol li::before {
+    content: counter(list-counter);
+    position: absolute; left: 0; top: 2px;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+    color: hsl(var(--muted-foreground));
+    width: 18px; text-align: center;
+  }
+
+  /* Blockquotes — serif */
+  .article-body blockquote {
+    margin: 24px 0;
+    padding: 24px 28px;
+    background: hsl(var(--secondary));
+    border-left: 3px solid hsl(var(--foreground));
+    border-radius: var(--radius);
+  }
+  .article-body blockquote p {
+    font-family: var(--font-serif);
+    font-size: 16.5px; line-height: 1.85;
+    color: hsl(var(--foreground));
+    margin-bottom: 10px;
+  }
+  .article-body blockquote p:last-child { margin-bottom: 0; }
+  .article-body blockquote em { color: hsl(var(--muted-foreground)); }
+
+  /* ============ Callouts (Obsidian-style) ============ */
+  .callout {
+    margin: 24px 0; padding: 24px 28px;
+    border-radius: var(--radius);
+    border: 1px solid hsl(var(--border));
+    position: relative; overflow: hidden;
+  }
+  .callout-title {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 12px; font-weight: 600;
+  }
+  .callout-title .lucide { width: 14px; height: 14px; }
+  .callout-note { background: hsl(var(--secondary)); border-color: hsl(var(--border)); }
+  .callout-warning { background: hsl(48 96% 96%); border-color: hsl(48 80% 70%); }
+  .dark .callout-warning { background: hsl(48 30% 10%); border-color: hsl(48 40% 25%); }
+
+  /* Important / TL;DR — inverted with dot pattern */
+  .callout-important {
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border-color: transparent;
+  }
+  .callout-important::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(circle at center, hsl(var(--primary-foreground) / 0.08) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(ellipse 100% 60% at top right, black 0%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse 100% 60% at top right, black 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .callout-important > * { position: relative; z-index: 1; }
+  .callout-important .callout-title { color: hsl(var(--primary-foreground) / 0.7); }
+  .callout-important p {
+    color: hsl(var(--primary-foreground));
+    font-size: 16.5px; line-height: 1.7;
+  }
+  .callout-important p + p { margin-top: 10px; font-size: 14.5px; color: hsl(var(--primary-foreground) / 0.78); }
+
+  /* ============ Tables ============ */
+  .article-body table {
+    width: 100%; border-collapse: collapse;
+    margin: 24px 0; font-size: 14px;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .article-body th {
+    padding: 10px 16px;
+    background: hsl(var(--muted));
+    font-weight: 600;
+    font-family: var(--font-mono); font-size: 11.5px;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    text-align: left;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .article-body td {
+    padding: 10px 16px;
+    border-bottom: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground) / 0.88);
+  }
+  .article-body tr:last-child td { border-bottom: none; }
+  .article-body tr:hover td { background: hsl(var(--accent) / 0.4); }
+
+  .article-body hr {
+    border: none; border-top: 1px solid hsl(var(--border));
+    margin: 48px 0;
+  }
+  .article-body img {
+    max-width: 100%;
+    border-radius: var(--radius);
+    border: 1px solid hsl(var(--border));
+    margin: 20px 0;
+  }
+
+  /* ============ Tags ============ */
+  .article-tags {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-top: 56px; padding-top: 28px;
+    border-top: 1px solid hsl(var(--border));
+  }
+  .article-tags .tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    background: hsl(var(--secondary));
+    border-radius: 9999px;
+    border: 1px solid hsl(var(--border));
+  }
+
+  /* ============ Footer ============ */
+  .site-footer {
+    border-top: 1px solid hsl(var(--border));
+    padding: 28px 0; margin-top: 80px;
+  }
+  .footer-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+  }
+  .footer-brand {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; color: hsl(var(--muted-foreground));
+  }
+  .footer-brand .brand-mark { width: 22px; height: 22px; font-size: 11px; }
+  .footer-meta {
+    font-family: var(--font-mono); font-size: 12px;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* ============ Loading / Error ============ */
+  .loading-state, .error-state {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 400px; text-align: center;
+    color: hsl(var(--muted-foreground));
+  }
+  .loading-state .spinner {
+    width: 24px; height: 24px;
+    border: 2px solid hsl(var(--border));
+    border-top-color: hsl(var(--foreground));
+    border-radius: 9999px;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-state .icon { margin-bottom: 16px; color: hsl(var(--muted-foreground)); }
+  .error-state .icon .lucide { width: 32px; height: 32px; }
+  .error-state h2 { font-size: 18px; font-weight: 600; color: hsl(var(--foreground)); margin-bottom: 8px; }
+  .error-state p { font-size: 14px; max-width: 400px; }
+
+  @media (max-width: 640px) {
+    .container { padding: 0 1rem; }
+    .section-block { margin-bottom: 48px; }
+    .callout { padding: 20px 20px; }
+    .callout-important p { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header class="site-header">
+  <div class="container inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">A</span>
+      <span>AICC</span>
+      <span class="brand-version">v1.0</span>
+    </a>
+    <nav class="nav-tabs" aria-label="主导航">
+      <a href="index.html" class="nav-tab"><i data-lucide="scroll-text"></i>宪法</a>
+      <a href="aicc-dashboard.html" class="nav-tab active"><i data-lucide="layout-grid"></i>工作台</a>
+      <a href="radar/index.html" class="nav-tab"><i data-lucide="radar"></i>雷达</a>
+      <a href="plan.html" class="nav-tab"><i data-lucide="bookmark-check"></i>计划</a>
+      <a href="graph.html" class="nav-tab"><i data-lucide="network"></i>图谱</a>
+    </nav>
+    <div class="header-actions">
+      <a href="aicc-editor.html" class="btn-new"><i data-lucide="plus"></i><span>新建</span></a>
+      <button class="icon-btn" aria-label="搜索"><i data-lucide="search"></i></button>
+      <button class="icon-btn" id="theme-toggle" aria-label="切换主题">
+        <i data-lucide="sun" class="sun"></i>
+        <i data-lucide="moon" class="moon"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ MAIN ============ -->
+<main>
+  <div class="container" id="article-root">
+    <div class="loading-state" id="loading-state">
+      <div class="spinner"></div>
+      <p>正在加载文章…</p>
+    </div>
+  </div>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <span class="brand-mark">A</span>
+      <span>AICC · 你的 AI 认知工作台</span>
+    </div>
+    <div class="footer-meta">v1.0</div>
+  </div>
+</footer>
+
+<script>
+  // ============ Mermaid init ============
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: document.documentElement.classList.contains('dark') ? 'dark' : 'neutral',
+    fontFamily: 'Geist, Noto Sans SC, sans-serif',
+    fontSize: 13,
+    flowchart: { curve: 'basis', padding: 16 },
+    themeVariables: {
+      primaryColor: '#f4f4f5',
+      primaryBorderColor: '#e4e4e7',
+      primaryTextColor: '#09090b',
+      lineColor: '#a1a1aa',
+      secondaryColor: '#f4f4f5',
+      tertiaryColor: '#fafafa'
+    }
+  });
+
+  lucide.createIcons();
+
+  // ============ Theme ============
+  const toggle = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  const stored = localStorage.getItem('aicc-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (stored === 'dark' || (!stored && prefersDark)) root.classList.add('dark');
+  toggle.addEventListener('click', () => {
+    root.classList.toggle('dark');
+    localStorage.setItem('aicc-theme', root.classList.contains('dark') ? 'dark' : 'light');
+    // Re-render mermaid with new theme
+    location.reload();
+  });
+
+  // ============ Markdown config ============
+  marked.setOptions({ breaks: true, gfm: true });
+
+  const renderer = new marked.Renderer();
+  let sectionCount = 0;
+  let mermaidId = 0;
+
+  renderer.heading = function(text, level, raw) {
+    const id = raw.replace(/<[^>]+>/g, '').replace(/[^\w\u4e00-\u9fff]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 50);
+    if (level === 2) {
+      sectionCount++;
+      const num = String(sectionCount).padStart(2, '0');
+      const closing = sectionCount > 1 ? '</div>' : '';
+      return `${closing}<div class="section-block" id="${id}">
+        <div class="section-header">
+          <div class="section-meta">
+            <span class="step-num">${num}</span>
+            <span class="step-kicker">Section · ${num}</span>
+          </div>
+          <h2 id="${id}">${text}</h2>
+        </div>`;
+    }
+    return `<h${level}>${text}</h${level}>`;
+  };
+
+  // Code blocks: mermaid → diagram, others → syntax highlighted
+  renderer.code = function(code, lang) {
+    if (lang === 'mermaid') {
+      mermaidId++;
+      return `<div class="mermaid-block"><pre class="mermaid" id="mermaid-${mermaidId}">${code}</pre></div>`;
+    }
+    const language = lang || 'code';
+    let highlighted;
+    try {
+      if (lang && hljs.getLanguage(lang)) {
+        highlighted = hljs.highlight(code, { language: lang }).value;
+      } else {
+        highlighted = hljs.highlightAuto(code).value;
+      }
+    } catch(e) {
+      highlighted = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    return `<div class="code-block">
+      <div class="code-head">
+        <span class="lang"><i data-lucide="code"></i>${language.toUpperCase()}</span>
+        <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy"></i>COPY</button>
+      </div>
+      <pre><code class="hljs language-${language}">${highlighted}</code></pre>
+    </div>`;
+  };
+
+  // Obsidian callouts
+  renderer.blockquote = function(quote) {
+    const calloutMatch = quote.match(/^\s*<p>\[!(\w+)\]\s*(.*?)<\/p>/);
+    if (calloutMatch) {
+      const type = calloutMatch[1].toLowerCase();
+      const title = calloutMatch[2] || type.toUpperCase();
+      const body = quote.replace(/^\s*<p>\[!\w+\].*?<\/p>/, '').trim();
+      const iconMap = { note: 'info', warning: 'alert-triangle', important: 'sparkles', tip: 'lightbulb', tldr: 'zap' };
+      const icon = iconMap[type] || 'info';
+      const cls = ['important', 'tldr'].includes(type) ? 'callout callout-important'
+                : type === 'warning' ? 'callout callout-warning'
+                : 'callout callout-note';
+      return `<div class="${cls}">
+        <div class="callout-title"><i data-lucide="${icon}"></i>${title}</div>
+        ${body}
+      </div>`;
+    }
+    return `<blockquote>${quote}</blockquote>`;
+  };
+
+  marked.setOptions({ renderer });
+
+  // ============ Helpers ============
+  function parseFrontmatter(text) {
+    const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+    if (!match) return { meta: {}, content: text };
+    try {
+      return { meta: jsyaml.load(match[1]) || {}, content: match[2] };
+    } catch (e) {
+      return { meta: {}, content: text };
+    }
+  }
+
+  function countWords(text) {
+    return text.replace(/[#*_`\[\]()>~\-|{}\n\r]/g, '').replace(/\s+/g, '').length;
+  }
+
+  function copyCode(btn) {
+    const code = btn.closest('.code-block').querySelector('code').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      btn.innerHTML = '<i data-lucide="check"></i>DONE';
+      lucide.createIcons({ nodes: btn.querySelectorAll('[data-lucide]') });
+      setTimeout(() => {
+        btn.innerHTML = '<i data-lucide="copy"></i>COPY';
+        lucide.createIcons({ nodes: btn.querySelectorAll('[data-lucide]') });
+      }, 2000);
+    });
+  }
+
+  // ============ Load article ============
+  async function loadArticle() {
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('slug') || params.get('file');
+
+    if (!slug) {
+      showError('未指定文章', '请通过 URL 参数 ?slug=文章名 来访问，如 article.html?slug=flash-attention');
+      return;
+    }
+
+    try {
+      const response = await fetch(`content/${slug}.md`);
+      if (!response.ok) throw new Error(`找不到文章: content/${slug}.md (HTTP ${response.status})`);
+      const text = await response.text();
+      renderArticle(text, slug);
+    } catch (err) {
+      showError('加载失败', err.message);
+    }
+  }
+
+  // ============ Render ============
+  function renderArticle(raw, slug) {
+    const { meta, content } = parseFrontmatter(raw);
+    const words = countWords(content);
+
+    sectionCount = 0;
+    mermaidId = 0;
+    let htmlBody = marked.parse(content);
+    if (sectionCount > 0) htmlBody += '</div>';
+
+    // Extract headings
+    const headings = [];
+    const regex = /<h2[^>]*id="([^"]*)"[^>]*>(.*?)<\/h2>/gi;
+    let match;
+    while ((match = regex.exec(htmlBody)) !== null) {
+      headings.push({ id: match[1], text: match[2].replace(/<[^>]+>/g, '') });
+    }
+
+    const title = meta.title || slug.replace(/-/g, ' ');
+    const subtitle = meta.subtitle || meta.description || '';
+    const date = meta.date ? String(meta.date).slice(0, 10) : '';
+    const category = meta.category || meta.categories || '';
+    const tags = Array.isArray(meta.tags) ? meta.tags : (meta.tags ? [meta.tags] : []);
+    const status = meta.status || '草稿';
+    const readtime = meta.readtime || meta.reading_time || Math.ceil(words / 300) + ' min';
+
+    document.title = `${title} — AICC`;
+
+    const articleRoot = document.getElementById('article-root');
+    articleRoot.innerHTML = `
+      <nav class="breadcrumb" aria-label="面包屑">
+        <a href="aicc-dashboard.html">AICC</a>
+        <span class="sep">/</span>
+        ${category ? `<a href="aicc-dashboard.html">${category}</a><span class="sep">/</span>` : ''}
+        <span class="current">${title}</span>
+      </nav>
+
+      <header class="article-hero">
+        <div class="badge-row">
+          ${category ? `<span class="badge badge-secondary">${category}</span>` : ''}
+          <span class="badge"><span class="dot"></span>${status}</span>
+        </div>
+        <h1>${title}</h1>
+        ${subtitle ? `<p class="subtitle">${subtitle}</p>` : ''}
+        <div class="meta-bar">
+          ${date ? `<span class="item"><i data-lucide="calendar"></i><strong>${date}</strong></span>` : ''}
+          <span class="item"><i data-lucide="clock"></i><strong>${readtime}</strong> 阅读</span>
+          <span class="item"><i data-lucide="file-text"></i><strong>${words.toLocaleString()}</strong> 字</span>
+        </div>
+      </header>
+
+      <div class="article-layout">
+        ${headings.length > 1 ? `
+        <aside class="article-toc" id="toc">
+          <div class="toc-label">目录</div>
+          <ol>
+            ${headings.map((h, i) => `<li><a href="#${h.id}"><span class="toc-num">${String(i+1).padStart(2,'0')}</span><span>${h.text}</span></a></li>`).join('')}
+          </ol>
+          <div class="toc-progress">
+            <div class="toc-progress-label"><span>READING</span><span id="progress-pct">0%</span></div>
+            <div class="toc-progress-bar"><div class="fill" id="progress-fill"></div></div>
+          </div>
+        </aside>` : '<div></div>'}
+
+        <article class="article-body">
+          ${htmlBody}
+          ${tags.length ? `<div class="article-tags">${tags.map(t => `<span class="tag">#${t}</span>`).join('')}</div>` : ''}
+        </article>
+      </div>
+    `;
+
+    lucide.createIcons({ nodes: articleRoot.querySelectorAll('[data-lucide]') });
+
+    // Render mermaid diagrams
+    mermaid.run({ nodes: articleRoot.querySelectorAll('.mermaid') });
+
+    initScrollSpy();
+    initReadingProgress();
+  }
+
+  function showError(title, message) {
+    document.getElementById('article-root').innerHTML = `
+      <div class="error-state">
+        <div class="icon"><i data-lucide="file-x"></i></div>
+        <h2>${title}</h2>
+        <p>${message}</p>
+      </div>
+    `;
+    lucide.createIcons({ nodes: document.querySelectorAll('.error-state [data-lucide]') });
+  }
+
+  function initScrollSpy() {
+    const sections = document.querySelectorAll('.section-block[id]');
+    const tocLinks = document.querySelectorAll('.article-toc a');
+    if (!sections.length || !tocLinks.length) return;
+    const setActive = (id) => {
+      tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+    };
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) setActive(e.target.id); });
+    }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+    sections.forEach(s => io.observe(s));
+  }
+
+  function initReadingProgress() {
+    const progressFill = document.getElementById('progress-fill');
+    const progressPct = document.getElementById('progress-pct');
+    if (!progressFill || !progressPct) return;
+    const updateProgress = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = Math.min(100, Math.max(0, (scrollTop / docHeight) * 100));
+      progressFill.style.width = pct + '%';
+      progressPct.textContent = Math.round(pct) + '%';
+    };
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    updateProgress();
+  }
+
+  loadArticle();
+</script>
+
+</body>
+</html>

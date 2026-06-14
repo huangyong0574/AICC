@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AICC · 文章编辑器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
+<style>
+  /* ============ Tokens ============ */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --border: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
+    --radius: 0.5rem;
+    --font-sans: 'Geist', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --font-serif: 'Noto Serif SC', Georgia, serif;
+    --font-mono: 'Geist Mono', 'SF Mono', Menlo, Consolas, monospace;
+  }
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { height: 100%; }
+  body {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans);
+    font-size: 14px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    height: 100%; overflow: hidden;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  ::selection { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+
+  /* ============ Layout ============ */
+  .app { display: flex; flex-direction: column; height: 100vh; }
+
+  /* ============ Header ============ */
+  .app-header {
+    height: 52px; min-height: 52px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px;
+    border-bottom: 1px solid hsl(var(--border));
+    background: hsl(var(--background));
+    z-index: 100;
+  }
+  .app-header-left {
+    display: inline-flex; align-items: center; gap: 12px;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-weight: 600; font-size: 14px;
+  }
+  .brand-mark {
+    width: 24px; height: 24px;
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border-radius: 5px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 11px;
+  }
+  .header-sep {
+    width: 1px; height: 20px;
+    background: hsl(var(--border));
+  }
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    padding: 3px 10px;
+    background: hsl(var(--secondary));
+    border-radius: 9999px;
+  }
+  .status-badge .dot {
+    width: 6px; height: 6px; border-radius: 9999px;
+    background: hsl(var(--muted-foreground));
+    transition: background 0.2s ease;
+  }
+  .status-badge.has-content .dot { background: hsl(142 76% 36%); }
+
+  .app-header-right {
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: 32px; padding: 0 12px;
+    font-size: 12px; font-weight: 500;
+    border-radius: 6px; border: 1px solid transparent;
+    cursor: pointer; white-space: nowrap;
+    font-family: var(--font-sans);
+    transition: all 0.15s ease;
+  }
+  .btn-ghost { background: transparent; color: hsl(var(--foreground)); }
+  .btn-ghost:hover { background: hsl(var(--accent)); }
+  .btn-outline { background: transparent; color: hsl(var(--foreground)); border-color: hsl(var(--border)); }
+  .btn-outline:hover { background: hsl(var(--accent)); }
+  .btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn .lucide { width: 13px; height: 13px; }
+
+  /* ============ Body split ============ */
+  .app-body {
+    flex: 1; display: flex;
+    overflow: hidden;
+  }
+
+  /* Editor pane */
+  .editor-pane {
+    width: 50%; display: flex; flex-direction: column;
+    border-right: 1px solid hsl(var(--border));
+  }
+  .editor-toolbar {
+    height: 36px; min-height: 36px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 12px;
+    border-bottom: 1px solid hsl(var(--border));
+    background: hsl(var(--muted) / 0.4);
+  }
+  .toolbar-label {
+    font-family: var(--font-mono); font-size: 10.5px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+  .toolbar-meta {
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+  }
+  .editor-textarea {
+    flex: 1; width: 100%;
+    padding: 20px 24px;
+    font-family: var(--font-mono);
+    font-size: 13px; line-height: 1.75;
+    color: hsl(var(--foreground));
+    background: hsl(var(--background));
+    border: none; outline: none; resize: none;
+    tab-size: 2;
+  }
+  .editor-textarea::placeholder { color: hsl(var(--muted-foreground) / 0.6); }
+
+  /* Preview pane */
+  .preview-pane {
+    width: 50%; display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .preview-toolbar {
+    height: 36px; min-height: 36px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 12px;
+    border-bottom: 1px solid hsl(var(--border));
+    background: hsl(var(--muted) / 0.4);
+  }
+  .preview-scroll {
+    flex: 1; overflow-y: auto;
+    background: hsl(var(--background));
+  }
+
+  /* ============ Preview rendering (matches article.html) ============ */
+  .preview-article { padding: 32px 28px 80px; }
+  .preview-article .container { max-width: 720px; margin: 0 auto; }
+
+  /* Hero */
+  .preview-article .article-hero { margin-bottom: 48px; }
+  .preview-article .article-hero .badge-row {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-bottom: 16px;
+  }
+  .preview-article .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px;
+    font-family: var(--font-mono); font-size: 10.5px; font-weight: 500;
+    border-radius: 9999px;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--background)); color: hsl(var(--foreground));
+  }
+  .preview-article .badge.badge-secondary { background: hsl(var(--secondary)); border-color: transparent; }
+  .preview-article .badge .dot { width: 5px; height: 5px; border-radius: 9999px; background: hsl(142 76% 36%); }
+  .preview-article .article-hero h1 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 600; letter-spacing: -0.025em;
+    line-height: 1.25; margin-bottom: 12px;
+  }
+  .preview-article .article-hero .subtitle {
+    font-size: 0.9375rem;
+    color: hsl(var(--muted-foreground));
+    line-height: 1.7;
+  }
+  .preview-article .meta-bar {
+    display: flex; align-items: center; gap: 0;
+    margin-top: 24px;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius); overflow: hidden;
+    background: hsl(var(--card)); flex-wrap: wrap;
+  }
+  .preview-article .meta-bar .item {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 14px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    border-right: 1px solid hsl(var(--border));
+  }
+  .preview-article .meta-bar .item:last-child { border-right: none; }
+  .preview-article .meta-bar .item strong { color: hsl(var(--foreground)); font-weight: 600; }
+  .preview-article .meta-bar .item .lucide { width: 12px; height: 12px; }
+
+  /* Article body */
+  .preview-article .article-body { margin-top: 40px; }
+  .preview-article .section-block { margin-bottom: 48px; }
+  .preview-article .section-block h2 {
+    font-size: clamp(1.25rem, 2vw, 1.5rem);
+    font-weight: 600; letter-spacing: -0.015em;
+    line-height: 1.3; margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .preview-article .article-body h3 {
+    font-size: 1.0625rem; font-weight: 600;
+    margin: 24px 0 10px;
+  }
+  .preview-article .article-body h4 {
+    font-size: 0.9375rem; font-weight: 600;
+    margin: 18px 0 8px;
+  }
+  .preview-article .article-body p {
+    font-size: 14.5px; line-height: 1.8;
+    color: hsl(var(--foreground) / 0.88);
+    margin-bottom: 14px;
+  }
+  .preview-article .article-body strong { font-weight: 600; color: hsl(var(--foreground)); }
+  .preview-article .article-body code {
+    font-family: var(--font-mono); font-size: 12.5px;
+    padding: 1px 5px;
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+    border-radius: 3px;
+  }
+  .preview-article .article-body pre {
+    margin: 16px 0; padding: 14px 16px;
+    font-family: var(--font-mono); font-size: 12.5px;
+    line-height: 1.65;
+    color: hsl(var(--foreground) / 0.92);
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius); overflow-x: auto;
+  }
+  .preview-article .article-body pre code { padding: 0; background: none; font-size: inherit; }
+  .preview-article .article-body ul, .preview-article .article-body ol {
+    padding-left: 0; list-style: none; margin: 14px 0;
+  }
+  .preview-article .article-body ul li, .preview-article .article-body ol li {
+    padding-left: 20px; position: relative;
+    margin-bottom: 6px;
+    font-size: 14.5px; line-height: 1.8;
+    color: hsl(var(--foreground) / 0.88);
+  }
+  .preview-article .article-body ul li::before {
+    content: ''; position: absolute; left: 4px; top: 13px;
+    width: 4px; height: 4px;
+    background: hsl(var(--foreground)); border-radius: 9999px;
+  }
+  .preview-article .article-body ol { counter-reset: lc; }
+  .preview-article .article-body ol li { counter-increment: lc; }
+  .preview-article .article-body ol li::before {
+    content: counter(lc); position: absolute; left: 0; top: 0;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    color: hsl(var(--muted-foreground));
+  }
+  .preview-article .article-body blockquote {
+    margin: 16px 0; padding: 18px 22px;
+    background: hsl(var(--secondary));
+    border-left: 3px solid hsl(var(--foreground));
+    border-radius: var(--radius);
+  }
+  .preview-article .article-body blockquote p {
+    font-family: var(--font-serif); font-size: 15px;
+    line-height: 1.85; color: hsl(var(--foreground));
+    margin-bottom: 6px;
+  }
+  .preview-article .article-body blockquote p:last-child { margin-bottom: 0; }
+
+  /* Callouts */
+  .preview-article .callout {
+    margin: 16px 0; padding: 18px 22px;
+    border-radius: var(--radius);
+    border: 1px solid hsl(var(--border));
+  }
+  .preview-article .callout-title {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 10.5px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 8px; font-weight: 600;
+  }
+  .preview-article .callout-title .lucide { width: 13px; height: 13px; }
+  .preview-article .callout-note { background: hsl(var(--secondary)); }
+  .preview-article .callout-important {
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); border-color: transparent;
+  }
+  .preview-article .callout-important .callout-title { color: hsl(var(--primary-foreground) / 0.7); }
+  .preview-article .callout-important p { color: hsl(var(--primary-foreground)); }
+  .preview-article .callout-warning { background: hsl(48 96% 95%); border-color: hsl(48 96% 70%); }
+  .dark .preview-article .callout-warning { background: hsl(48 30% 12%); border-color: hsl(48 40% 30%); }
+
+  .preview-article .article-body hr {
+    border: none; border-top: 1px solid hsl(var(--border)); margin: 32px 0;
+  }
+  .preview-article .article-body table {
+    width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px;
+  }
+  .preview-article .article-body th, .preview-article .article-body td {
+    padding: 8px 12px; border: 1px solid hsl(var(--border)); text-align: left;
+  }
+  .preview-article .article-body th {
+    background: hsl(var(--muted)); font-weight: 600;
+    font-family: var(--font-mono); font-size: 11px;
+  }
+  .preview-article .article-tags {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-top: 40px; padding-top: 20px;
+    border-top: 1px solid hsl(var(--border));
+  }
+  .preview-article .tag {
+    padding: 3px 9px;
+    font-family: var(--font-mono); font-size: 10.5px;
+    color: hsl(var(--muted-foreground));
+    background: hsl(var(--secondary)); border-radius: 9999px;
+  }
+
+  /* ============ Empty / Placeholder ============ */
+  .preview-empty {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 100%; color: hsl(var(--muted-foreground));
+    text-align: center; padding: 40px;
+  }
+  .preview-empty .icon { margin-bottom: 12px; opacity: 0.4; }
+  .preview-empty .icon .lucide { width: 28px; height: 28px; }
+  .preview-empty p { font-size: 13px; line-height: 1.6; }
+
+  /* ============ Publish dialog ============ */
+  .dialog-overlay {
+    position: fixed; inset: 0;
+    background: hsl(var(--foreground) / 0.4);
+    display: none; align-items: center; justify-content: center;
+    z-index: 200;
+  }
+  .dialog-overlay.open { display: flex; }
+  .dialog {
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) + 4px);
+    width: 460px; max-width: 90vw;
+    box-shadow: 0 16px 48px hsl(var(--foreground) / 0.12);
+    overflow: hidden;
+  }
+  .dialog-header {
+    padding: 20px 24px 0;
+  }
+  .dialog-header h2 {
+    font-size: 16px; font-weight: 600; margin-bottom: 4px;
+  }
+  .dialog-header p {
+    font-size: 13px; color: hsl(var(--muted-foreground)); line-height: 1.5;
+  }
+  .dialog-body { padding: 20px 24px; }
+  .dialog-field { margin-bottom: 16px; }
+  .dialog-field label {
+    display: block;
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 6px;
+  }
+  .dialog-field input {
+    width: 100%; height: 34px;
+    padding: 0 10px;
+    font-family: var(--font-sans); font-size: 13px;
+    color: hsl(var(--foreground));
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 6px; outline: none;
+  }
+  .dialog-field input:focus {
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.1);
+  }
+  .dialog-field .hint {
+    margin-top: 4px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: hsl(var(--muted-foreground));
+  }
+  .dialog-footer {
+    padding: 16px 24px;
+    border-top: 1px solid hsl(var(--border));
+    display: flex; justify-content: flex-end; gap: 8px;
+    background: hsl(var(--muted) / 0.3);
+  }
+
+  /* ============ Toast ============ */
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(10px);
+    padding: 10px 18px;
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border-radius: 8px; font-size: 12.5px; font-weight: 500;
+    opacity: 0; transition: all 0.2s ease;
+    z-index: 300; pointer-events: none;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast .lucide { width: 14px; height: 14px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ============ HEADER ============ -->
+  <header class="app-header">
+    <div class="app-header-left">
+      <a href="index.html" class="brand" style="text-decoration:none;color:inherit;">
+        <span class="brand-mark">A</span>
+        <span>AICC</span>
+      </a>
+      <span class="header-sep"></span>
+      <span style="font-size:13px;font-weight:500;color:hsl(var(--foreground));">文章编辑器</span>
+      <span class="header-sep"></span>
+      <span class="status-badge" id="status-badge">
+        <span class="dot"></span>
+        <span id="status-text">等待输入</span>
+      </span>
+    </div>
+    <div class="app-header-right">
+      <a href="aicc-dashboard.html" class="btn btn-ghost" style="text-decoration:none;">
+        <i data-lucide="arrow-left"></i>工作台
+      </a>
+      <button class="btn btn-ghost" id="btn-theme" title="切换主题">
+        <i data-lucide="sun" class="sun"></i>
+        <i data-lucide="moon" class="moon" style="display:none"></i>
+      </button>
+      <button class="btn btn-outline" id="btn-clear" title="清空">
+        <i data-lucide="trash-2"></i>清空
+      </button>
+      <button class="btn btn-primary" id="btn-publish" disabled title="预览通过后发布为文章页">
+        <i data-lucide="rocket"></i>发布文章
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ BODY ============ -->
+  <div class="app-body">
+    <!-- Editor -->
+    <div class="editor-pane">
+      <div class="editor-toolbar">
+        <span class="toolbar-label">Markdown</span>
+        <span class="toolbar-meta" id="editor-meta">0 字</span>
+      </div>
+      <textarea class="editor-textarea" id="editor" placeholder="粘贴你的 Obsidian Markdown 内容…
+
+格式示例：
+---
+title: 文章标题
+subtitle: 一句话摘要
+date: 2026-05-24
+category: 分类
+tags: [tag1, tag2]
+status: 已定稿
+---
+
+## 第一节
+
+正文内容…"></textarea>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-pane">
+      <div class="preview-toolbar">
+        <span class="toolbar-label">文章页预览</span>
+        <span class="toolbar-meta" id="preview-meta"></span>
+      </div>
+      <div class="preview-scroll" id="preview-scroll">
+        <div class="preview-empty" id="preview-empty">
+          <div class="icon"><i data-lucide="eye"></i></div>
+          <p>在左侧粘贴 Markdown 内容<br>这里实时预览 AICC 文章页效果</p>
+        </div>
+        <div class="preview-article" id="preview-article" style="display:none">
+          <div class="container" id="preview-content"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PUBLISH DIALOG ============ -->
+<div class="dialog-overlay" id="dialog-overlay">
+  <div class="dialog">
+    <div class="dialog-header">
+      <h2>发布为 AICC 文章页</h2>
+      <p>确认信息后，文章将保存到 content/ 目录并可通过 article.html 访问。</p>
+    </div>
+    <div class="dialog-body">
+      <div class="dialog-field">
+        <label>文件名 (slug)</label>
+        <input type="text" id="pub-slug" placeholder="flash-attention">
+        <div class="hint">访问地址：article.html?slug=<span id="pub-slug-preview">___</span></div>
+      </div>
+      <div class="dialog-field">
+        <label>确认标题</label>
+        <input type="text" id="pub-title" placeholder="文章标题">
+      </div>
+      <div class="dialog-field">
+        <label>分类</label>
+        <input type="text" id="pub-category" placeholder="如：LLM 算法原理">
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button class="btn btn-outline" id="btn-cancel">取消</button>
+      <button class="btn btn-outline" id="btn-download-md">
+        <i data-lucide="download"></i>下载 .md
+      </button>
+      <button class="btn btn-primary" id="btn-confirm-publish">
+        <i data-lucide="check"></i>确认发布
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><i data-lucide="check-circle"></i><span id="toast-text"></span></div>
+
+<!-- Hidden file input -->
+<input type="file" id="file-input" accept=".md,.markdown,.txt" style="display:none">
+
+<script>
+lucide.createIcons();
+
+// ============ Elements ============
+const editor = document.getElementById('editor');
+const previewEmpty = document.getElementById('preview-empty');
+const previewArticle = document.getElementById('preview-article');
+const previewContent = document.getElementById('preview-content');
+const editorMeta = document.getElementById('editor-meta');
+const previewMeta = document.getElementById('preview-meta');
+const statusBadge = document.getElementById('status-badge');
+const statusText = document.getElementById('status-text');
+const btnPublish = document.getElementById('btn-publish');
+const toastEl = document.getElementById('toast');
+const toastText = document.getElementById('toast-text');
+
+// ============ Theme ============
+const btnTheme = document.getElementById('btn-theme');
+const rootEl = document.documentElement;
+if (window.matchMedia('(prefers-color-scheme: dark)').matches) rootEl.classList.add('dark');
+btnTheme.addEventListener('click', () => {
+  rootEl.classList.toggle('dark');
+  const isDark = rootEl.classList.contains('dark');
+  btnTheme.querySelector('.sun').style.display = isDark ? 'none' : 'inline-block';
+  btnTheme.querySelector('.moon').style.display = isDark ? 'inline-block' : 'none';
+});
+
+// ============ Toast ============
+function showToast(msg) {
+  toastText.textContent = msg;
+  toastEl.classList.add('show');
+  setTimeout(() => toastEl.classList.remove('show'), 2200);
+}
+
+// ============ Clear ============
+document.getElementById('btn-clear').addEventListener('click', () => {
+  editor.value = '';
+  renderPreview();
+});
+
+// ============ Markdown config ============
+marked.setOptions({ breaks: true, gfm: true });
+
+const renderer = new marked.Renderer();
+let sectionCount = 0;
+
+renderer.heading = function(text, level, raw) {
+  const id = raw.replace(/<[^>]+>/g, '').replace(/[^\w\u4e00-\u9fff]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 50);
+  if (level === 2) {
+    sectionCount++;
+    const closing = sectionCount > 1 ? '</div>' : '';
+    return `${closing}<div class="section-block" id="${id}"><h2>${text}</h2>`;
+  }
+  return `<h${level}>${text}</h${level}>`;
+};
+
+renderer.blockquote = function(quote) {
+  const calloutMatch = quote.match(/^\s*<p>\[!(\w+)\]\s*(.*?)<\/p>/);
+  if (calloutMatch) {
+    const type = calloutMatch[1].toLowerCase();
+    const title = calloutMatch[2] || type.toUpperCase();
+    const body = quote.replace(/^\s*<p>\[!\w+\].*?<\/p>/, '').trim();
+    const iconMap = { note: 'info', warning: 'alert-triangle', important: 'sparkles', tip: 'lightbulb', tldr: 'zap' };
+    const icon = iconMap[type] || 'info';
+    const cls = ['important', 'tldr'].includes(type) ? 'callout callout-important'
+              : type === 'warning' ? 'callout callout-warning'
+              : 'callout callout-note';
+    return `<div class="${cls}"><div class="callout-title"><i data-lucide="${icon}"></i>${title}</div>${body}</div>`;
+  }
+  return `<blockquote>${quote}</blockquote>`;
+};
+
+marked.setOptions({ renderer });
+
+// ============ Frontmatter ============
+function parseFrontmatter(text) {
+  const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  if (!match) return { meta: {}, content: text };
+  try {
+    return { meta: jsyaml.load(match[1]) || {}, content: match[2] };
+  } catch (e) {
+    return { meta: {}, content: text };
+  }
+}
+
+function countWords(text) {
+  return text.replace(/[#*_`\[\]()>~\-|{}\n\r]/g, '').replace(/\s+/g, '').length;
+}
+
+// ============ Render ============
+let currentMeta = {};
+
+function renderPreview() {
+  const raw = editor.value;
+  if (!raw.trim()) {
+    previewEmpty.style.display = 'flex';
+    previewArticle.style.display = 'none';
+    editorMeta.textContent = '0 字';
+    previewMeta.textContent = '';
+    statusBadge.classList.remove('has-content');
+    statusText.textContent = '等待输入';
+    btnPublish.disabled = true;
+    return;
+  }
+
+  const { meta, content } = parseFrontmatter(raw);
+  currentMeta = meta;
+  const words = countWords(content);
+
+  editorMeta.textContent = words + ' 字';
+  statusBadge.classList.add('has-content');
+  statusText.textContent = '预览就绪';
+  btnPublish.disabled = false;
+
+  // Reset & parse
+  sectionCount = 0;
+  let htmlBody = marked.parse(content);
+  if (sectionCount > 0) htmlBody += '</div>';
+
+  const title = meta.title || '未命名文章';
+  const subtitle = meta.subtitle || meta.description || '';
+  const date = meta.date ? String(meta.date).slice(0, 10) : '';
+  const category = meta.category || '';
+  const tags = Array.isArray(meta.tags) ? meta.tags : [];
+  const status = meta.status || '草稿';
+  const readtime = meta.readtime || Math.ceil(words / 300) + ' min';
+
+  previewMeta.textContent = title;
+
+  previewContent.innerHTML = `
+    <header class="article-hero">
+      <div class="badge-row">
+        ${category ? `<span class="badge badge-secondary">${category}</span>` : ''}
+        <span class="badge"><span class="dot"></span>${status}</span>
+      </div>
+      <h1>${title}</h1>
+      ${subtitle ? `<p class="subtitle">${subtitle}</p>` : ''}
+      <div class="meta-bar">
+        ${date ? `<span class="item"><i data-lucide="calendar"></i><strong>${date}</strong></span>` : ''}
+        <span class="item"><i data-lucide="clock"></i><strong>${readtime}</strong> 阅读</span>
+        <span class="item"><i data-lucide="file-text"></i><strong>${words.toLocaleString()}</strong> 字</span>
+      </div>
+    </header>
+    <article class="article-body">
+      ${htmlBody}
+      ${tags.length ? `<div class="article-tags">${tags.map(t => `<span class="tag">#${t}</span>`).join('')}</div>` : ''}
+    </article>
+  `;
+
+  previewEmpty.style.display = 'none';
+  previewArticle.style.display = 'block';
+
+  lucide.createIcons({ nodes: previewContent.querySelectorAll('[data-lucide]') });
+}
+
+// Debounced render
+let timer;
+editor.addEventListener('input', () => {
+  clearTimeout(timer);
+  timer = setTimeout(renderPreview, 250);
+});
+
+// ============ Drag & Drop ============
+editor.addEventListener('dragover', (e) => e.preventDefault());
+editor.addEventListener('drop', (e) => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (ev) => { editor.value = ev.target.result; renderPreview(); showToast('已加载 ' + file.name); };
+    reader.readAsText(file);
+  }
+});
+
+// ============ Publish Dialog ============
+const dialogOverlay = document.getElementById('dialog-overlay');
+const pubSlug = document.getElementById('pub-slug');
+const pubSlugPreview = document.getElementById('pub-slug-preview');
+const pubTitle = document.getElementById('pub-title');
+const pubCategory = document.getElementById('pub-category');
+
+btnPublish.addEventListener('click', () => {
+  const title = currentMeta.title || '未命名文章';
+  const slug = title.replace(/[^\w\u4e00-\u9fff]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 50);
+  pubSlug.value = slug;
+  pubSlugPreview.textContent = slug;
+  pubTitle.value = title;
+  pubCategory.value = currentMeta.category || '';
+  dialogOverlay.classList.add('open');
+});
+
+pubSlug.addEventListener('input', () => { pubSlugPreview.textContent = pubSlug.value || '___'; });
+
+document.getElementById('btn-cancel').addEventListener('click', () => {
+  dialogOverlay.classList.remove('open');
+});
+
+// Download .md
+document.getElementById('btn-download-md').addEventListener('click', () => {
+  const slug = pubSlug.value || 'article';
+  const blob = new Blob([editor.value], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = slug + '.md';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('已下载 ' + slug + '.md → 放入 content/ 目录');
+});
+
+// Confirm publish (save to content/ via fetch POST — for local dev server)
+// Fallback: download .md + copy articles.json entry
+document.getElementById('btn-confirm-publish').addEventListener('click', async () => {
+  const slug = pubSlug.value || 'article';
+  const title = pubTitle.value || currentMeta.title || '';
+  const category = pubCategory.value || '';
+
+  // Try to save directly (works if running with a local server that supports PUT/POST)
+  try {
+    const saveResponse = await fetch(`content/${slug}.md`, { method: 'PUT', body: editor.value });
+    if (saveResponse.ok) {
+      dialogOverlay.classList.remove('open');
+      showToast('已发布 → article.html?slug=' + slug);
+      return;
+    }
+  } catch (e) {
+    // Server doesn't support PUT, fallback to download
+  }
+
+  // Fallback: download the file + show instructions
+  const blob = new Blob([editor.value], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = slug + '.md';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  // Copy articles.json entry to clipboard
+  const entry = JSON.stringify({
+    slug: slug,
+    title: title,
+    subtitle: currentMeta.subtitle || '',
+    category: category,
+    date: currentMeta.date ? String(currentMeta.date).slice(0, 10) : new Date().toISOString().slice(0, 10),
+    status: currentMeta.status || '草稿',
+    tags: currentMeta.tags || []
+  }, null, 2);
+
+  try {
+    await navigator.clipboard.writeText(entry);
+    showToast('已下载 .md 并复制 articles.json 条目到剪贴板');
+  } catch (e) {
+    showToast('已下载 .md，请手动添加到 articles.json');
+  }
+
+  dialogOverlay.classList.remove('open');
+});
+
+// Close dialog on overlay click
+dialogOverlay.addEventListener('click', (e) => {
+  if (e.target === dialogOverlay) dialogOverlay.classList.remove('open');
+});
+</script>
+
+</body>
+</html>

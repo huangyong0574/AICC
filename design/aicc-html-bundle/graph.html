@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AICC · 累积图谱</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --background: 0 0% 100%; --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%; --primary: 240 5.9% 10%; --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%; --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%; --accent: 240 4.8% 95.9%;
+    --border: 240 5.9% 90%; --ring: 240 10% 3.9%; --radius: 0.5rem;
+    --frontier: 38 92% 50%; --mature: 142 71% 38%;
+    --learning: 217 91% 60%; --published: 142 71% 38%;
+    --font-sans: 'Geist','Noto Sans SC',-apple-system,system-ui,sans-serif;
+    --font-mono: 'Geist Mono','SF Mono',Menlo,monospace;
+  }
+  .dark {
+    --background: 240 10% 3.9%; --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%; --primary: 0 0% 98%; --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%; --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%; --accent: 240 3.7% 15.9%;
+    --border: 240 3.7% 15.9%; --ring: 240 4.9% 83.9%;
+    --frontier: 38 92% 60%; --mature: 142 71% 50%;
+    --learning: 217 91% 70%; --published: 142 71% 55%;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{background:hsl(var(--background));color:hsl(var(--foreground));font-family:var(--font-sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;font-feature-settings:'rlig' 1,'calt' 1}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:none;background:none}
+  .container{max-width:1280px;margin:0 auto;padding:0 1.5rem}
+
+  .site-header{position:sticky;top:0;z-index:50;background:hsl(var(--background)/0.85);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid hsl(var(--border))}
+  .site-header .inner{height:64px;display:flex;align-items:center;justify-content:space-between}
+  .brand{display:inline-flex;align-items:center;gap:10px;font-weight:600;font-size:15px;letter-spacing:-0.01em}
+  .brand-mark{width:28px;height:28px;background:hsl(var(--primary));color:hsl(var(--primary-foreground));border-radius:calc(var(--radius) - 2px);display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:600;font-size:13px}
+  .brand-version{font-family:var(--font-mono);font-size:11px;color:hsl(var(--muted-foreground));padding:2px 8px;border:1px solid hsl(var(--border));border-radius:calc(var(--radius) - 2px);margin-left:4px}
+  .nav-tabs{display:inline-flex;align-items:center;gap:2px;background:hsl(var(--secondary));padding:4px;border-radius:calc(var(--radius) - 2px)}
+  .nav-tab{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;font-size:13px;font-weight:500;color:hsl(var(--muted-foreground));border-radius:calc(var(--radius) - 4px);transition:all 0.15s ease}
+  .nav-tab:hover{color:hsl(var(--foreground))}
+  .nav-tab.active{background:hsl(var(--background));color:hsl(var(--foreground));box-shadow:0 1px 2px hsl(var(--foreground)/0.06)}
+  .nav-tab .lucide{width:13px;height:13px}
+  .header-actions{display:inline-flex;align-items:center;gap:8px}
+  .icon-btn{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;background:transparent;color:hsl(var(--foreground));border-radius:calc(var(--radius) - 2px);transition:background 0.15s ease}
+  .icon-btn:hover{background:hsl(var(--accent))}
+  .icon-btn .lucide{width:16px;height:16px}
+  .icon-btn .moon{display:none}
+  .dark .icon-btn .sun{display:none}
+  .dark .icon-btn .moon{display:inline-block}
+  @media (max-width:768px){.nav-tabs{display:none}}
+
+  main{padding:64px 0 96px}
+  .page-hero{margin-bottom:32px}
+  .hero-kicker{display:inline-flex;align-items:center;gap:9px;font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.18em;text-transform:uppercase;color:hsl(var(--muted-foreground));margin-bottom:18px}
+  .hero-kicker .pulse{width:6px;height:6px;border-radius:9999px;background:hsl(var(--mature));box-shadow:0 0 0 4px hsl(var(--mature)/0.15)}
+  .page-hero h1{font-size:clamp(2.25rem,5vw,3.5rem);font-weight:600;letter-spacing:-0.04em;line-height:1.05;margin-bottom:18px}
+  .page-hero .lede{max-width:62ch;color:hsl(var(--muted-foreground));font-size:15.5px;line-height:1.7}
+
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid hsl(var(--border));flex-wrap:wrap}
+  .legend{display:inline-flex;align-items:center;gap:18px;flex-wrap:wrap;font-size:12px;color:hsl(var(--muted-foreground))}
+  .legend-item{display:inline-flex;align-items:center;gap:6px}
+  .legend-dot{width:10px;height:10px;border-radius:9999px}
+  .legend-dot.discovered{background:hsl(var(--muted-foreground)/0.3);border:1px dashed hsl(var(--muted-foreground)/0.5)}
+  .legend-dot.in-plan{background:hsl(var(--frontier))}
+  .legend-dot.learning{background:hsl(var(--learning))}
+  .legend-dot.published{background:hsl(var(--published))}
+  .toolbar-meta{font-family:var(--font-mono);font-size:11px;color:hsl(var(--muted-foreground));letter-spacing:0.04em}
+
+  .graph-frame{border:1px solid hsl(var(--border));border-radius:var(--radius);background:hsl(var(--card));position:relative;overflow:hidden}
+  .graph-svg{display:block;width:100%;height:560px}
+
+  .week-section{margin-top:36px}
+  .week-section h2{font-size:1rem;font-weight:600;letter-spacing:-0.01em;margin-bottom:14px;color:hsl(var(--foreground));display:inline-flex;align-items:center;gap:10px}
+  .week-section h2 .badge{font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:hsl(var(--muted-foreground));padding:2px 8px;border:1px solid hsl(var(--border));border-radius:9999px;font-weight:500}
+  .week-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+  .node-chip{display:grid;grid-template-columns:32px 1fr;gap:10px;align-items:center;padding:12px 14px;border:1px solid hsl(var(--border));border-radius:var(--radius);background:hsl(var(--card));transition:all 0.15s ease}
+  .node-chip:hover{border-color:hsl(var(--foreground)/0.2);transform:translateY(-1px);box-shadow:0 4px 12px -6px hsl(var(--foreground)/0.12)}
+  .node-chip.discovered{opacity:0.5;filter:grayscale(0.6)}
+  .node-num{width:32px;height:32px;border-radius:9999px;background:hsl(var(--secondary));display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:12px;font-weight:600;color:hsl(var(--foreground));font-feature-settings:'tnum' 1}
+  .node-chip.in-plan .node-num{background:hsl(var(--frontier)/0.15);color:hsl(var(--frontier))}
+  .node-chip.learning .node-num{background:hsl(var(--learning)/0.15);color:hsl(var(--learning))}
+  .node-chip.published .node-num{background:hsl(var(--published)/0.15);color:hsl(var(--published))}
+  .node-body{min-width:0}
+  .node-en{font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:hsl(var(--muted-foreground));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .node-title{font-size:13px;font-weight:500;color:hsl(var(--foreground));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  footer{border-top:1px solid hsl(var(--border));padding:24px 0;font-size:12px;color:hsl(var(--muted-foreground));font-family:var(--font-mono);letter-spacing:0.04em;margin-top:48px}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container inner">
+    <a class="brand" href="./index.html">
+      <span class="brand-mark">A</span>
+      AICC
+      <span class="brand-version">v0.2</span>
+    </a>
+    <nav class="nav-tabs" aria-label="主导航">
+      <a href="./index.html" class="nav-tab"><i data-lucide="scroll-text"></i>宪法</a>
+      <a href="./aicc-dashboard.html" class="nav-tab"><i data-lucide="layout-grid"></i>工作台</a>
+      <a href="./radar/index.html" class="nav-tab"><i data-lucide="radar"></i>雷达</a>
+      <a href="./plan.html" class="nav-tab"><i data-lucide="bookmark-check"></i>计划</a>
+      <a href="./graph.html" class="nav-tab active"><i data-lucide="network"></i>图谱</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" id="theme-toggle" aria-label="切换主题">
+        <i data-lucide="sun" class="sun"></i>
+        <i data-lucide="moon" class="moon"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+    <section class="page-hero">
+      <div class="hero-kicker"><span class="pulse"></span><span>Knowledge Graph · 累积视图</span></div>
+      <h1>累积图谱</h1>
+      <p class="lede">把每周雷达的认知点沉淀为长期的知识网络。已加入计划的节点用色彩突出，未涉及的保持灰色，便于一眼看出"我学到了什么，缺什么"。</p>
+    </section>
+
+    <div class="toolbar">
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot discovered"></span>未加入</span>
+        <span class="legend-item"><span class="legend-dot in-plan"></span>待启动</span>
+        <span class="legend-item"><span class="legend-dot learning"></span>学习中</span>
+        <span class="legend-item"><span class="legend-dot published"></span>已成稿</span>
+      </div>
+      <div class="toolbar-meta"><span id="graph-stats">7 节点 · 0 已激活</span></div>
+    </div>
+
+    <div class="graph-frame">
+      <svg class="graph-svg" id="graph-svg" viewBox="0 0 1200 560" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+    <section class="week-section">
+      <h2>2026-W22 <span class="badge">2026-05-26 → 06-01</span></h2>
+      <div class="week-strip" id="week-strip"></div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="container">AICC · Cumulative Knowledge Graph · 每周累积，持续生长</div>
+</footer>
+
+<script>
+  const THEME_KEY = 'aicc-theme';
+  const root = document.documentElement;
+  function applyTheme(t){ if(t==='dark') root.classList.add('dark'); else root.classList.remove('dark'); }
+  applyTheme(localStorage.getItem(THEME_KEY) || 'light');
+  document.getElementById('theme-toggle').addEventListener('click', ()=>{
+    const cur = root.classList.contains('dark') ? 'dark' : 'light';
+    const nxt = cur==='dark' ? 'light' : 'dark';
+    localStorage.setItem(THEME_KEY, nxt); applyTheme(nxt);
+  });
+
+  // ---- registry of all known cognition points (manually curated for now) ----
+  const NODES = [
+    { id: '2026-W22-01-dynamic-workflows', titleEn: 'Dynamic Workflows', title: '动态工作流', cluster: 'Agent' },
+    { id: '2026-W22-02-rlvr', titleEn: 'RLVR', title: '可验证奖励强化学习', cluster: 'RL' },
+    { id: '2026-W22-03-code-sandbox', titleEn: 'Code Sandbox', title: '代码沙箱奖励', cluster: 'RL' },
+    { id: '2026-W22-04-ppo-grpo', titleEn: 'PPO / GRPO', title: 'PPO 与 GRPO 对比', cluster: 'RL' },
+    { id: '2026-W22-05-multi-turn-rl', titleEn: 'Multi-turn RL', title: '多轮强化学习', cluster: 'RL' },
+    { id: '2026-W22-06-tool-use', titleEn: 'Tool Use', title: '工具使用与外部记忆', cluster: 'Agent' },
+    { id: '2026-W22-07-distributed-rl', titleEn: 'Distributed RL', title: '分布式 RL 训练', cluster: 'Infra' }
+  ];
+
+  function readState(){
+    try { return JSON.parse(localStorage.getItem('aicc-cognition-state') || '{}'); }
+    catch { return {}; }
+  }
+
+  function nodeColor(state){
+    if (state === 'in-plan') return 'hsl(var(--frontier))';
+    if (state === 'learning') return 'hsl(var(--learning))';
+    if (state === 'published') return 'hsl(var(--published))';
+    return 'hsl(var(--muted-foreground) / 0.4)';
+  }
+
+  function renderGraph(){
+    const state = readState();
+    const svg = document.getElementById('graph-svg');
+    svg.innerHTML = '';
+
+    const cx = 600, cy = 280;
+    // Hub by cluster
+    const clusters = ['Agent', 'RL', 'Infra'];
+    const clusterCenters = {
+      Agent: { x: 340, y: 220 },
+      RL: { x: 700, y: 300 },
+      Infra: { x: 940, y: 200 }
+    };
+
+    // draw cluster halos
+    clusters.forEach(c => {
+      const p = clusterCenters[c];
+      const halo = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      halo.setAttribute('cx', p.x); halo.setAttribute('cy', p.y);
+      halo.setAttribute('r', 130);
+      halo.setAttribute('fill', 'hsl(var(--secondary) / 0.5)');
+      halo.setAttribute('stroke', 'hsl(var(--border))');
+      halo.setAttribute('stroke-dasharray', '4 6');
+      svg.appendChild(halo);
+      const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+      label.setAttribute('x', p.x); label.setAttribute('y', p.y - 138);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('font-family', 'Geist Mono, monospace');
+      label.setAttribute('font-size', '11');
+      label.setAttribute('letter-spacing', '2');
+      label.setAttribute('fill', 'hsl(var(--muted-foreground))');
+      label.textContent = c.toUpperCase();
+      svg.appendChild(label);
+    });
+
+    // layout nodes around cluster centers
+    const byCluster = {};
+    NODES.forEach(n => {
+      byCluster[n.cluster] = byCluster[n.cluster] || [];
+      byCluster[n.cluster].push(n);
+    });
+
+    const positions = {};
+    Object.keys(byCluster).forEach(c => {
+      const arr = byCluster[c];
+      const ctr = clusterCenters[c];
+      const radius = 78;
+      arr.forEach((n, i) => {
+        const angle = (i / arr.length) * Math.PI * 2 - Math.PI / 2;
+        positions[n.id] = {
+          x: ctr.x + Math.cos(angle) * radius,
+          y: ctr.y + Math.sin(angle) * radius
+        };
+      });
+    });
+
+    // connection lines within cluster
+    Object.keys(byCluster).forEach(c => {
+      const arr = byCluster[c];
+      const ctr = clusterCenters[c];
+      arr.forEach(n => {
+        const p = positions[n.id];
+        const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1', ctr.x); line.setAttribute('y1', ctr.y);
+        line.setAttribute('x2', p.x); line.setAttribute('y2', p.y);
+        line.setAttribute('stroke', 'hsl(var(--border))');
+        line.setAttribute('stroke-width', '1');
+        svg.appendChild(line);
+      });
+    });
+
+    // nodes
+    let activatedCount = 0;
+    NODES.forEach(n => {
+      const p = positions[n.id];
+      const st = (state[n.id] && state[n.id].state) || 'discovered';
+      if (st !== 'discovered') activatedCount++;
+      const color = nodeColor(st);
+      const r = st === 'discovered' ? 11 : 14;
+
+      const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+      g.setAttribute('style', 'cursor:pointer');
+
+      if (st !== 'discovered') {
+        const ring = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        ring.setAttribute('cx', p.x); ring.setAttribute('cy', p.y);
+        ring.setAttribute('r', r + 5);
+        ring.setAttribute('fill', color);
+        ring.setAttribute('opacity', '0.18');
+        g.appendChild(ring);
+      }
+
+      const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx', p.x); c.setAttribute('cy', p.y);
+      c.setAttribute('r', r);
+      c.setAttribute('fill', st === 'discovered' ? 'hsl(var(--background))' : color);
+      c.setAttribute('stroke', st === 'discovered' ? 'hsl(var(--muted-foreground) / 0.5)' : color);
+      c.setAttribute('stroke-width', '1.5');
+      if (st === 'discovered') c.setAttribute('stroke-dasharray', '3 3');
+      g.appendChild(c);
+
+      const num = document.createElementNS('http://www.w3.org/2000/svg','text');
+      num.setAttribute('x', p.x); num.setAttribute('y', p.y + 4);
+      num.setAttribute('text-anchor', 'middle');
+      num.setAttribute('font-family', 'Geist Mono, monospace');
+      num.setAttribute('font-size', '11');
+      num.setAttribute('font-weight', '600');
+      num.setAttribute('fill', st === 'discovered' ? 'hsl(var(--muted-foreground))' : 'hsl(var(--primary-foreground))');
+      num.textContent = n.id.match(/-(\d{2})-/)[1];
+      g.appendChild(num);
+
+      const lbl = document.createElementNS('http://www.w3.org/2000/svg','text');
+      lbl.setAttribute('x', p.x); lbl.setAttribute('y', p.y + r + 16);
+      lbl.setAttribute('text-anchor', 'middle');
+      lbl.setAttribute('font-family', 'Geist Mono, monospace');
+      lbl.setAttribute('font-size', '10');
+      lbl.setAttribute('fill', st === 'discovered' ? 'hsl(var(--muted-foreground) / 0.7)' : 'hsl(var(--foreground))');
+      lbl.textContent = n.titleEn;
+      g.appendChild(lbl);
+
+      g.addEventListener('click', () => {
+        location.href = './radar/2026-06-12.html#' + n.id;
+      });
+
+      const title = document.createElementNS('http://www.w3.org/2000/svg','title');
+      title.textContent = `${n.titleEn} · ${n.title} (${st})`;
+      g.appendChild(title);
+
+      svg.appendChild(g);
+    });
+
+    document.getElementById('graph-stats').textContent = `${NODES.length} 节点 · ${activatedCount} 已激活`;
+
+    // week strip
+    const strip = document.getElementById('week-strip');
+    strip.innerHTML = NODES.map(n => {
+      const st = (state[n.id] && state[n.id].state) || 'discovered';
+      const idx = n.id.match(/-(\d{2})-/)[1];
+      return `
+        <a class="node-chip ${st}" href="./radar/2026-06-01.html#${n.id}">
+          <span class="node-num">${idx}</span>
+          <div class="node-body">
+            <div class="node-en">${n.titleEn}</div>
+            <div class="node-title">${n.title}</div>
+          </div>
+        </a>
+      `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  renderGraph();
+  window.addEventListener('storage', renderGraph);
+  window.addEventListener('focus', renderGraph);
+</script>
+</body>
+</html>

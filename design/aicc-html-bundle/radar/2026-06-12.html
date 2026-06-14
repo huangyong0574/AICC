@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI认知雷达 · 2026-06-12</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --background:0 0% 100%;
+  --background-secondary:0 0% 98%;
+  --foreground:0 0% 3.9%;
+  --card:0 0% 100%;
+  --card-foreground:0 0% 3.9%;
+  --primary:0 0% 9%;
+  --primary-foreground:0 0% 98%;
+  --secondary:0 0% 96.1%;
+  --secondary-foreground:0 0% 9%;
+  --muted:0 0% 96.1%;
+  --muted-foreground:0 0% 45.1%;
+  --accent:0 0% 96.1%;
+  --accent-foreground:0 0% 9%;
+  --destructive:0 72% 50%;
+  --destructive-foreground:0 0% 98%;
+  --border:0 0% 89.8%;
+  --input:0 0% 89.8%;
+  --ring:0 0% 3.9%;
+  --radius:0.5rem;
+  --frontier:38 92% 50%;
+  --mature:142 71% 38%;
+  --experimental:280 60% 55%;
+  --shadow-sm:0 1px 2px 0 rgb(0 0 0 / 0.04);
+  --shadow-md:0 2px 8px -2px rgb(0 0 0 / 0.06);
+  --shadow-lg:0 6px 20px -4px rgb(0 0 0 / 0.08);
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif,"Apple Color Emoji";
+  background:hsl(var(--background));
+  color:hsl(var(--foreground));
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  -webkit-text-size-adjust:100%;
+  overflow-x:hidden;
+}
+.font-mono{font-family:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+/* ===== MOBILE-FIRST LAYOUT ===== */
+.max-w-screen-xl{max-width:1280px;margin:0 auto;padding:0 1rem}
+@media(min-width:768px){.max-w-screen-xl{padding:0 1.5rem}}
+
+/* Header */
+header{
+  border-bottom:1px solid hsl(var(--border));
+  background:hsl(var(--background));
+  padding:12px 0;
+}
+@media(min-width:768px){
+  header{position:sticky;top:0;z-index:50;background:hsl(var(--background)/0.85);backdrop-filter:saturate(180%) blur(12px);-webkit-backdrop-filter:saturate(180%) blur(12px);padding:0}
+}
+.header-inner{display:flex;align-items:center;justify-content:space-between}
+@media(min-width:768px){.header-inner{height:4rem}}
+.logo{display:inline-flex;align-items:center;gap:0.5rem;font-weight:600;font-size:14px;letter-spacing:-0.01em;text-decoration:none;color:inherit}
+.logo-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;border-radius:6px;
+  background:hsl(var(--primary));color:hsl(var(--primary-foreground));
+  font-family:"SF Mono",monospace;font-weight:600;font-size:12px;
+}
+.logo-version{
+  font-family:"SF Mono",monospace;font-size:10px;
+  color:hsl(var(--muted-foreground));
+  border:1px solid hsl(var(--border));border-radius:4px;
+  padding:1px 6px;margin-left:2px;
+}
+.nav-pills{display:none}
+@media(min-width:768px){
+  .nav-pills{display:inline-flex;align-items:center;gap:2px;background:hsl(var(--secondary));padding:4px;border-radius:6px}
+}
+.nav-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:500;padding:6px 14px;border-radius:4px;
+  color:hsl(var(--muted-foreground));text-decoration:none;
+  transition:all 0.2s;border:none;background:none;cursor:pointer;
+}
+.nav-pill:hover{color:hsl(var(--foreground))}
+.nav-pill.active{background:hsl(var(--background));color:hsl(var(--foreground));box-shadow:var(--shadow-sm)}
+
+/* Hero */
+.hero{margin-bottom:1.5rem;padding-top:1.25rem}
+@media(min-width:768px){.hero{margin-bottom:2.75rem;padding-top:2rem}}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:0.5rem;
+  font-family:"SF Mono",monospace;font-size:10px;
+  text-transform:uppercase;letter-spacing:0.15em;
+  color:hsl(var(--muted-foreground));margin-bottom:12px;
+}
+@media(min-width:768px){.hero-eyebrow{font-size:10.5px;letter-spacing:0.18em;margin-bottom:18px}}
+.pulse-dot{width:6px;height:6px;border-radius:50%;background:hsl(var(--mature));animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+.hero h1{
+  font-weight:600;letter-spacing:-0.03em;line-height:1.1;
+  margin-bottom:8px;font-size:1.75rem;
+}
+@media(min-width:768px){.hero h1{font-size:clamp(2.25rem,5vw,3.5rem);letter-spacing:-0.04em;margin-bottom:18px}}
+.hero h1 .sub{
+  display:block;margin-top:0.5rem;
+  font-family:"SF Mono",monospace;font-weight:400;
+  font-size:12px;color:hsl(var(--muted-foreground));letter-spacing:0.01em;
+}
+@media(min-width:768px){.hero h1 .sub{font-size:0.32em;margin-top:0.75rem}}
+
+/* Filter bar */
+.filter-bar{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:1.25rem;padding-bottom:12px;
+  border-bottom:1px solid hsl(var(--border));
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.filter-bar::-webkit-scrollbar{display:none}
+@media(min-width:768px){.filter-bar{justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.75rem;padding-bottom:18px;overflow:visible}}
+.filter-pills{display:inline-flex;align-items:center;gap:6px;flex-shrink:0}
+.filter-label{display:none}
+@media(min-width:768px){.filter-label{display:inline;font-family:"SF Mono",monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:hsl(var(--muted-foreground));margin-right:4px}}
+.filter-pill{
+  display:inline-flex;align-items:center;gap:5px;
+  border-radius:9999px;font-size:12px;font-weight:500;
+  padding:5px 10px;border:1px solid hsl(var(--border));
+  background:hsl(var(--card));color:hsl(var(--muted-foreground));
+  transition:all 0.2s;cursor:pointer;white-space:nowrap;flex-shrink:0;
+}
+@media(min-width:768px){.filter-pill{font-size:12.5px;padding:6px 12px}}
+.filter-pill.active{background:hsl(var(--primary));color:hsl(var(--primary-foreground));border-color:hsl(var(--primary))}
+.filter-dot{width:6px;height:6px;border-radius:50%}
+.filter-dot.frontier{background:hsl(var(--frontier))}
+.filter-dot.mature{background:hsl(var(--mature))}
+.filter-dot.experimental{background:hsl(var(--experimental))}
+.stats-badge{
+  display:inline-flex;align-items:center;gap:0.5rem;
+  padding:5px 10px;border:1px solid hsl(var(--border));
+  border-radius:9999px;background:hsl(var(--card));
+  font-size:12px;color:hsl(var(--muted-foreground));white-space:nowrap;flex-shrink:0;
+}
+.stats-badge strong{font-family:"SF Mono",monospace;font-weight:600;color:hsl(var(--foreground))}
+
+/* Section titles */
+.section-title{
+  display:flex;align-items:center;gap:10px;
+  margin:2rem 0 1rem;padding-bottom:10px;
+  border-bottom:1px solid hsl(var(--border));
+}
+@media(min-width:768px){.section-title{margin:3rem 0 1.5rem;padding-bottom:12px}}
+.section-title h2{font-size:1.1rem;font-weight:600;letter-spacing:-0.02em}
+@media(min-width:768px){.section-title h2{font-size:1.25rem}}
+.section-count{
+  font-family:"SF Mono",monospace;font-size:10px;
+  color:hsl(var(--muted-foreground));
+  background:hsl(var(--secondary));padding:2px 7px;border-radius:4px;
+}
+
+/* Insight cards */
+.card-grid{display:grid;grid-template-columns:1fr;gap:1rem}
+@media(min-width:768px){.card-grid{gap:1.5rem}}
+.insight-card{
+  position:relative;background:hsl(var(--card));
+  border:1px solid hsl(var(--border));
+  border-radius:var(--radius);overflow:hidden;
+  transition:border-color 0.2s,box-shadow 0.2s,transform 0.2s;
+}
+.insight-card.frontier{border-color:hsl(var(--frontier)/0.4);box-shadow:inset 3px 0 0 hsl(var(--frontier))}
+.insight-card.mature{border-color:hsl(var(--mature)/0.4);box-shadow:inset 3px 0 0 hsl(var(--mature))}
+.insight-card.experimental{border-color:hsl(var(--experimental)/0.4);box-shadow:inset 3px 0 0 hsl(var(--experimental))}
+@media(min-width:768px){
+  .insight-card:hover{border-color:hsl(var(--foreground)/0.2);transform:translateY(-1px);box-shadow:0 8px 24px -12px hsl(var(--foreground)/0.15),0 2px 6px hsl(var(--foreground)/0.04)}
+  .insight-card.frontier{box-shadow:inset 3px 0 0 hsl(var(--frontier)),0 4px 16px -8px hsl(var(--frontier)/0.18)}
+  .insight-card.mature{box-shadow:inset 3px 0 0 hsl(var(--mature)),0 4px 16px -8px hsl(var(--mature)/0.18)}
+  .insight-card.experimental{box-shadow:inset 3px 0 0 hsl(var(--experimental)),0 4px 16px -8px hsl(var(--experimental)/0.18)}
+}
+
+.card-layout{display:flex;flex-direction:column}
+@media(min-width:768px){.card-layout{display:grid;grid-template-columns:96px 1fr;min-height:100%}}
+
+.card-num-col{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;
+  border-bottom:1px solid hsl(var(--border)/0.6);
+  background:hsl(var(--secondary)/0.4);
+}
+@media(min-width:768px){
+  .card-num-col{
+    flex-direction:column;align-items:center;justify-content:space-between;
+    text-align:center;gap:1.25rem;padding:2.25rem 0.875rem 1.75rem;
+    border-bottom:none;border-right:1px solid hsl(var(--border));background:transparent;
+  }
+}
+.card-num-col .num{
+  font-family:"SF Mono",monospace;font-weight:600;
+  letter-spacing:-0.05em;color:hsl(var(--foreground));
+  line-height:1;font-size:22px;font-feature-settings:'tnum' 1;
+}
+@media(min-width:768px){.card-num-col .num{font-size:44px;font-weight:500}}
+.card-num-col .num-label{
+  font-family:"SF Mono",monospace;font-size:9px;
+  font-weight:500;letter-spacing:0.2em;text-transform:uppercase;
+  color:hsl(var(--muted-foreground));margin-left:6px;
+}
+@media(min-width:768px){.card-num-col .num-label{margin-left:0;margin-top:10px;font-size:9.5px;display:block}}
+.maturity-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  border-radius:9999px;border:1px solid;
+  background:hsl(var(--background));
+  font-family:"SF Mono",monospace;font-size:10px;
+  font-weight:500;letter-spacing:0.01em;
+  padding:3px 8px;white-space:nowrap;color:hsl(var(--foreground));
+}
+.maturity-tag.frontier{border-color:hsl(var(--frontier)/0.3)}
+.maturity-tag.mature{border-color:hsl(var(--mature)/0.3)}
+.maturity-tag.experimental{border-color:hsl(var(--experimental)/0.3)}
+.maturity-tag .dot{width:5px;height:5px;border-radius:50%}
+.maturity-tag.frontier .dot{background:hsl(var(--frontier))}
+.maturity-tag.mature .dot{background:hsl(var(--mature))}
+.maturity-tag.experimental .dot{background:hsl(var(--experimental))}
+
+.card-content{padding:14px 14px 16px}
+@media(min-width:768px){.card-content{padding:1.5rem 2.25rem 1.75rem}}
+.card-eyebrow{
+  display:block;font-family:"SF Mono",monospace;
+  font-size:9.5px;font-weight:500;letter-spacing:0.14em;
+  text-transform:uppercase;color:hsl(var(--muted-foreground));margin-bottom:4px;
+}
+@media(min-width:768px){.card-eyebrow{font-size:10.5px;letter-spacing:0.18em;margin-bottom:8px}}
+.card-title{font-size:1.2rem;font-weight:600;letter-spacing:-0.02em;line-height:1.25;margin-bottom:2px}
+@media(min-width:768px){.card-title{font-size:1.6rem;letter-spacing:-0.025em}}
+.card-definition{
+  font-size:0.9375rem;line-height:1.6;
+  margin:12px 0;padding-left:14px;
+  border-left:2px solid hsl(var(--foreground));letter-spacing:-0.005em;
+}
+@media(min-width:768px){.card-definition{font-size:1.0625rem;line-height:1.65;margin:18px 0;padding-left:18px}}
+.card-section{margin-top:16px}
+@media(min-width:768px){.card-section{margin-top:22px}}
+.card-section-label{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:"SF Mono",monospace;font-size:9.5px;
+  font-weight:500;letter-spacing:0.15em;text-transform:uppercase;
+  color:hsl(var(--muted-foreground));margin-bottom:6px;
+}
+@media(min-width:768px){.card-section-label{font-size:10px;letter-spacing:0.2em;margin-bottom:10px;gap:6px}}
+.card-section-label svg{width:10px;height:10px}
+@media(min-width:768px){.card-section-label svg{width:11px;height:11px}}
+.card-section p{
+  font-size:0.875rem;line-height:1.72;letter-spacing:0.005em;
+  color:hsl(var(--foreground)/0.85);
+}
+@media(min-width:768px){.card-section p{font-size:0.9375rem;line-height:1.78}}
+
+.card-footer{
+  display:flex;flex-direction:column;gap:10px;
+  margin-top:14px;padding-top:12px;
+  border-top:1px dashed hsl(var(--border));
+}
+@media(min-width:768px){.card-footer{flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:1.75rem;padding-top:1.25rem}}
+.card-source{
+  display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;
+  font-family:"SF Mono",monospace;font-size:11px;color:hsl(var(--muted-foreground));
+}
+.card-source strong{font-weight:600;color:hsl(var(--foreground))}
+.card-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card-link{
+  display:inline-flex;align-items:center;gap:4px;
+  font-family:"SF Mono",monospace;font-size:11px;
+  color:hsl(var(--foreground));text-decoration:none;
+  border-bottom:1px solid hsl(var(--border));padding-bottom:1px;
+  transition:color 0.2s,border-color 0.2s;
+}
+.card-link:hover{border-color:hsl(var(--foreground))}
+.card-link svg{width:11px;height:11px}
+.plan-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  height:30px;padding:0 11px;border-radius:9999px;
+  border:1px solid hsl(var(--border));background:hsl(var(--card));
+  font-family:"SF Mono",monospace;font-size:11.5px;font-weight:500;
+  color:hsl(var(--muted-foreground));cursor:pointer;
+  transition:all 0.2s;white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;
+}
+.plan-btn:active{transform:scale(0.96);background:hsl(var(--accent))}
+@media(min-width:768px){.plan-btn{height:32px;padding:0 12px;font-size:12.5px}}
+@media(min-width:768px){.plan-btn:hover{color:hsl(var(--foreground));border-color:hsl(var(--foreground)/0.3);background:hsl(var(--accent))}}
+.plan-btn svg{width:12px;height:12px}
+
+/* Data tables */
+.data-table-wrapper{
+  overflow-x:auto;margin:0.75rem 0;
+  border:1px solid hsl(var(--border));border-radius:var(--radius);
+  -webkit-overflow-scrolling:touch;
+}
+.data-table{width:100%;border-collapse:collapse;font-size:0.8125rem}
+@media(min-width:768px){.data-table{font-size:0.875rem}}
+.data-table th{
+  text-align:left;padding:10px 12px;
+  font-family:"SF Mono",monospace;font-size:10px;
+  font-weight:600;letter-spacing:0.05em;text-transform:uppercase;
+  color:hsl(var(--muted-foreground));background:hsl(var(--secondary));
+  border-bottom:1px solid hsl(var(--border));white-space:nowrap;
+}
+@media(min-width:768px){.data-table th{padding:12px 16px;font-size:11px}}
+.data-table td{padding:10px 12px;border-bottom:1px solid hsl(var(--border)/0.5);vertical-align:top;line-height:1.5}
+@media(min-width:768px){.data-table td{padding:12px 16px}}
+.data-table tr:last-child td{border-bottom:none}
+.data-table .num-cell{font-family:"SF Mono",monospace;font-weight:500;color:hsl(var(--muted-foreground));font-size:11px;font-feature-settings:'tnum' 1}
+.data-table a{color:hsl(var(--foreground));text-decoration:none;border-bottom:1px solid hsl(var(--border));transition:border-color 0.2s}
+.data-table .tag{
+  display:inline-block;font-size:10px;font-family:"SF Mono",monospace;
+  padding:2px 6px;border-radius:4px;
+  background:hsl(var(--secondary));color:hsl(var(--muted-foreground));white-space:nowrap;
+}
+
+/* News cards */
+.news-grid{display:grid;grid-template-columns:1fr;gap:0.75rem}
+@media(min-width:768px){.news-grid{grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:1rem}}
+.news-card{
+  padding:12px 14px;border:1px solid hsl(var(--border));
+  border-radius:var(--radius);background:hsl(var(--card));
+  transition:border-color 0.2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.news-card:active{background:hsl(var(--accent)/0.5)}
+@media(min-width:768px){.news-card{padding:1.25rem 1.5rem}.news-card:hover{border-color:hsl(var(--foreground)/0.15);box-shadow:var(--shadow-md)}}
+.news-card-num{font-family:"SF Mono",monospace;font-size:10px;font-weight:600;color:hsl(var(--muted-foreground));margin-bottom:4px}
+.news-card h3{font-size:0.875rem;font-weight:600;letter-spacing:-0.01em;line-height:1.4;margin-bottom:6px}
+@media(min-width:768px){.news-card h3{font-size:0.9375rem;margin-bottom:8px}}
+.news-card h3 a{color:inherit;text-decoration:none}
+.news-card .reason{font-size:0.8125rem;line-height:1.55;color:hsl(var(--muted-foreground));margin-bottom:6px}
+.news-card .media{font-family:"SF Mono",monospace;font-size:10px;color:hsl(var(--muted-foreground))}
+
+/* Video list */
+.video-list{display:grid;gap:0}
+.video-item{
+  display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:10px;
+  padding:12px 12px;border-bottom:1px solid hsl(var(--border)/0.5);
+  -webkit-tap-highlight-color:transparent;
+}
+@media(min-width:768px){.video-item{grid-template-columns:auto 1fr auto;gap:16px;padding:14px 16px}}
+.video-item:last-child{border-bottom:none}
+.video-item:active{background:hsl(var(--accent)/0.5)}
+@media(min-width:768px){.video-item:hover{background:hsl(var(--accent)/0.5)}}
+.video-item .rank{font-family:"SF Mono",monospace;font-weight:600;font-size:12px;color:hsl(var(--muted-foreground));text-align:center;font-feature-settings:'tnum' 1}
+.video-item .info{min-width:0}
+.video-item .title{font-size:0.8125rem;font-weight:500;line-height:1.4;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+@media(min-width:768px){.video-item .title{font-size:0.875rem}}
+.video-item .meta{font-size:11px;color:hsl(var(--muted-foreground));display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.video-item .meta .channel{font-weight:500;color:hsl(var(--foreground))}
+.video-item .watch-link{
+  font-family:"SF Mono",monospace;font-size:10px;
+  color:hsl(var(--foreground));text-decoration:none;
+  padding:4px 8px;border:1px solid hsl(var(--border));border-radius:4px;
+  white-space:nowrap;-webkit-tap-highlight-color:transparent;
+}
+.video-item .watch-link:active{background:hsl(var(--accent))}
+
+/* Footer */
+footer{border-top:1px solid hsl(var(--border));margin-top:2rem;padding:1.5rem 0}
+@media(min-width:768px){footer{margin-top:3rem;padding:2rem 0}}
+.footer-inner{
+  display:flex;flex-direction:column;gap:0.5rem;
+  font-family:"SF Mono",monospace;font-size:10.5px;color:hsl(var(--muted-foreground));
+}
+@media(min-width:768px){.footer-inner{flex-direction:row;align-items:center;justify-content:space-between;font-size:11.5px}}
+.footer-logo{display:inline-flex;align-items:center;gap:6px}
+.footer-logo .icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;border-radius:4px;
+  background:hsl(var(--primary));color:hsl(var(--primary-foreground));
+  font-family:"SF Mono",monospace;font-weight:600;font-size:10px;
+}
+@media(min-width:768px){.footer-logo .icon{width:22px;height:22px;font-size:11px}}
+
+/* Note block */
+.note-block{
+  margin-top:10px;padding:10px 12px;
+  background:hsl(var(--secondary));border-radius:6px;
+  font-size:12px;color:hsl(var(--muted-foreground));
+}
+@media(min-width:768px){.note-block{margin-top:12px;padding:12px 16px;font-size:13px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="max-w-screen-xl header-inner">
+    <a class="logo" href="#">
+      <span class="logo-icon">A</span>
+      <span>AICC</span>
+      <span class="logo-version font-mono">v1.0</span>
+    </a>
+    <nav class="nav-pills" aria-label="主导航">
+      <a class="nav-pill" href="#">产品文化</a>
+      <a class="nav-pill" href="#">认知工作台</a>
+      <a class="nav-pill active" href="#">认知雷达</a>
+      <a class="nav-pill" href="#">认知图谱</a>
+    </nav>
+  </div>
+</header>
+
+<main style="padding-bottom:1rem">
+<div class="max-w-screen-xl">
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-eyebrow font-mono">
+    <span class="pulse-dot"></span>
+    WEEKLY RADAR · 2026-W24 · LIVE
+  </div>
+  <h1>本周深度认知点<span class="sub font-mono"><span style="opacity:.5">—&nbsp;</span>2026-06-08 → 2026-06-12</span></h1>
+</section>
+
+<!-- Filter bar -->
+<div class="filter-bar">
+  <div class="filter-pills">
+    <span class="filter-label font-mono">FILTER</span>
+    <button class="filter-pill active">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg>
+      全部 <span style="opacity:.5">·</span> 7
+    </button>
+    <button class="filter-pill"><span class="filter-dot mature"></span>成熟可用 · 3</button>
+    <button class="filter-pill"><span class="filter-dot frontier"></span>研究前沿 · 4</button>
+  </div>
+  <div class="stats-badge">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+    <span>认知点</span>
+    <strong class="font-mono">7</strong>
+  </div>
+</div>
+
+<!-- Cognitive Insights Cards -->
+<section class="card-grid">
+
+<!-- Insight 01 -->
+<article class="insight-card frontier">
+<div class="card-layout">
+  <div class="card-num-col">
+    <div><div class="num font-mono">01</div><div class="num-label font-mono">Insight</div></div>
+    <span class="maturity-tag frontier"><span class="dot"></span>研究前沿</span>
+  </div>
+  <div class="card-content">
+    <span class="card-eyebrow">Mixture-of-Transformers · World Foundation Model</span>
+    <h2 class="card-title">Mixture-of-Transformers 世界基础模型</h2>
+    <div class="card-definition">NVIDIA Cosmos 3 提出的一种用一个统一架构同时承载"理解物理世界—模拟物理状态—生成物理动作"三种能力的多任务专家路由网络。</div>
+    <div class="card-section">
+      <div class="card-section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>核心原理</div>
+      <p>传统物理AI流水线把感知、世界模型和动作策略拆成三个独立模型，模态间需要手动桥接接口。Cosmos 3 引入 Mixture-of-Transformers（MoT）架构，把视觉推理、世界模拟、动作生成分别放在三个 Transformer 专家中，但共享底层 token 表征和位置编码，由路由网络根据当前任务把 token 流分发到合适的专家。模型在大规模物理视频和机器人轨迹上联合训练，使三种能力共享对"物理直觉"（重力、刚体、摩擦、因果）的内部表征，避免了传统流水线在模态边界上的信息损失。Cosmos 3 完全开源，模型与数据集都发布在 Hugging Face。</p>
+    </div>
+    <div class="card-section">
+      <div class="card-section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>为什么重要</div>
+      <p>物理世界数据采集成本极高，世界基础模型让"在仿真中预训练 + 现实中微调"成为机器人和自动驾驶的主流范式。Cosmos 3 把"物理直觉"做成像 BERT 那样可被全社区复用的基础能力底座，会显著降低具身AI的入场门槛。</p>
+    </div>
+    <div class="card-footer">
+      <div class="card-source"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><strong>NVIDIA</strong><span style="color:hsl(var(--border))">·</span><span>2026-06-02</span></div>
+      <a class="card-link" href="https://developer.nvidia.com/blog/develop-physical-ai-reasoning-world-and-action-models-with-nvidia-cosmos-3/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>原文链接</a>
+      <button type="button" class="plan-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>加入深度学习计划</button>
+    </div>
+  </div>
+</div>
+</article>
+
+<!-- Insight 02 -->
+<article class="insight-card mature">
+<div class="card-layout">
+  <div class="card-num-col">
+    <div><div class="num font-mono">02</div><div class="num-label font-mono">Insight</div></div>
+    <span class="maturity-tag mature"><span class="dot"></span>成熟可用</span>
+  </div>
+  <div class="card-content">
+    <span class="card-eyebrow">Extended Test-Time Compute · Research Agent</span>
+    <h2 class="card-title">Extended Test-Time Compute 研究Agent</h2>
+    <div class="card-definition">Google Deep Research Max 通过延长测试时计算（test-time compute）让 Agent 可以反复迭代研究计划、自我批判、并补充检索，直到产出"分析师级"的报告。</div>
+    <div class="card-section">
+      <div class="card-section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>核心原理</div>
+      <p>早期 Deep Research 类 Agent 是"线性多跳"：拟定计划→执行搜索→汇总。Deep Research Max 借助 Gemini 3.1 Pro 的长程推理能力，引入显式的"批判-修订循环"。Agent 在生成中间稿后，会用专门的 critique prompt 自评关键论点是否被证据支撑、有没有逻辑漏洞，然后基于批判结果再生成新的搜索查询、补充资料、修订结论。同一个研究任务可以触发上百次自动检索（边缘案例下达 160 次），最终生成的报告自动嵌入图表和源数据。Deep Research Max 还原生支持 MCP（Model Context Protocol），可以接入用户私有数据源。</p>
+    </div>
+    <div class="card-section">
+      <div class="card-section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>为什么重要</div>
+      <p>这是"测试时计算"作为新Scaling Law（除了模型参数和数据量之外的第三条性能曲线）的最强工业化案例之一。它把"花更多算力买更好答案"做成产品能力，标志着研究/分析类工作流被 Agent 接管的临界点已到。</p>
+    </div>
+    <div class="card-footer">
+      <div class="card-source"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><strong>Google</strong><span style="color:hsl(var(--border))">·</span><span>2026-06-04</span></div>
+      <a class="card-link" href="https://blog.google/innovation-and-ai/models-and-research/gemini-models/next-generation-gemini-deep-research/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>原文链接</a>
+      <button type="button" class="plan-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>加入深度学习计划</button>
+    </div>
+  </div>
+</div>
+</article>
+
+<!-- Insight 03 -->
+<article class="insight-card mature">
+<div class="card-layout">
+  <div class="card-num-col">
+    <div><div class="num font-mono">03</div><div class="num-label font-mono">Insight</div></div>
+    <span class="maturity-tag mature"><span class="dot"></span>成熟可用</span>
+  </div>
+  <div class="card-content">
+    <span class="card-eyebrow">Vera — Agent-Native CPU</span>
+    <h2 class="card-title">Vera——Agent 原生 CPU 架构</h2>
+    <div class="card-definition">NVIDIA Vera 是首款专门为大规模 Agentic AI 工作负载设计的 CPU，把 Agent 在 CPU 端的实际瓶颈（频繁工具调用、上下文切换、多并发会话）作为一阶设计目标。</div>
+    <div class="card-section">
+      <div class="card-section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>核心原理</div>
+      <p>传统数据中心 CPU 为通用计算优化，在 Agent 工作负载下会出现三类瓶颈——海量轻量级 I/O（每个 Agent 都要调用工具/数据库/API）、低延迟调度（Agent 编排需要快速上下文切换）、高内存带宽（多个 Agent 会话同时持有大上下文）。Vera 针对这三类瓶颈做架构层重构：88 个 Olympus 自研核心、Spatial Multithreading 空间多线程加速 Agent 内并发、配合 LPDDR5X 提供 1.2TB/s 带宽。Vera 与 Rubin GPU 紧耦合形成 Vera Rubin 平台，在"Agent 工厂"（AI Factory）形态下以端到端 token 吞吐为优化指标。NVIDIA 给出的对比数据是相比同代 x86 CPU 在 Agent 负载下吞吐提升 1.8x。</p>
+    </div>
+    <div class="card-section">
+      <div class="card-section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>为什么重要</div>
+      <p>这是业界首次把"AI Agent"上升为需要专用硅的计算范式。芯片层面的"Agent原生"开始与软件框架（Agents SDK、LangChain）形成完整的栈级别协同。Vera Rubin 平台已进入量产爬坡，意味着"Agent 工厂"基础设施从论文走向数据中心。</p>
+    </div>
+    <div class="card-footer">
+      <div class="card-source"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><strong>NVIDIA</strong><span style="color:hsl(var(--border))">·</span><span>2026-06-03</span></div>
+      <a class="card-link" href="https://www.nvidia.com/en-us/data-center/technologies/rubin/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>原文链接</a>
+      <button type="button" class="plan-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>加入深度学习计划</button>
+    </div>
+  </div>
+</div>
+</article>
+
+<!-- Insight 04 -->
+<article class="insight-card mature">
+<div class="card-layout">
+  <div class="card-num-col">
+    <div><div class="num font-mono">04</div><div class="num-label font-mono">Insight</div></div>
+    <span class="maturity-tag mature"><span class="dot"></span>成熟可用</span>
+  </div>
+  <div class="card-content">
+    <span class="card-eyebrow">Codex Sites · Prompt-to-App</span>
+    <h2 class="card-title">Codex Sites——内部应用的 Prompt-to-App 平台</h2>
+    <div class="card-definition">OpenAI Codex Sites 让非开发者用一句话描述需求，就能生成、托管和分享一个完整的内部应用，把"编程"压缩为"说出意图"。</div>
+    <div class="card-section">
+      <div class="card-section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>核心原理</div>
+      <p>Codex Sites 的关键是把传统 Web 应用开发链路（前端代码、后端 API、数据库、部署、权限）编排成一条由 Codex Agent 自动完成的流水线。用户输入自然语言需求后，Codex 在后台拆解为子任务：选模板、生成 React 组件、生成数据 schema、配置认证、部署到 OpenAI 托管环境，最终给出一个可分享的 URL。配套的 6 个 Role-Specific Plugins（销售、财务、HR、运营、客服、产品）则把"角色任务上下文"作为长记忆注入 Codex，让同一个底层 Agent 在不同业务角色下表现得像专业工具。Codex Sites 在企业内的典型用法是"业务用户 5 分钟搭一个内部小工具"，而不是替代专业软件研发。</p>
+    </div>
+    <div class="card-section">
+      <div class="card-section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>为什么重要</div>
+      <p>这是"AI 编程"从"辅助开发者"到"绕过开发者直接服务业务"的明显跨越，对内部 IT 部门、低代码平台和 SaaS 工具的格局都会产生结构性冲击。</p>
+    </div>
+    <div class="card-footer">
+      <div class="card-source"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><strong>OpenAI</strong><span style="color:hsl(var(--border))">·</span><span>2026-06-02</span></div>
+      <a class="card-link" href="https://openai.com/index/codex-for-every-role-tool-workflow/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>原文链接</a>
+      <button type="button" class="plan-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>加入深度学习计划</button>
+    </div>
+  </div>
+</div>
+</article>
+
+<!-- Insight 05 -->
+<article class="insight-card frontier">
+<div class="card-layout">
+  <div class="card-num-col">
+    <div><div class="num font-mono">05</div><div class="num-label font-mono">Insight</div></div>
+    <span class="maturity-tag frontier"><span class="dot"></span>研究前沿</span>
+  </div>
+  <div class="card-content">
+    <span class="card-eyebrow">Agentic Orchestration Level — Cyber Threat Assessment</span>
+    <h2 class="card-title">Agentic Orchestration Level（攻防风险评估）</h2>
+    <div class="card-definition">Anthropic 提出的一种把"AI 被用作攻击工具的危险程度"标准化的评估框架，从"做了什么动作"升级为"在攻击链中扮演了多自主的协作者"。</div>
+    <div class="card-section">
+      <div class="card-section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>核心原理</div>
+      <p>Anthropic 分析了 2025.3—2026.3 一年间被禁用的 832 个滥用账号，用 MITRE ATT&amp;CK 框架对 AI 在攻击链中的角色进行映射。结论是攻击者使用 AI 的成熟度可分为四级：L1 仅生成钓鱼/诈骗文案；L2 用 AI 做侦察、写恶意代码；L3 用 AI 自主执行横向移动、权限提升等后渗透步骤；L4 用 AI 编排多个子 Agent、形成端到端自治攻击链。L3 已是当前主流，L4 已被观测到雏形。这意味着风险评估必须从"模型输出是否有害"升级为"模型是否被编排为攻击工具链中的一个关节"，对应的防御也要从内容审核转向行为模式与编排意图识别。</p>
+    </div>
+    <div class="card-section">
+      <div class="card-section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>为什么重要</div>
+      <p>随着 Agent 能力外溢，AI 安全的第一战场从"对齐"转向"反编排"。这个评估框架是当前少数能给出可操作分级的实证研究，是政策制定和企业蓝队都需要内化的认知。</p>
+    </div>
+    <div class="card-footer">
+      <div class="card-source"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><strong>Anthropic</strong><span style="color:hsl(var(--border))">·</span><span>2026-06-03</span></div>
+      <a class="card-link" href="https://www.anthropic.com/news/AI-enabled-cyber-threats-mitre-attack" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>原文链接</a>
+      <button type="button" class="plan-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>加入深度学习计划</button>
+    </div>
+  </div>
+</div>
+</article>
+
+<!-- Insight 06 -->
+<article class="insight-card mature">
+<div class="card-layout">
+  <div class="card-num-col">
+    <div><div class="num font-mono">06</div><div class="num-label font-mono">Insight</div></div>
+    <span class="maturity-tag mature"><span class="dot"></span>成熟可用</span>
+  </div>
+  <div class="card-content">
+    <span class="card-eyebrow">Voluntary Framework Regulation</span>
+    <h2 class="card-title">自愿框架监管（Trump AI 行政令）</h2>
+    <div class="card-definition">2026 年 6 月 2 日 Trump 签署的 "Promoting Advanced AI Innovation and Security" 行政令，正式确立美国 AI 监管的"自愿框架 + 网络安全焦点 + 前沿模型透明度"路径。</div>
+    <div class="card-section">
+      <div class="card-section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>核心原理</div>
+      <p>与 Biden 时代基于 Defense Production Act 的强制信息披露不同，新行政令把 AI 监管的核心机制改为：(1) 联邦机构与前沿 AI 公司签订自愿合规协议；(2) 把监管焦点从泛化 AI 风险收窄到"网络安全"和"关键基础设施"；(3) 通过 NIST 建立前沿模型评估的自愿透明度基准；(4) 配套出口管制和供应链安全措施。这种"软规则+硬基础设施安全"组合代表美国在不放弃监管的前提下尽量少干预创新速度的取向。</p>
+    </div>
+    <div class="card-section">
+      <div class="card-section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>为什么重要</div>
+      <p>这条监管路径将影响未来 2-3 年所有美企 AI 产品的合规边界，也将间接塑造欧盟、英国等司法辖区的监管选择。理解"为什么是自愿"是把握下一阶段 AI 商业化窗口期的关键。</p>
+    </div>
+    <div class="card-footer">
+      <div class="card-source"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><strong>White House</strong><span style="color:hsl(var(--border))">·</span><span>2026-06-02</span></div>
+      <a class="card-link" href="https://www.whitehouse.gov/presidential-actions/2026/06/promoting-advanced-artificial-intelligence-innovation-and-security/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>原文链接</a>
+      <button type="button" class="plan-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>加入深度学习计划</button>
+    </div>
+  </div>
+</div>
+</article>
+
+<!-- Insight 07 -->
+<article class="insight-card frontier">
+<div class="card-layout">
+  <div class="card-num-col">
+    <div><div class="num font-mono">07</div><div class="num-label font-mono">Insight</div></div>
+    <span class="maturity-tag frontier"><span class="dot"></span>研究前沿</span>
+  </div>
+  <div class="card-content">
+    <span class="card-eyebrow">Embodiment-Aware Synthetic Training</span>
+    <h2 class="card-title">Embodiment-Aware 合成训练数据</h2>
+    <div class="card-definition">基于 Cosmos 3 这类世界基础模型，把机器人训练数据从"实机采集"转向"由模型按机器人形态生成可执行轨迹"的合成数据范式。</div>
+    <div class="card-section">
+      <div class="card-section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>核心原理</div>
+      <p>实机数据采集是机器人最大的成本项——每个机器人都要在物理空间中执行任务、收集成功/失败数据。Cosmos 3 引入"Embodiment-Aware"生成能力：给定机器人形态描述（关节数、自由度、末端执行器、约束），世界模型可以反向生成在该形态下"物理可行"的合成视频和动作轨迹，并自动给出可执行的关节角序列。下游训练 pipeline 把这些合成数据当作真实数据使用，再通过少量真机微调消除 sim-to-real gap。NVIDIA 把这套范式作为 GR00T 人形机器人模型的核心数据来源。</p>
+    </div>
+    <div class="card-section">
+      <div class="card-section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>为什么重要</div>
+      <p>这是把"基础模型"概念从语言/视觉/世界推到"机器人形态空间"的第一步。它让"小公司也能训出可用人形机器人模型"在数据成本上变得现实。</p>
+    </div>
+    <div class="card-footer">
+      <div class="card-source"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><strong>NVIDIA</strong><span style="color:hsl(var(--border))">·</span><span>2026-06-02</span></div>
+      <a class="card-link" href="https://developer.nvidia.com/blog/develop-physical-ai-reasoning-world-and-action-models-with-nvidia-cosmos-3/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>原文链接</a>
+      <button type="button" class="plan-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>加入深度学习计划</button>
+    </div>
+  </div>
+</div>
+</article>
+
+</section>
+
+<!-- Section: Videos -->
+<div class="section-title">
+  <h2>本周视频精选</h2>
+  <span class="section-count font-mono">TOP 10</span>
+</div>
+<div class="data-table-wrapper">
+  <div class="video-list">
+    <div class="video-item">
+      <span class="rank font-mono">01</span>
+      <div class="info">
+        <div class="title">Introducing Sites in Codex</div>
+        <div class="meta"><span class="channel">OpenAI</span><span>·</span><span>Codex Sites: Prompt-to-App</span><span>·</span><span>7.7万播放</span></div>
+      </div>
+      <a class="watch-link font-mono" href="https://www.youtube.com/@OpenAI/videos" target="_blank">观看</a>
+    </div>
+    <div class="video-item">
+      <span class="rank font-mono">02</span>
+      <div class="info">
+        <div class="title">Announcing NVIDIA RTX Spark | GTC Taipei 2026 Keynote by CEO Jensen Huang</div>
+        <div class="meta"><span class="channel">NVIDIA</span><span>·</span><span>Jensen Huang</span><span>·</span><span>6.9万播放</span></div>
+      </div>
+      <a class="watch-link font-mono" href="https://www.youtube.com/@NVIDIA/videos" target="_blank">观看</a>
+    </div>
+    <div class="video-item">
+      <span class="rank font-mono">03</span>
+      <div class="info">
+        <div class="title">The better AI gets, the smaller its share of the economy might get</div>
+        <div class="meta"><span class="channel">Dwarkesh Patel</span><span>·</span><span>Alex Imas &amp; Phil Trammell</span><span>·</span><span>5.6万播放</span></div>
+      </div>
+      <a class="watch-link font-mono" href="https://www.youtube.com/@DwarkeshPatel/videos" target="_blank">观看</a>
+    </div>
+    <div class="video-item">
+      <span class="rank font-mono">04</span>
+      <div class="info">
+        <div class="title">Build and share interactive prototypes in Codex</div>
+        <div class="meta"><span class="channel">OpenAI</span><span>·</span><span>Codex 交互原型构建</span><span>·</span><span>5万播放</span></div>
+      </div>
+      <a class="watch-link font-mono" href="https://www.youtube.com/@OpenAI/videos" target="_blank">观看</a>
+    </div>
+    <div class="video-item">
+      <span class="rank font-mono">05</span>
+      <div class="info">
+        <div class="title">Jensen Huang and Satya Nadella's Conversation at Microsoft Build</div>
+        <div class="meta"><span class="channel">NVIDIA</span><span>·</span><span>Jensen Huang &amp; Satya Nadella</span><span>·</span><span>3.3万播放</span></div>
+      </div>
+      <a class="watch-link font-mono" href="https://www.youtube.com/@NVIDIA/videos" target="_blank">观看</a>
+    </div>
+    <div class="video-item">
+      <span class="rank font-mono">06</span>
+      <div class="info">
+        <div class="title">Turn the world into cheese (or anything really) with this camera</div>
+        <div class="meta"><span class="channel">OpenAI</span><span>·</span><span>多模态创意演示</span><span>·</span><span>3.2万播放</span></div>
+      </div>
+      <a class="watch-link font-mono" href="https://www.youtube.com/@OpenAI/videos" target="_blank">观看</a>
+    </div>
+    <div class="video-item">
+      <span class="rank font-mono">07</span>
+      <div class="info">
+        <div class="title">Accelerating Humanoid Robot Development With NVIDIA Isaac GR00T</div>
+        <div class="meta"><span class="channel">NVIDIA</span><span>·</span><span>Isaac GR00T 人形机器人</span><span>·</span><span>2.6万播放</span></div>
+      </div>
+      <a class="watch-link font-mono" href="https://www.youtube.com/@NVIDIA/videos" target="_blank">观看</a>
+    </div>
+    <div class="video-item">
+      <span class="rank font-mono">08</span>
+      <div class="info">
+        <div class="title">NVIDIA Vera—The CPU for Agents</div>
+        <div class="meta"><span class="channel">NVIDIA</span><span>·</span><span>Agent 原生 CPU 架构</span><span>·</span><span>2.5万播放</span></div>
+      </div>
+      <a class="watch-link font-mono" href="https://www.youtube.com/@NVIDIA/videos" target="_blank">观看</a>
+    </div>
+    <div class="video-item">
+      <span class="rank font-mono">09</span>
+      <div class="info">
+        <div class="title">Knowing What Your Customers Want, All the Time: Listen Labs' Alfred Wahlforss</div>
+        <div class="meta"><span class="channel">Sequoia Capital</span><span>·</span><span>Alfred Wahlforss</span><span>·</span><span>1.9万播放</span></div>
+      </div>
+      <a class="watch-link font-mono" href="https://www.youtube.com/@sequoiacapital/videos" target="_blank">观看</a>
+    </div>
+    <div class="video-item">
+      <span class="rank font-mono">10</span>
+      <div class="info">
+        <div class="title">How a reasoning model cracked an 80-year-old math problem — OpenAI Podcast Ep. 20</div>
+        <div class="meta"><span class="channel">OpenAI</span><span>·</span><span>推理模型攻克数学难题</span><span>·</span><span>1.2万播放</span></div>
+      </div>
+      <a class="watch-link font-mono" href="https://www.youtube.com/@OpenAI/videos" target="_blank">观看</a>
+    </div>
+  </div>
+</div>
+<div class="note-block">本周未更新频道：Anthropic（4周前）、Claude（无内容）、Andrej Karpathy（1年前）、Lex Fridman（仅1条且为上周内容）、Google DeepMind（2周前）</div>
+
+<!-- Section: Company Updates -->
+<div class="section-title">
+  <h2>AI公司技术动态</h2>
+  <span class="section-count font-mono">17 条</span>
+</div>
+<div class="data-table-wrapper">
+<table class="data-table">
+<thead><tr><th>#</th><th>公司</th><th>标题</th><th>类型</th><th>新概念</th><th>来源</th></tr></thead>
+<tbody>
+<tr><td class="num-cell">01</td><td>NVIDIA</td><td>Cosmos 3 物理AI世界基础模型</td><td><span class="tag">产品发布</span></td><td>Mixture-of-Transformers / 推理-世界-动作三合一</td><td><a href="https://developer.nvidia.com/blog/develop-physical-ai-reasoning-world-and-action-models-with-nvidia-cosmos-3/" target="_blank">原文</a></td></tr>
+<tr><td class="num-cell">02</td><td>NVIDIA</td><td>Vera CPU for Agents</td><td><span class="tag">产品发布</span></td><td>Agent 原生 CPU / 1.8x x86 吞吐</td><td><a href="https://www.nvidia.com/en-us/data-center/technologies/rubin/" target="_blank">原文</a></td></tr>
+<tr><td class="num-cell">03</td><td>NVIDIA</td><td>Vera Rubin Platform Ramping into Full Production</td><td><span class="tag">产品发布</span></td><td>Agent 工厂量产 / Vera+Rubin 统一架构</td><td><a href="https://www.nvidia.com/en-us/data-center/technologies/rubin/" target="_blank">原文</a></td></tr>
+<tr><td class="num-cell">04</td><td>NVIDIA</td><td>RTX Spark：个人 AI 桌面超级芯片</td><td><span class="tag">产品发布</span></td><td>1 PetaFLOP 端侧 AI / 个人 AI 时代</td><td><a href="https://nvidianews.nvidia.com/news/nvidia-microsoft-windows-pcs-agents-rtx-spark" target="_blank">原文</a></td></tr>
+<tr><td class="num-cell">05</td><td>NVIDIA</td><td>Isaac GR00T 人形机器人开发加速</td><td><span class="tag">技术更新</span></td><td>端到端机器人基础模型</td><td><a href="https://www.nvidia.com/en-us/glossary/isaac-gr00t/" target="_blank">原文</a></td></tr>
+<tr><td class="num-cell">06</td><td>OpenAI</td><td>Codex Sites + 6 Role-Specific Plugins</td><td><span class="tag">产品发布</span></td><td>Prompt-to-App / 角色定制 Codex</td><td><a href="https://openai.com/index/codex-for-every-role-tool-workflow/" target="_blank">原文</a></td></tr>
+<tr><td class="num-cell">07</td><td>OpenAI</td><td>Investor Innovation Day 2026</td><td><span class="tag">产品发布</span></td><td>OpenAI 商业化路径 / IPO 预热</td><td><a href="https://www.youtube.com/watch?v=RwzRm-qCXwA" target="_blank">原文</a></td></tr>
+<tr><td class="num-cell">08</td><td>OpenAI</td><td>GPT-Rosalind 5.5 生物防御版本</td><td><span class="tag">产品发布</span></td><td>生物防御 AI / 受控访问研究模式</td><td><a href="https://openai.com/index/strengthening-societal-resilience-with-rosalind-biodefense/" target="_blank">原文</a></td></tr>
+<tr><td class="num-cell">09</td><td>OpenAI</td><td>Build and share interactive prototypes in Codex</td><td><span class="tag">技术更新</span></td><td>Codex 原型协作</td><td><a href="https://openai.com/index/introducing-the-codex-app/" target="_blank">原文</a></td></tr>
+<tr><td class="num-cell">10</td><td>Google DeepMind</td><td>Deep Research Max（基于 Gemini 3.1 Pro）</td><td><span class="tag">产品发布</span></td><td>扩展测试时计算 / MCP 接入 / 160 次自动搜索</td><td><a href="https://blog.google/innovation-and-ai/models-and-research/gemini-models/next-generation-gemini-deep-research/" target="_blank">原文</a></td></tr>
+<tr><td class="num-cell">11</td><td>Google DeepMind</td><td>Solipsistic superintelligence is unlikely to be cooperative</td><td><span class="tag">研究成果</span></td><td>超智能合作性形式化分析</td><td><a href="https://deepmind.google/research/publications/231466/" target="_blank">原文</a></td></tr>
+<tr><td class="num-cell">12</td><td>Anthropic</td><td>Project Glasswing 扩展至 15+ 国家 150+ 组织</td><td><span class="tag">技术更新</span></td><td>关键基础设施 AI 网络防御扩张</td><td><a href="https://www.anthropic.com/news/expanding-project-glasswing" target="_blank">原文</a></td></tr>
+<tr><td class="num-cell">13</td><td>Anthropic</td><td>Services Track &amp; Partner Hub</td><td><span class="tag">产品发布</span></td><td>三级合作伙伴体系</td><td><a href="https://www.anthropic.com/news/services-track-partner-hub" target="_blank">原文</a></td></tr>
+<tr><td class="num-cell">14</td><td>Anthropic</td><td>AI-enabled Cyber Threats Mapping (MITRE ATT&amp;CK)</td><td><span class="tag">研究成果</span></td><td>Agentic Orchestration Level 风险评估</td><td><a href="https://www.anthropic.com/news/AI-enabled-cyber-threats-mitre-attack" target="_blank">原文</a></td></tr>
+<tr><td class="num-cell">15</td><td>Anthropic</td><td>秘密提交 S-1 草案，启动 IPO 流程</td><td><span class="tag">产品发布</span></td><td>估值 9650 亿</td><td><a href="https://www.anthropic.com/news/confidential-draft-s1-sec" target="_blank">原文</a></td></tr>
+<tr><td class="num-cell">16</td><td>DeepSeek</td><td>DeepGEMM FP8 计算核更新</td><td><span class="tag">技术更新</span></td><td>FP8 GEMM 高效推理</td><td><a href="https://github.com/deepseek-ai/DeepGEMM" target="_blank">原文</a></td></tr>
+<tr><td class="num-cell">17</td><td>DeepSeek</td><td>DeepEP MoE 专家并行通信库更新</td><td><span class="tag">技术更新</span></td><td>MoE 通信优化</td><td><a href="https://github.com/deepseek-ai/DeepEP" target="_blank">原文</a></td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- Section: Hot News -->
+<div class="section-title">
+  <h2>热门AI新闻推荐</h2>
+  <span class="section-count font-mono">11 条</span>
+</div>
+<div class="news-grid">
+  <div class="news-card">
+    <div class="news-card-num font-mono">01</div>
+    <h3><a href="https://www.whitehouse.gov/presidential-actions/2026/06/promoting-advanced-artificial-intelligence-innovation-and-security/" target="_blank">Trump签署"Promoting Advanced AI Innovation and Security"行政令</a></h3>
+    <div class="reason">美国AI监管路径明确：自愿框架+网络安全焦点+前沿模型透明度，本周最具政策影响力事件</div>
+    <div class="media font-mono">White House</div>
+  </div>
+  <div class="news-card">
+    <div class="news-card-num font-mono">02</div>
+    <h3><a href="https://www.edtechinnovationhub.com/news/googles-new-ai-agent-will-run-160-searches-while-you-sleep-and-hand-you-the-report-by-morning" target="_blank">Google DeepMind launches Deep Research Max</a></h3>
+    <div class="reason">自主研究Agent进入"过夜跑160次搜索给你交报告"时代</div>
+    <div class="media font-mono">EdTech Innovation Hub</div>
+  </div>
+  <div class="news-card">
+    <div class="news-card-num font-mono">03</div>
+    <h3><a href="https://techcrunch.com/2026/06/02/openai-launches-new-codex-tools-for-white-collar-work/" target="_blank">OpenAI launches new Codex tools for white-collar work</a></h3>
+    <div class="reason">Codex从开发者工具变身白领通用Agent平台，6个角色插件+Sites</div>
+    <div class="media font-mono">TechCrunch</div>
+  </div>
+  <div class="news-card">
+    <div class="news-card-num font-mono">04</div>
+    <h3><a href="https://www.helpnetsecurity.com/2026/06/03/anthropic-project-glasswing-expansion/" target="_blank">Anthropic expands Project Glasswing to 150 organizations</a></h3>
+    <div class="reason">AI网络防御从概念走向规模化部署</div>
+    <div class="media font-mono">Help Net Security</div>
+  </div>
+  <div class="news-card">
+    <div class="news-card-num font-mono">05</div>
+    <h3><a href="https://www.thedeepview.com/articles/nvidia-bets-big-that-it-has-the-cpu-for-the-ai-agent-era" target="_blank">Nvidia bets big that it has the CPU for the AI agent era</a></h3>
+    <div class="reason">Vera CPU——为Agent时代专门设计的芯片，挑战 x86</div>
+    <div class="media font-mono">The Deep View</div>
+  </div>
+  <div class="news-card">
+    <div class="news-card-num font-mono">06</div>
+    <h3><a href="https://www.axios.com/2026/06/01/nvidia-ai-push-cosmos-3-world-model" target="_blank">Nvidia expands AI push with Cosmos 3 world model</a></h3>
+    <div class="reason">物理AI世界基础模型开源化，机器人训练新底座</div>
+    <div class="media font-mono">Axios</div>
+  </div>
+  <div class="news-card">
+    <div class="news-card-num font-mono">07</div>
+    <h3><a href="https://www.bloomberg.com/news/articles/2026-06-05/wwdc-2026-preview-ios-27-siri-ai-features-macos-27-more-apple-will-announce" target="_blank">What to Expect From Apple's AI, Siri and iOS 27 Launch at WWDC 2026</a></h3>
+    <div class="reason">苹果AI战略关键节点，6月9日WWDC前瞻</div>
+    <div class="media font-mono">Bloomberg</div>
+  </div>
+  <div class="news-card">
+    <div class="news-card-num font-mono">08</div>
+    <h3><a href="https://www.startuphub.ai/ai-news/artificial-intelligence/2026/openai-investor-day-ai-s-business-transformation" target="_blank">OpenAI Investor Day: AI's Business Transformation</a></h3>
+    <div class="reason">OpenAI首次面向投资者展示完整商业化路径</div>
+    <div class="media font-mono">StartupHub.ai</div>
+  </div>
+  <div class="news-card">
+    <div class="news-card-num font-mono">09</div>
+    <h3><a href="https://techcrunch.com/2026/06/02/anthropic-scales-claude-mythos-to-critical-infrastructure-in-15-countries/" target="_blank">Anthropic scales Claude Mythos to critical infrastructure in 15+ countries</a></h3>
+    <div class="reason">国防级AI网络安全合作进入新阶段</div>
+    <div class="media font-mono">TechCrunch</div>
+  </div>
+  <div class="news-card">
+    <div class="news-card-num font-mono">10</div>
+    <h3><a href="https://justainews.com/companies/openai/openai-opens-gpt-rosalind-for-biodefense-and-pandemic-preparedness/" target="_blank">OpenAI Opens GPT Rosalind for Biodefense and Pandemic Preparedness</a></h3>
+    <div class="reason">AI在生物防御和流行病准备中的受控应用</div>
+    <div class="media font-mono">JustAINews</div>
+  </div>
+  <div class="news-card">
+    <div class="news-card-num font-mono">11</div>
+    <h3><a href="https://www.biopharmadive.com/news/foundayo-launch-openai-rosalind-janux-gilead-arcellx/817789/" target="_blank">Lilly's obesity pill off to a strong start; OpenAI debuts new drug discovery AI</a></h3>
+    <div class="reason">GPT-Rosalind在多家生物技术公司投入药物研发</div>
+    <div class="media font-mono">BioPharma Dive</div>
+  </div>
+</div>
+
+</div>
+</main>
+
+<footer>
+  <div class="max-w-screen-xl footer-inner">
+    <div class="footer-logo">
+      <span class="icon font-mono">A</span>
+      <span>AICC · 本周认知雷达</span>
+    </div>
+    <div>由 AI 认知雷达自动生成 · 覆盖 2026-06-08 → 2026-06-12</div>
+    <div>v1.0 · 2026-W24</div>
+  </div>
+</footer>
+
+</body>
+</html>
