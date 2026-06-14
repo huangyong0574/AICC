@@ -287,40 +287,61 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
         {/* Input Card */}
         <Card>
           <CardContent className="pt-6 space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <MessageCircle className="h-3 w-3" />你想穿透讲明白的 AI 概念（一句话提问）
-              </label>
-              <Textarea
-                value={rawQuestion}
-                onChange={e => setRawQuestion(e.target.value)}
-                placeholder="输入一个算法概念，如：GDN（Gated Delta Network）"
-                className="min-h-[90px]"
-                disabled={started}
-              />
-              <div className="flex items-center gap-2 flex-wrap text-[11px]">
-                <span className="text-muted-foreground shrink-0">示例：</span>
-                {EXAMPLES.map((ex, i) => (
-                  <span key={i} className="relative group/ex">
+            {conceptId ? (
+              /* 概念模式：认知点已从深度计划带入并确定，锁定展示（不再是可搜索/可编辑的输入） */
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <MessageCircle className="h-3 w-3" />本次要穿透学习的认知点（来自深度计划）
+                </label>
+                <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 flex items-center justify-between gap-3">
+                  <span className="text-base font-semibold text-foreground">{rawQuestion || initialQuestion || conceptId}</span>
+                  {!started && onNavigate && (
                     <button
-                      onClick={() => !started && setRawQuestion(ex.label)}
-                      disabled={started}
-                      className="rounded-full border border-border/60 bg-card/40 px-2.5 py-0.5 text-foreground/70 hover:border-primary/40 hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => onNavigate("plan")}
+                      className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 shrink-0"
                     >
-                      {ex.label}
+                      换一个
                     </button>
-                    <a
-                      href={ex.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="pointer-events-none group-hover/ex:pointer-events-auto absolute left-1/2 -translate-x-1/2 top-full mt-1.5 z-50 whitespace-nowrap rounded-md border border-border bg-popover px-2.5 py-1 text-[10px] text-muted-foreground shadow-md opacity-0 group-hover/ex:opacity-100 transition-opacity duration-150 hover:text-primary"
-                    >
-                      {ex.url.length > 50 ? ex.url.slice(0, 50) + "…" : ex.url}
-                    </a>
-                  </span>
-                ))}
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              /* 自由模式：未带概念时才提供输入 + 示例 */
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <MessageCircle className="h-3 w-3" />你想穿透讲明白的 AI 概念（一句话提问）
+                </label>
+                <Textarea
+                  value={rawQuestion}
+                  onChange={e => setRawQuestion(e.target.value)}
+                  placeholder="输入一个算法概念，如：GDN（Gated Delta Network）"
+                  className="min-h-[90px]"
+                  disabled={started}
+                />
+                <div className="flex items-center gap-2 flex-wrap text-[11px]">
+                  <span className="text-muted-foreground shrink-0">示例：</span>
+                  {EXAMPLES.map((ex, i) => (
+                    <span key={i} className="relative group/ex">
+                      <button
+                        onClick={() => !started && setRawQuestion(ex.label)}
+                        disabled={started}
+                        className="rounded-full border border-border/60 bg-card/40 px-2.5 py-0.5 text-foreground/70 hover:border-primary/40 hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {ex.label}
+                      </button>
+                      <a
+                        href={ex.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="pointer-events-none group-hover/ex:pointer-events-auto absolute left-1/2 -translate-x-1/2 top-full mt-1.5 z-50 whitespace-nowrap rounded-md border border-border bg-popover px-2.5 py-1 text-[10px] text-muted-foreground shadow-md opacity-0 group-hover/ex:opacity-100 transition-opacity duration-150 hover:text-primary"
+                      >
+                        {ex.url.length > 50 ? ex.url.slice(0, 50) + "…" : ex.url}
+                      </a>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center justify-between gap-3 pt-4">
               <div className="text-[11px] text-muted-foreground font-mono">
