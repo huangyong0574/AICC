@@ -200,9 +200,9 @@ main.tsx (App Router · 手写 History 路由 + CognitionProvider)
 | `aicc-published-articles` | localStorage | `EditorPage.tsx` | 已发布文章索引（slug/title/category/date/…） |
 | `aicc-article-md:<slug>` | localStorage | `EditorPage.tsx` → `ArticlePage.tsx` | 已发布文章的 Markdown 原文（文章页优先回读） |
 | `aicc-theme` | localStorage | `SiteHeader.tsx` | `dark` / `light` |
-| `gdn_llm_cfg_v3` | localStorage | `feynman/lib/storage.ts` | LLM 配置（apiKey/baseUrl/model） |
-| `gdn_notes_v3` | localStorage | `feynman/lib/storage.ts` | 费曼笔记（本地缓存，相同问题复用真实结果） |
-| `gdn_graph_v3` | localStorage | `feynman/lib/storage.ts` | 已内化概念（费曼图谱挂载） |
+| `aicc-llm-cfg` | localStorage | `feynman/lib/storage.ts` | LLM 配置（apiKey/baseUrl/model） |
+| `aicc-feynman-notes` | localStorage | `feynman/lib/storage.ts` | 费曼笔记（本地缓存，相同问题复用真实结果） |
+| `aicc-feynman-graph` | localStorage | `feynman/lib/storage.ts` | 已内化概念（费曼图谱挂载） |
 
 ---
 

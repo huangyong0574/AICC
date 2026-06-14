@@ -128,6 +128,30 @@ export function GraphPage({ onNavigate }: GraphPageProps) {
     }
   }, [NODES])
 
+  // 关系边：费曼内化产出的 concept→parent；父节点排在底部一行
+  const { relEdges, parentNodes } = useMemo(() => {
+    const relOf = (n: GraphNode) => {
+      for (const id of n.ids) {
+        const r = map[id]?.relation
+        if (r?.parent) return r
+      }
+      return null
+    }
+    const related = NODES.map((n) => ({ n, rel: relOf(n) })).filter((x) => x.rel) as Array<{
+      n: GraphNode
+      rel: { parent: string; text: string }
+    }>
+    const parents = Array.from(new Set(related.map((x) => x.rel.parent)))
+    const pPos: Record<string, { x: number; y: number }> = {}
+    parents.forEach((p, i) => {
+      pPos[p] = { x: VIEW_W * ((i + 1) / (parents.length + 1)), y: VIEW_H - 24 }
+    })
+    const edges = related
+      .map((x) => ({ id: x.n.id, from: positions[x.n.id], to: pPos[x.rel.parent] }))
+      .filter((e) => e.from && e.to)
+    return { relEdges: edges, parentNodes: parents.map((p) => ({ name: p, ...pPos[p] })) }
+  }, [NODES, map, positions])
+
   const activatedCount = NODES.filter((n) => stateOf(n) !== "discovered").length
 
   return (
@@ -201,6 +225,29 @@ export function GraphPage({ onNavigate }: GraphPageProps) {
                     style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: 2, fill: "hsl(var(--muted-foreground))" }}
                   >
                     {c.name}
+                  </text>
+                </g>
+              ))}
+
+              {/* 关系边：费曼内化产出的 concept→parent（虚线）；底部父节点 hub */}
+              {relEdges.map((e) => (
+                <line
+                  key={`rel-${e.id}`}
+                  x1={e.from.x}
+                  y1={e.from.y}
+                  x2={e.to.x}
+                  y2={e.to.y}
+                  stroke="hsl(var(--published))"
+                  strokeWidth={1.4}
+                  strokeDasharray="4 5"
+                  opacity={0.5}
+                />
+              ))}
+              {parentNodes.map((p) => (
+                <g key={`parent-${p.name}`}>
+                  <rect x={p.x - 54} y={p.y - 14} width={108} height={28} rx={14} fill="hsl(var(--secondary))" stroke="hsl(var(--border))" />
+                  <text x={p.x} y={p.y + 4} textAnchor="middle" style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, fill: "hsl(var(--foreground))" }}>
+                    {p.name}
                   </text>
                 </g>
               ))}

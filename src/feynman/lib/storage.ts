@@ -1,8 +1,28 @@
 import type { LlmConfig, Note, GraphDelta } from "../types"
 
-const LLM_KEY = "gdn_llm_cfg_v3"
-const NOTES_KEY = "gdn_notes_v3"
-const GRAPH_KEY = "gdn_graph_v3"  // 用户内化过的概念（用于知识图谱挂载）
+const LLM_KEY = "aicc-llm-cfg"
+const NOTES_KEY = "aicc-feynman-notes"
+const GRAPH_KEY = "aicc-feynman-graph"  // 用户内化过的概念（用于知识图谱挂载）
+
+// 一次性迁移：旧 gdn_* 键 → 新 aicc-* 键（保留用户已存的 key / 笔记 / 图谱，不丢数据）
+;(() => {
+  if (typeof localStorage === "undefined") return
+  const moves: Array<[string, string]> = [
+    ["gdn_llm_cfg_v3", LLM_KEY],
+    ["gdn_notes_v3", NOTES_KEY],
+    ["gdn_graph_v3", GRAPH_KEY],
+  ]
+  for (const [oldK, newK] of moves) {
+    try {
+      if (localStorage.getItem(newK) == null) {
+        const old = localStorage.getItem(oldK)
+        if (old != null) localStorage.setItem(newK, old)
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+})()
 
 export const DEFAULT_CFG: LlmConfig = {
   apiKey: "",

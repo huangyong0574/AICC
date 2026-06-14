@@ -51,7 +51,7 @@ function stateToPath(page: AppPage, slug: string, week: string): string {
 }
 
 function App() {
-  const { setState, map } = useCognition()
+  const { setState, map, upsert } = useCognition()
   const [page, setPage] = useState<AppPage>(() => pathToState(location.pathname).page)
   const [articleSlug, setArticleSlug] = useState<string>(() => pathToState(location.pathname).slug || 'flash-attention')
   // 当前查看的雷达周（'' = 最新周）。深链 /radar/<week> 时从 URL 初始化。
@@ -132,6 +132,19 @@ function App() {
     navigateTo('editor')
   }, [navigateTo, setActiveConcept])
 
+  // 费曼内化完成 → 把图谱关系（concept→parent）回写到平台认知状态，供认知图谱渲染关系边
+  const handleInternalized = useCallback(
+    (id: string, delta: { parent: string; relation: string; tags?: string[]; oneLine?: string }) => {
+      if (!id || !delta?.parent) return
+      const existing = map[id]
+      upsert(id, {
+        title: existing?.title || id,
+        relation: { parent: delta.parent, text: delta.relation, tags: delta.tags, oneLine: delta.oneLine },
+      })
+    },
+    [upsert, map],
+  )
+
   if (page === 'letter') {
     return <LetterHome onEnter={() => navigateTo('radar-archive')} onNavigate={handleNavigate} />
   }
@@ -181,6 +194,7 @@ function App() {
       initialQuestion={activeConceptId ? (map[activeConceptId]?.title || '') : ''}
       onGoToEditor={handleGoToEditor}
       onNavigate={handleNavigate}
+      onInternalized={handleInternalized}
     />
   )
 }

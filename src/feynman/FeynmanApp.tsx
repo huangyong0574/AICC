@@ -9,7 +9,7 @@ import {
 } from "lucide-react"
 import { SiteHeader, type NavPage } from "../pages/SiteHeader"
 
-import type { FeynmanDigest, LlmConfig, Note, StepEntry, FeynmanWarmupQuestion } from "./types"
+import type { FeynmanDigest, GraphDelta, LlmConfig, Note, StepEntry, FeynmanWarmupQuestion } from "./types"
 import { DEFAULT_CFG, loadCfg, addNote, findCachedNote } from "./lib/storage"
 import { callFeynmanWarmup } from "./lib/llm"
 
@@ -34,9 +34,11 @@ interface FeynmanAppProps {
   onGoToEditor?: (id?: string) => void
   /** 平台全局导航（套 AICC SiteHeader 用） */
   onNavigate?: (page: NavPage) => void
+  /** 费曼内化完成时回调：把图谱关系（concept→parent）回写平台认知状态 */
+  onInternalized?: (id: string, delta: GraphDelta) => void
 }
 
-export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigate }: FeynmanAppProps = {}) {
+export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigate, onInternalized }: FeynmanAppProps = {}) {
   const [cfg, setCfg] = useState<LlmConfig>(DEFAULT_CFG)
   const [rawQuestion, setRawQuestion] = useState(initialQuestion ?? "")
   const [topic, setTopic] = useState("")
@@ -401,6 +403,8 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
                 prefills={{ biz: stepTakeaways.step1, dev: stepTakeaways.step2, internal: stepTakeaways.step3 }}
                 onDigest={(d) => {
                   setFeynman(d)
+                  // 内化产出的图谱关系回写平台认知状态（驱动认知图谱关系边）
+                  if (conceptId && d.graphDelta) onInternalized?.(conceptId, d.graphDelta)
                   // 费曼评估完成后，自动保存为本地缓存
                   const note: Note = {
                     id: noteId || genId(),

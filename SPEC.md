@@ -456,7 +456,7 @@ User input -> FeynmanApp.tsx (learning 阶段内部状态管理)
 
 ### 4.5 Storage System
 
-> 完整数据契约。分两层：**平台状态机层（aicc-*）** 与 **费曼引擎层（gdn_*）**。
+> 完整数据契约。分两层：**平台状态机层（aicc-*）** 与 **费曼引擎层（aicc-feynman-* / aicc-llm-cfg，原 gdn_* 已迁移）**。
 
 **平台层（认知状态机 + 文章 + 主题）**
 
@@ -473,9 +473,9 @@ User input -> FeynmanApp.tsx (learning 阶段内部状态管理)
 
 | Key | Content | Structure |
 |---|---|---|
-| `gdn_llm_cfg_v3` | LLM config | `{ apiKey, baseUrl, model }` |
-| `gdn_notes_v3` | Note library | `Note[]` array |
-| `gdn_graph_v3` | Knowledge graph | `GraphDelta[]` array |
+| `aicc-llm-cfg` | LLM config | `{ apiKey, baseUrl, model }` |
+| `aicc-feynman-notes` | Note library | `Note[]` array |
+| `aicc-feynman-graph` | Knowledge graph | `GraphDelta[]` array |
 
 **Default Config** (`storage.ts`):
 ```typescript
@@ -1184,11 +1184,11 @@ npm run preview
 ### P1 — 费曼学习页交互升级 + 数据归一（剩余）
 - [ ] **「先猜后揭」交互（第 2 层）**：每步先写猜想 → 提交后揭晓 AI 解答 + 认知差（命中/遗漏/偏差）→ 带走修正；需改 `StepPipeline` + `callStep`（gap 字段折进单次调用）+ 真·LLM 迭代
 - [ ] **概念模式锁定 + 示例归一**：从计划带入的概念已确定，费曼页不应再显示「可编辑搜索框 + 无关示例（KAN/AWQ/CoT…）」——概念模式应锁定/确认展示该概念、直接「开始讲解」；仅自由模式才显示输入，且示例改取雷达概念（弃用 `algorithm-concepts.ts` 旧 30 库）
-- [ ] **费曼数据并入平台**：`gdn_notes_v3`/`gdn_graph_v3` → `aicc-*`；内化成果直接喂平台认知图谱
+- [ ] **费曼数据并入平台**：`aicc-feynman-notes`/`aicc-feynman-graph` → `aicc-*`；内化成果直接喂平台认知图谱
 
 ### P1 — 让主线「真正闭环」（剩余高价值缺口）
 - [ ] **已发布文章的文章库**：编辑器发布写 localStorage（`aicc-article-md` + `aicc-published-articles`）；目前经「深度计划」已成稿筛选访问，可考虑独立文章库视图（或并入图谱页）
-- [ ] **认知图谱关系边**：当前仅节点（按周聚类、按状态着色），无概念间关联；接 `gdn_graph_v3`（费曼内化产出的父节点/关系）渲染真实边
+- [ ] **认知图谱关系边**：当前仅节点（按周聚类、按状态着色），无概念间关联；接 `aicc-feynman-graph`（费曼内化产出的父节点/关系）渲染真实边
 - [ ] **每周回顾（链路⑤）**：在图谱上做「认知水平回顾 + 避免遗忘」的复习机制（间隔重复）
 - [ ] **防腐机制系统化**：把「24h 未成稿提醒 / 周度 LLM 审计 / 评价优于问答」从一封信的承诺变成实际功能（如防腐看板）
 

@@ -38,6 +38,8 @@ export interface CognitionItem {
   sourceWeek?: string
   /** 来源雷达快照文件名，如 2026-06-12.html */
   sourceFile?: string
+  /** 费曼内化产出的图谱关系（用于认知图谱的关系边）：concept → parent */
+  relation?: { parent: string; text: string; tags?: string[]; oneLine?: string }
 }
 
 export type CognitionMap = Record<string, CognitionItem>
