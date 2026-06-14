@@ -322,7 +322,13 @@ type CognitionMap = Record<string /* id */, CognitionItem>
 
 **上游：`ai-cognitive-radar` skill**（个人知识系统的外循环感知层，运行在 Qoder，仓库外）
 每周扫描 YouTube 频道 / AI 公司博客 / 权威媒体 → 速览层 + 精选 5-8 个深度认知点（带成熟度）。
-产出：① Markdown 周报（存 Obsidian）② 静态 HTML（部署 ECS `/weekly/{date}.html`）③ **结构化 JSON（喂工程）** ④ 微信推送。
+产出 4 件：
+- ① Markdown 周报 → Obsidian `AICC-Input/AI认知雷达-{本周五日期}.md`
+- ② 静态 HTML → 部署 ECS `/weekly/{本周五日期}.html`（独立阅读页，供微信推送）
+- ③ **结构化 JSON（喂工程）→ Obsidian `AICC-Input/{weekId}.json`**（`RadarWeek` 契约，见下）—— ⚠️ 当前定时任务缺这一步，是 skill ↔ 应用未打通的根因
+- ④ 微信推送链接
+
+**命名映射（务必一致）**：`{本周五日期}`（如 `2026-06-12`）与 `{weekId}`（ISO 周号，如 `2026-W24`）指同一周；约定 `generatedAt` = 本周五日期 = weekly HTML 文件名，三者一一对应（`weekly/2026-06-12.html` ↔ `2026-W24.json`，其 `generatedAt: "2026-06-12"`）。skill 须同时产出这两种标识。
 
 **数据契约（唯一来源）：`public/content/radar/`**
 
@@ -341,7 +347,15 @@ type CognitionMap = Record<string /* id */, CognitionItem>
 
 **两级雷达 IA（对齐产品链路②③）**：`/radar` 归档全集合 → 点某期 → `/radar/{weekId}` 该周切片 → 选 1 个认知点 → 费曼。
 
-> 即：**skill 每周摄取 → 写 `public/content/radar/*.json`（+ 更新 index）→ 归档页自动多出一期 → 进某期 → 加入计划进入状态机**。新增一周无需改代码。
+**摄取链路（Obsidian 中转 + AICC 侧集成；git 为唯一事实来源）**：
+1. skill 把 ③ JSON 产到 Obsidian `AICC-Input/{weekId}.json`（与 MD 并列；skill **不**碰 git、**不**碰 ECS `content/radar`）。
+2. AICC 侧运行 `node scripts/ingest-radar.mjs <…/AICC-Input/{weekId}.json>`：校验 `RadarWeek` 契约 + id 规范 `{weekId}-{NN}-{slug}` → 复制到 `public/content/radar/{weekId}.json` → 扫描目录重建 `index.json`（按 weekId 降序）。
+3. `git commit + push`（事实来源更新）→ `npm run build` → 部署 `dist/`（含 `content/radar/`）到 ECS（增量 scp，保留 `weekly/` + `demo/`）。
+4. 结果：归档页自动多出一期，**认知图谱 / 深度计划 / 费曼自由模式示例随之增长**。
+
+**状态机边界**：skill 只负责 `discovered` 层数据；`in-plan / learning / published` 存在用户浏览器 `aicc-cognition-state`（localStorage），skill 不触碰、也无法触碰。
+
+> 即：**skill 每周摄取 → 写 `AICC-Input/{weekId}.json` → `ingest-radar` 纳入 `public/content/radar/`（+ 重建 index）→ commit/push + 部署 → 归档页自动多一期 → 加入计划进入状态机**。新增一周无需改代码。
 
 ---
 

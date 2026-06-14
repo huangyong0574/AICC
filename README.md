@@ -266,9 +266,9 @@ src/
 public/
 └── content/                        # AI 概念文章库
     ├── articles.json               # 文章索引
-    ├── radar/                      # ★ 认知雷达数据（由 ai-cognitive-radar skill 产出，工程动态加载）
-    │   ├── index.json              #   周索引（新→旧）
-    │   └── 2026-W24.json           #   每周认知点（RadarWeek）
+    ├── radar/                      # ★ 认知雷达数据（skill 产出 → scripts/ingest-radar.mjs 纳入；工程动态加载）
+    │   ├── index.json              #   周索引（新→旧），由 ingest-radar 重建
+    │   └── 2026-W24.json           #   每周认知点（RadarWeek：weekId/dateRange/generatedAt/insights）
     ├── flash-attention.md
     ├── csa-compressed-sparse-attention.md
     ├── mla-multi-head-latent-attention.md
@@ -279,6 +279,9 @@ public/
 
 design/
 └── aicc-html-bundle/               # 设计稿源（HTML，归口为唯一来源，与 src/ 实现对照）
+
+scripts/
+└── ingest-radar.mjs                # 雷达摄取：AICC-Input/{weekId}.json → public/content/radar/ + 重建 index（见 SPEC §3.6）
 ```
 
 ---
@@ -381,6 +384,8 @@ AICC 采用「认知递进」的分层设计，对齐产品链路：
 | 动态 SVG 机制图 + 30 算法概念知识库 | Done | P0 |
 | 设计稿归档 design/（唯一来源） | Done | P0 |
 | **雷达数据动态化**（skill 输出 JSON → 工程 `useLatestRadarWeek()` 加载） | Done | P0 |
+| 雷达摄取脚本 `ingest-radar` + `RadarWeek.generatedAt` 对齐（AICC 侧集成就绪，见 SPEC §3.6） | Done | P1 |
+| 定时任务 skill 补产 `{weekId}.json` 到 `AICC-Input/`（打通应用雷达/图谱自动增长） | Planned | P1 |
 | ECS 生产部署 | Done | P0 |
 | **费曼「先猜后揭」**（每步先写猜想 → 揭晓 + 认知差：命中/遗漏/偏差） | Done | P1 |
 | 费曼概念模式锁定 + 示例归一（弃用旧 30 库，改取雷达概念） | Done | P1 |

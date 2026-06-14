@@ -39,11 +39,13 @@ export interface RadarInsight {
 }
 
 export interface RadarWeek {
-  /** 周编号（用于 Hero kicker） */
+  /** 周编号（用于 Hero kicker），ISO 周号如 2026-W24 */
   weekId: string
   /** 日期范围（副标题） */
   dateRange: string
-  /** 7 条认知点 */
+  /** 生成日期（= 本周五日期 = weekly HTML 文件名），由 skill 写入 */
+  generatedAt?: string
+  /** 5-8 条认知点 */
   insights: RadarInsight[]
 }
 
