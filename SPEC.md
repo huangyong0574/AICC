@@ -394,7 +394,7 @@ AICC/
 │   │   ├── FeynmanApp.tsx           # 主应用（接 conceptId/initialQuestion/onGoToEditor）
 │   │   ├── types.ts                 # 数据契约
 │   │   ├── components/              # StepPipeline / FeynmanPrime / DigestPanel / views/ / animations/ …
-│   │   ├── lib/                     # llm.ts / prompts.ts / storage.ts / partialJson.ts / svgRenderer.ts / mdExport.ts
+│   │   ├── lib/                     # llm.ts / prompts.ts / storage.ts / partialJson.ts / svgRenderer.ts
 │   │   └── data/                    # algorithm-concepts.ts(.md)（30 概念 + arXiv 链接）
 │   ├── App.tsx                      # 旧单页入口（已无人 import，遗留）
 │   └── index.css                    # 全局样式 + CSS 变量
@@ -764,19 +764,16 @@ interface GraphDelta {
 
 ---
 
-### 5.7 Export Bar
+### 5.7 素材导出栏（已移除）
 
-`ExportBar` component provides 5 export methods:
+> 原 `ExportBar`（素材导出 / 沉淀：保存到笔记库 · 下载 .md · 复制 Markdown · 讲稿片段 · PPT 要点）已整体移除，`components/ExportBar.tsx` 与 `lib/mdExport.ts` 一并删除。
 
-| Button | Function | Implementation |
-|---|---|---|
-| 保存到笔记库 | addNote -> localStorage | `storage.ts#addNote` |
-| 下载 .md | Generate Markdown file download | `mdExport.ts#downloadMarkdown` |
-| 复制 Markdown | Copy to clipboard | `mdExport.ts#toMarkdown` |
-| 讲稿片段 | Extract value lead + definition + benefit summary | `mdExport.ts#toSpeechScript` |
-| PPT 要点 | Extract bullet points | `mdExport.ts#toPptBullets` |
+**移除理由（向产品主线收敛）**：
+- **违背「输出你的理解，而非 AI 的理解」**：五个按钮导出的都是 AI 的四步结构化输出（讲稿/PPT 只是再包装一遍），与一封信的核心信条冲突。真正值得沉淀的是用户**自己的成稿文章**，已有专属路径（见下）。
+- **笔记库已无入口**：`LibraryDialog` 早已删除，`aicc-feynman-notes` 仅作「相同提问直接加载」的内部缓存；「保存到笔记库」指向一个不存在的视图。
+- **重复 + 过早逃生口**：内化完成时 `FeynmanApp` 已自动 `addNote`（无需手动保存）；且该栏在「任意一步确认」后即出现，会把用户从「内化 → 去成稿」正路上拉走。
 
-Markdown export includes frontmatter: `title`, `question`, `tags`, `parent: Transformer`, `createdAt`
+**唯一沉淀出口**：内化三问 →「去成稿」→ 成稿编辑器 → 发布 → 更新认知图谱 + 标记 `published`（§5.6 / §3.5）。若日后需要「带走原始素材」，应放在**已发布文章**（用户的产物）侧，而非 AI 解释这一侧。
 
 ---
 

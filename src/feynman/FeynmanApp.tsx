@@ -16,7 +16,6 @@ import { callFeynmanWarmup } from "./lib/llm"
 import { FeynmanPrime } from "./components/FeynmanPrime"
 import { StepPipeline, emptySteps } from "./components/StepPipeline"
 import { FeynmanDigestPanel } from "./components/FeynmanDigestPanel"
-import { ExportBar } from "./components/ExportBar"
 import { CognitiveNavBar } from "./components/CognitiveNavBar"
 import { SettingsDialog } from "./components/SettingsDialog"
 import { useLatestRadarWeek } from "../data/radarData"
@@ -420,15 +419,6 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
                   toast.success("整份资料已存入本地缓存，下次提问相同问题将直接加载")
                 }}
               />
-            )}
-
-            {(allConfirmed || steps.some(s => s.confirmed)) && (
-              <Card>
-                <CardContent className="pt-5 space-y-3">
-                  <div className="text-xs text-muted-foreground">素材导出 / 沉淀</div>
-                  <ExportBar note={currentNote} />
-                </CardContent>
-              </Card>
             )}
 
             {/* 内化前置成成稿门槛：四步确认后，必须先完成费曼内化三问，才解锁「去成稿」 */}

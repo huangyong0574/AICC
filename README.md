@@ -171,7 +171,7 @@ main.tsx (App Router · 手写 History 路由 + CognitionProvider)
 ### 8. 本地优先架构
 
 - **无需后端**：所有 LLM 调用直接走 DashScope（阿里云百炼）；**本产品必须连接 LLM，无离线/Mock 模式**
-- **笔记持久化**：localStorage + Markdown 导出
+- **笔记持久化**：学习状态与笔记存浏览器 localStorage（相同提问可直接复用缓存）
 - **知识图谱**：已学习概念的可视化
 
 ---
@@ -260,8 +260,7 @@ src/
 │   │   ├── llm.ts                  # DashScope API 客户端 + SSE 解析
 │   │   ├── partialJson.ts          # 流式部分 JSON 提取器
 │   │   ├── storage.ts              # localStorage 持久化
-│   │   ├── svgRenderer.ts          # SVG 模板渲染
-│   │   └── mdExport.ts             # Markdown 导出
+│   │   └── svgRenderer.ts          # SVG 模板渲染
 │   ├── FeynmanApp.tsx              # 主应用 + 状态管理
 │   └── types.ts                    # 完整数据契约
 public/
