@@ -4,24 +4,17 @@ interface MaturityPillProps {
   maturity: Maturity
 }
 
-const config: Record<Maturity, { label: string; className: string }> = {
-  frontier: {
-    label: '研究前沿',
-    className: 'border-[hsl(var(--frontier))]/30 text-foreground',
-  },
-  mature: {
-    label: '成熟可用',
-    className: 'border-[hsl(var(--mature))]/30 text-foreground',
-  },
+const config: Record<Maturity, { label: string; cssVar: string }> = {
+  frontier: { label: '研究前沿', cssVar: 'frontier' },
+  mature: { label: '成熟可用', cssVar: 'mature' },
+  experimental: { label: '概念验证', cssVar: 'experimental' },
 }
 
 export function MaturityPill({ maturity }: MaturityPillProps) {
-  const { label, className } = config[maturity]
-  const dotClass = maturity === 'frontier' ? 'bg-[hsl(var(--frontier))]' : 'bg-[hsl(var(--mature))]'
-  const dotShadow =
-    maturity === 'frontier'
-      ? 'shadow-[0_0_0_3px_hsl(var(--frontier)/0.15)]'
-      : 'shadow-[0_0_0_3px_hsl(var(--mature)/0.15)]'
+  const { label, cssVar } = config[maturity] ?? config.frontier
+  const className = `border-[hsl(var(--${cssVar}))]/30 text-foreground`
+  const dotClass = `bg-[hsl(var(--${cssVar}))]`
+  const dotShadow = `shadow-[0_0_0_3px_hsl(var(--${cssVar})/0.15)]`
 
   return (
     <span

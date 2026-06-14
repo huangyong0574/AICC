@@ -1,10 +1,17 @@
 /**
- * AI 认知雷达 - 本周数据
- * 数据源：2026-W22（2026-05-26 → 2026-06-01）
- * 注：所有 7 条 insight 内容已从设计稿 aicc-radar.html 完整提取
+ * AI 认知雷达 - 数据层
+ *
+ * 数据来源（唯一事实来源）：`public/content/radar/`
+ *   - index.json        —— 周列表（新→旧），由 ai-cognitive-radar skill 维护
+ *   - <weekId>.json     —— 每周的 RadarWeek 数据
+ * 运行时由 useLatestRadarWeek() 动态加载最新一周；下方 radarWeekData 仅作离线/加载失败兜底。
+ *
+ * 概念 id 规范：`<weekId>-<NN>-<slug>`（如 2026-W24-01-mot-world-model），
+ * 使周/序号成为内生元数据，供计划页编号、跨周分组、状态机复用。
  */
+import { useEffect, useState } from 'react'
 
-export type Maturity = 'frontier' | 'mature'
+export type Maturity = 'frontier' | 'mature' | 'experimental'
 
 export interface RadarInsight {
   /** 全局唯一 ID，用于深入计划 localStorage 存储 */
@@ -157,4 +164,74 @@ export const radarWeekData: RadarWeek = {
       sourceUrl: 'https://www.youtube.com/watch?v=UDTr9yUnLUI',
     },
   ],
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * 动态加载层：从 public/content/radar/ 读取 skill 产出的真实周报数据
+ * ────────────────────────────────────────────────────────────── */
+
+const RADAR_BASE = '/content/radar'
+
+export interface RadarIndexEntry {
+  weekId: string
+  dateRange: string
+  /** 相对 RADAR_BASE 的文件名，如 2026-W24.json */
+  file: string
+  generatedAt?: string
+}
+
+/** 读取周索引（新→旧）；失败返回空数组 */
+export async function loadRadarIndex(): Promise<RadarIndexEntry[]> {
+  try {
+    const r = await fetch(`${RADAR_BASE}/index.json`)
+    if (!r.ok) throw new Error(`HTTP ${r.status}`)
+    const data = await r.json()
+    return Array.isArray(data?.weeks) ? (data.weeks as RadarIndexEntry[]) : []
+  } catch {
+    return []
+  }
+}
+
+/** 读取某一周数据；失败返回 null */
+export async function loadRadarWeek(file: string): Promise<RadarWeek | null> {
+  try {
+    const r = await fetch(`${RADAR_BASE}/${file}`)
+    if (!r.ok) throw new Error(`HTTP ${r.status}`)
+    const data = (await r.json()) as RadarWeek
+    return data?.insights?.length ? data : null
+  } catch {
+    return null
+  }
+}
+
+/** 读取最新一周（index[0]）；任何环节失败回退到内置 seed radarWeekData */
+export async function loadLatestRadarWeek(): Promise<RadarWeek> {
+  const idx = await loadRadarIndex()
+  if (idx.length) {
+    const week = await loadRadarWeek(idx[0].file)
+    if (week) return week
+  }
+  return radarWeekData
+}
+
+/**
+ * React Hook：先以 seed 渲染（无加载闪烁），异步换成最新真实周。
+ * RadarPage / GraphPage / Dashboard 共用。
+ */
+export function useLatestRadarWeek(): { week: RadarWeek; loading: boolean } {
+  const [week, setWeek] = useState<RadarWeek>(radarWeekData)
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    let alive = true
+    loadLatestRadarWeek().then(w => {
+      if (alive) {
+        setWeek(w)
+        setLoading(false)
+      }
+    })
+    return () => {
+      alive = false
+    }
+  }, [])
+  return { week, loading }
 }

@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import { SiteHeader, type NavPage } from "./SiteHeader"
 import { useCognition, type CognitionStateValue } from "../lib/cognition"
-import { radarWeekData } from "../data/radarData"
+import { useLatestRadarWeek } from "../data/radarData"
 
 interface GraphPageProps {
   onNavigate: (page: NavPage) => void
@@ -17,19 +17,12 @@ interface GraphNode {
   cluster: string
 }
 
-/* 节点来自本周雷达数据（与认知状态机同一份 id），按成熟度聚类 */
+/* 节点来自最新一周雷达数据（与认知状态机同一份 id），按成熟度聚类 */
 const CLUSTER_LABEL: Record<string, string> = {
   frontier: "FRONTIER",
   mature: "MATURE",
+  experimental: "EXPERIMENTAL",
 }
-
-const NODES: GraphNode[] = radarWeekData.insights.map((ins) => ({
-  id: ins.id,
-  num: String(ins.index).padStart(2, "0"),
-  titleEn: ins.eyebrow,
-  title: ins.title,
-  cluster: ins.maturity,
-}))
 
 function nodeColor(state: NodeState): string {
   if (state === "in-plan") return "hsl(var(--frontier))"
@@ -43,8 +36,21 @@ const VIEW_H = 560
 
 export function GraphPage({ onNavigate }: GraphPageProps) {
   const { map } = useCognition()
+  const { week } = useLatestRadarWeek()
 
-  // 聚类中心 + 节点布局（仅依赖静态 NODES，与状态无关）
+  const NODES: GraphNode[] = useMemo(
+    () =>
+      week.insights.map((ins) => ({
+        id: ins.id,
+        num: String(ins.index).padStart(2, "0"),
+        titleEn: ins.eyebrow,
+        title: ins.title,
+        cluster: ins.maturity,
+      })),
+    [week],
+  )
+
+  // 聚类中心 + 节点布局（依赖 NODES，随最新一周数据变化）
   const { clusters, positions } = useMemo(() => {
     const byCluster: Record<string, GraphNode[]> = {}
     NODES.forEach((n) => {
@@ -71,7 +77,7 @@ export function GraphPage({ onNavigate }: GraphPageProps) {
       clusters: names.map((c) => ({ name: c, center: centers[c] })),
       positions: pos,
     }
-  }, [])
+  }, [NODES])
 
   const stateOf = (id: string): NodeState => map[id]?.state || "discovered"
   const activatedCount = NODES.filter((n) => stateOf(n.id) !== "discovered").length
@@ -200,7 +206,7 @@ export function GraphPage({ onNavigate }: GraphPageProps) {
 
           <section className="week-section">
             <h2>
-              {radarWeekData.weekId} <span className="badge">{radarWeekData.dateRange}</span>
+              {week.weekId} <span className="badge">{week.dateRange}</span>
             </h2>
             <div className="week-strip">
               {NODES.map((n) => {

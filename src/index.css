@@ -44,9 +44,10 @@
     --ring: 0 0% 3.9%;
     --radius: 0.5rem;
 
-    /* === Radar Module 语义色（amber 研究前沿 / green 成熟可用）=== */
+    /* === Radar Module 语义色（amber 研究前沿 / green 成熟可用 / purple 概念验证）=== */
     --frontier: 38 92% 50%;
     --mature: 142 71% 38%;
+    --experimental: 262 83% 58%;
 
     /* === 认知状态机语义色（蓝 学习中 / 绿 已成稿）=== */
     --learning: 217 91% 60%;
@@ -139,9 +140,10 @@
     --input: 0 0% 16%;
     --ring: 0 0% 83.9%;
 
-    /* === Radar Module 暗色模式（提亮 amber / green）=== */
+    /* === Radar Module 暗色模式（提亮 amber / green / purple）=== */
     --frontier: 38 92% 60%;
     --mature: 142 71% 50%;
+    --experimental: 262 83% 68%;
 
     /* === 认知状态机暗色（提亮 蓝 / 绿）=== */
     --learning: 217 91% 70%;

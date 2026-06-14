@@ -1,35 +1,48 @@
-# AICC - AI Concept Penetration Learning Platform
-## Product Specification
+# AICC — AI 认知操作系统 / AI Concept Cognition Platform
+## Product Specification（总纲 · 唯一事实来源）
 
-> Version: v2.0.0  
-> Updated: 2026-05-07  
-> Status: MVP completed, step loop evaluation pending  
+> Version: v3.0.0
+> Updated: 2026-06-14
+> Status: 多页面平台 + 认知状态机闭环已完成；费曼步骤内 loop 评分待迭代
 > Package: ai-knowledge-explorer
+>
+> **本文档定位**：AICC 工程的唯一事实来源（Single Source of Truth），供未来 AI Coding 参照。
+> 任何改动若影响「认知状态机 / 存储契约 / 路由 / 页面职责」，必须同步本文档。
+> 设计稿源码归档于 `design/aicc-html-bundle/`，与 `src/` 实现对照。
+>
+> **v3 关键变化**：产品从单一「费曼概念教练」升级为以**认知状态机**为主线的多页面平台
+> （discovered→in-plan→learning→published）。费曼引擎降为「learning」阶段的深度学习子系统，
+> 其详细规格见第 5/7/8 章（仍然有效）。
 
 ---
 
 ## 1. Product Positioning
 
-**Product Name**: AICC (AI Concept Coach) / ai-knowledge-explorer  
-**One-liner**: MaaS industry non-algorithm professionals' AI concept penetration learning platform, using Feynman learning method to explain an AI algorithm concept within 15 minutes.  
-**UI Display Name**: "你的AI认知教练" (header)  
-**Subtitle**: "四大步骤流式 · 费曼内化 · Transformer 基线图谱"  
-**Hero Title**: "如果你不能简单地解释它，你就没有真正理解它。"  
-**Hero Sub**: "如果你和我一样，看到新技术想了解，但论文又不太懂，看看这个页面是否适合你"
+**Product Name**: AICC (AI Concept Cognition) / ai-knowledge-explorer
+**One-liner**: 个人「AI 认知操作系统」——把「刷到一个 AI 概念 → 看不懂 → 遗忘」的零散循环，
+重构成一条可追踪、可沉淀的认知流水线：**发现 → 计划 → 费曼学习 → 成稿**，全程本地持久化为你的「第二大脑」。
+**核心信念**：**输出你的理解，而非 AI 的理解。**
 
 **Target Users**:
-- Large model pre-sales solution engineers
-- AI business architects
-- Product managers / technical sales
-- Professionals who don't write algorithm code but need to explain AI technology to customers
+- MaaS / 大模型行业的售前方案、AI 业务架构师、产品 / 技术销售
+- 不写算法代码、但需要向客户讲清 AI 技术的从业者
+- 任何希望长期、系统地积累 AI 认知（而非依赖 AI 即时问答）的人
 
-**Core Demand**: Understand an algorithm concept found in arXiv/tech papers within ~15 minutes, validated by Feynman method, recorded as long-term memory for future cognitive linkage.
+**Core Demand**: 在 ~15 分钟内穿透理解一个 arXiv / 技术论文里的 AI 概念，
+用费曼法验证「我真的懂了」，并把它沉淀为长期记忆与可复用的文章，跨周累积形成认知复利。
 
-**Default Example Questions** (UI EXAMPLES array):
-- "什么是 GDN（Gated Delta Network）？"
-- "Transformer 的 Attention 为什么是 O(N²)？"
-- "Mamba / 状态空间模型（SSM）和 RNN 的区别"
-- "MoE（混合专家）的路由为什么有负载不均？"
+**产品哲学（来自 `/` 一封信 · LetterHome）**——这是产品的灵魂，所有功能都为它服务：
+
+| 章节 | 内容 | 对应的系统化回答 |
+|---|---|---|
+| 01 症状 | **认知断裂**（论文数学/原理晦涩）、**认知单点**（学了不与已有知识链接）、**认知丢失**（ChatBox 学完即忘，无复利） | 费曼四步穿透 / 认知图谱 + 跨周计划 / 状态机 + 本地持久化 |
+| 02 信念 | AI 认知是行业工作者的**认知基石**；AI 时代可构建自己的**第二大脑**；时刻**警惕 AI 外包你的理解** | 认知状态机即「第二大脑」机制；费曼「你来讲/评价」对抗 AI 外包 |
+| 03 自省 | 人性弱点：贪图短期反馈 / 问了 AI 就以为学会 / 表演式学习 | 设计上以「能讲清/能评价」为完成标准，而非「问过了」 |
+| 04 防腐 | 提问与评价定稿；24h 后产出 MD；每周 LLM 审计知识库与图谱 | 编辑器成稿 / 费曼内化评分 / （周度审计待系统化，见第 12 章） |
+
+**Hero Title（费曼工作台）**: "如果你不能简单地解释它，你就没有真正理解它。"
+
+**Default Example Questions**: 费曼工作台每次从知识库随机抽取（如 GDN、Flash Attention、Mamba/SSM、MoE 路由等）。
 
 ---
 
@@ -47,8 +60,27 @@
 
 ### 3.1 Overall Flow
 
+**平台主流程 = 认知状态机**（每个概念在此流水线上流转，全程持久化于 localStorage）：
+
 ```
-User inputs natural language question (e.g. "GDN是什么意思？")
+  ┌─────────────┐   加入计划    ┌──────────┐  开始费曼   ┌────────────┐  去成稿/发布  ┌─────────────┐
+  │ discovered  │ ───────────► │ in-plan  │ ─────────► │  learning  │ ──────────► │  published  │
+  │ 雷达发现     │              │ 待启动    │            │  学习中     │             │  已成稿      │
+  │ RadarPage   │              │ PlanPage │            │ FeynmanApp │             │ Editor→     │
+  └─────────────┘              └──────────┘            └────────────┘             │   Article   │
+        ▲                           │                        │                    └─────────────┘
+        │                           │ 移除(仅in-plan免确认)    │                          │
+    每周雷达数据                      ▼                        ▼ （详见下方费曼子流程）       ▼
+   (radarData.ts)              深度计划看板               费曼四步穿透               文章页 / 认知图谱(绿)
+
+  状态映射：cognition.tsx · localStorage[aicc-cognition-state] = { [id]: CognitionItem }
+  当前认知点：sessionStorage[aicc-active-concept]（跨刷新保活，保证 published 回写不断链）
+```
+
+**「learning」阶段内部 = 费曼四步穿透子流程**：
+
+```
+User inputs natural language question (e.g. "GDN是什么意思？")  ← 计划页带入概念标题预填
         |
    Feynman Warmup (3 questions) <- LLM dynamic generation
         |
@@ -101,10 +133,30 @@ User inputs natural language question (e.g. "GDN是什么意思？")
   |  -> LLM review + graph mount |
   +-----------------------------+
         | done
-   Export (5 methods) / View Knowledge Graph
+   Export (5 methods) / 「去成稿」→ EditorPage（携带 conceptId）
+        |
+   发布 → upsert(conceptId, {slug, state:'published'}) → 文章页 / 计划页「已成稿」
 ```
 
 ### 3.2 Module List
+
+**平台页面模块（路由 + 状态机角色）**：
+
+| Page | Route | 职责 | 状态机角色 | 关键 props / 入口 |
+|---|---|---|---|---|
+| LetterHome | `/` (`/philosophy`) | 产品文化·一封信（症状/信念/自省/防腐） | 价值观层 | `onEnter` / `onNavigate` |
+| Dashboard | `/dashboard` | 文章管理 + 本周雷达计划概览 | 总览 | `onNavigate` / `onOpenArticle` |
+| RadarPage | `/radar` | 技术成熟度雷达 | **discovered→in-plan** | `addToPlan()`；learning/published 卡片删除需二次确认 |
+| PlanPage | `/plan` | 跨周深度计划看板 | in-plan/learning/published 看板 | `onOpenFeynman(id)` / `onOpenArticle(slug)` |
+| FeynmanApp | `/feynman` | 费曼四步穿透学习引擎 | **in-plan→learning** | `conceptId` / `initialQuestion` / `onGoToEditor(id)` |
+| EditorPage | `/editor` | Markdown 编辑 + 实时预览 + 发布 | **learning→published** | `conceptId` / `onBack` / `onPublished(slug)` |
+| GraphPage | `/graph` | 认知图谱（按状态着色） | 累积可视化 | `onNavigate`（节点取自 radarData，按 cognition state 着色） |
+| ArticlePage | `/article/:slug` | 文章阅读页 | published 产物 | 先读 `aicc-article-md:<slug>`，回退 `public/content/<slug>.md` |
+
+> 路由编排集中在 `main.tsx`：`pathToState`/`stateToPath` 双向映射，`handleOpenFeynman`/`handleGoToEditor`
+> 负责状态流转与 `activeConceptId`（sessionStorage）保活，详见第 3.5 节。
+
+**费曼引擎子模块（learning 阶段内部）**：
 
 | Module | Function | Status | Notes |
 |---|---|---|---|
@@ -189,7 +241,7 @@ Level 4 (本质内化) -> 本质总结：一句话本质 + 锚点类比 + 对比
 **组件设计**：
 - 组件名：`CognitiveNavBar`
 - Props：`{ currentNode: 1-6, completedNodes: number[] }`
-- 放置位置：`GdnApp.tsx` 中 header 下方，`started && warmupConfirmed` 时显示
+- 放置位置：`FeynmanApp.tsx` 中 header 下方，`started && warmupConfirmed` 时显示
 - 状态来源：从 `steps[]` 的 streaming/confirmed 状态 + feynman digest 状态计算得出
 
 ---
@@ -199,6 +251,95 @@ Level 4 (本质内化) -> 本质总结：一句话本质 + 锚点类比 + 对比
 > **Important**: Current version's "loop questions" in steps 1/2 are UI placeholders only (`LoopBlock` component).
 > User clicks "confirm" to proceed directly without LLM evaluation.
 > `LoopBlock` textarea is `disabled`, code comment: "当前版本：输入占位；下一轮会加入 LLM 评分 + 下一步解锁逻辑"
+
+---
+
+### 3.5 Cognition State Machine（认知状态机）★ 平台主线
+
+> 实现：`src/lib/cognition.tsx`（`CognitionProvider` + `useCognition`）。这是 AICC 的数据脊柱，
+> 与设计稿 `aicc-html-bundle` 共享同一套 localStorage 模型。**任何改动须保持以下契约。**
+
+**数据模型**
+
+```ts
+type CognitionStateValue = "discovered" | "in-plan" | "learning" | "published"
+
+interface CognitionItem {
+  state: CognitionStateValue
+  title: string         // 中文标题
+  titleEn?: string      // 英文标题（雷达 eyebrow）
+  slug?: string         // 成稿后对应文章 slug（published 时写入）
+  addedAt?: number      // 加入计划时间戳（ms）；流转中保持不变
+  sourceWeek?: string   // 来源周，如 2026-W22
+  sourceFile?: string   // 来源雷达快照文件名（可选）
+}
+
+type CognitionMap = Record<string /* id */, CognitionItem>
+```
+
+**状态标签**（`STATE_LABELS`）：`discovered=已发现`、`in-plan=待启动`、`learning=学习中`、`published=已成稿`。
+
+**存储契约**
+
+| Key | 作用域 | 内容 |
+|---|---|---|
+| `aicc-cognition-state` | localStorage | 核心 `CognitionMap` |
+| `aicc-deep-plan` | localStorage | 派生：所有 `state !== 'discovered'` 的 id 列表（每次 persist 自动重算） |
+| `aicc-active-concept` | **sessionStorage** | 当前认知点 id；`main.tsx` 在进入费曼/编辑器时写、发布后清 |
+
+**状态转移表**
+
+| From → To | 触发 UI | 代码路径 | 副作用 |
+|---|---|---|---|
+| ∅ → in-plan | 雷达「加入深入计划」 | `RadarPage.addToPlan(id, meta)` | 写 title/titleEn/sourceWeek，补 `addedAt` |
+| in-plan → learning | 计划「开始费曼学习」 | `PlanPage.onOpenFeynman(id)` → `main.handleOpenFeynman` | `setState(id,'learning')` + 写 `aicc-active-concept` + 进 `/feynman`，标题预填 |
+| learning → published | 费曼「去成稿」→ 编辑器发布 | `FeynmanApp.onGoToEditor(id)` → `EditorPage.confirmPublish` | `upsert(id,{slug,title,state:'published'})`；发布后清 `aicc-active-concept` |
+| any(非discovered) → ∅ | 雷达再次点击 / 计划「移除」 | `remove(id)` | 硬删除条目；**雷达页对 learning/published 需二次确认** |
+
+**Context API（`useCognition()`）**
+
+| 方法 | 说明 |
+|---|---|
+| `map` | 当前 `CognitionMap` |
+| `upsert(id, patch)` | 浅合并写入（保留已有字段）；EditorPage 发布走此路径 |
+| `setState(id, state)` | 仅切状态；切到非 discovered 且无 `addedAt` 时补时间戳 |
+| `addToPlan(id, meta)` | discovered → in-plan |
+| `remove(id)` | 删除条目 |
+| `plannedItems()` | 返回非 discovered 条目，按 `addedAt` 新→旧 |
+
+**关键不变量 / 护栏（务必维持）**
+
+1. **`activeConceptId` 必须可跨整页重载恢复**：通用「编辑器」导航入口要 `setActiveConcept('')` 清空（防止把无关文章误回写到上一个 learning 概念）；「去成稿」才携带 id；发布成功后清空。
+2. **`addedAt` 在整个生命周期保持不变**（用于计划页排序），流转只改 `state`/`slug`。
+3. **跨页同步**：Provider 监听 `storage` / `focus` 事件回灌，多标签页一致。
+4. **id 一致性**：雷达、计划、图谱、编辑器必须用同一个 `id`（当前取 `radarData` 的 slug，如 `dynamic-workflows`）。
+5. **删除是硬删除**：会丢失 learning 进度与 published 的 slug 关联——非 in-plan 必须二次确认。
+
+---
+
+### 3.6 Radar Data Source & Ingestion（雷达数据来源 · 外循环）
+
+> 「发现」入口的数据由**外部 skill 摄取**，工程动态消费——这是状态机的源头，单独成节。
+
+**上游：`ai-cognitive-radar` skill**（个人知识系统的外循环感知层，运行在 Qoder，仓库外）
+每周扫描 YouTube 频道 / AI 公司博客 / 权威媒体 → 速览层 + 精选 5-8 个深度认知点（带成熟度）。
+产出：① Markdown 周报（存 Obsidian）② 静态 HTML（部署 ECS `/weekly/{date}.html`）③ **结构化 JSON（喂工程）** ④ 微信推送。
+
+**数据契约（唯一来源）：`public/content/radar/`**
+
+| 文件 | 内容 |
+|---|---|
+| `index.json` | `{ weeks: RadarIndexEntry[] }`，新→旧，`weeks[0]` 为最新周 |
+| `{weekId}.json` | 一周的 `RadarWeek`：`{ weekId, dateRange, generatedAt, insights: RadarInsight[] }` |
+
+`RadarInsight` 字段：`id`(=`{weekId}-{NN}-{slug}`) / index / eyebrow(英) / title(中) / tagline(一句话) / maturity(`frontier`🟡 \| `mature`🟢 \| `experimental`🔴) / corePrinciple / whyMatters / org / dateRange / sourceUrl。
+
+**下游：工程动态加载**（`src/data/radarData.ts`）
+- `useLatestRadarWeek()` → `fetch('/content/radar/index.json')` → 取 `weeks[0]` → 加载该周 JSON；任何环节失败回退内置 seed `radarWeekData`。
+- 消费方：`RadarPage` / `GraphPage` / `Dashboard`（均改为 hook 动态加载，不再 import 硬编码常量）。
+- **id 规范** `{weekId}-{NN}-{slug}` 使 PlanPage 编号、跨周分组、状态机存储自洽。
+
+> 即：**skill 每周摄取 → 写 `public/content/radar/*.json` → 工程 fetch 渲染 → 加入计划进入状态机**。新增一周只需 skill 落一个 JSON + 更新 index，无需改代码。
 
 ---
 
@@ -226,68 +367,45 @@ Level 4 (本质内化) -> 本质总结：一句话本质 + 锚点类比 + 对比
 
 ```
 AICC/
-+-- src/
-|   +-- gdn/                          # Main app module (active)
-|   |   +-- GdnApp.tsx                # App entry (309 lines)
-|   |   +-- types.ts                  # Data types (287 lines)
-|   |   +-- components/
-|   |   |   +-- StepPipeline.tsx      # 4-step pipeline (core flow control)
-|   |   |   +-- FeynmanDigestPanel.tsx # Feynman digest panel
-|   |   |   +-- QaPipeline.tsx        # Old 6-question pipeline (retained)
-|   |   |   +-- GraphDialog.tsx       # Knowledge graph dialog
-|   |   |   +-- MechanismAnim.tsx     # GDN gate animation (5 token demo)
-|   |   |   +-- SettingsDialog.tsx    # LLM settings dialog
-|   |   |   +-- LibraryDialog.tsx     # Note library dialog
-|   |   |   +-- ExportBar.tsx         # Export bar (5 methods)
-|   |   |   +-- FeynmanPrime.tsx      # Feynman warmup cards
-|   |   |   +-- LoopBlock.tsx         # Loop question placeholder (disabled)
-|   |   |   +-- Formula.tsx           # KaTeX formula component
-|   |   |   +-- StreamingSection.tsx  # Streaming section skeleton
-|   |   |   +-- views/
-|   |   |       +-- Step1View.tsx     # Step 1 render
-|   |   |       +-- Step2View.tsx     # Step 2 render
-|   |   |       +-- Step3View.tsx     # Step 3 render
-|   |   |       +-- Step4View.tsx     # Step 4 render
-|   |   |       +-- PrincipleView.tsx # Principle steps view
-|   |   |       +-- MathView.tsx      # Math formula view
-|   |   |       +-- TimelineView.tsx  # Timeline view
-|   |   |       +-- AnalogyView.tsx   # Analogy view (legacy)
-|   |   |       +-- EngineeringView.tsx # Engineering view (legacy)
-|   |   |       +-- BusinessView.tsx  # Business view (legacy)
-|   |   |       +-- animations/
-|   |   |           +-- AttentionOnTwoAnim.tsx
-|   |   |           +-- MambaSsmAnim.tsx
-|   |   |           +-- MoeRouteAnim.tsx
-|   |   |           +-- GenericFlowAnim.tsx
-|   |   +-- lib/
-|   |   |   +-- llm.ts               # LLM call interface (437 lines)
-|   |   |   +-- prompts.ts           # Prompt centralized management (291 lines)
-|   |   |   +-- storage.ts           # localStorage persistence (88 lines)
-|   |   |   +-- mdExport.ts          # Multi-format export tools
-|   |   |   +-- partialJson.ts       # Streaming partial JSON field extraction
-|   |   |   +-- svgRenderer.ts       # SVG template renderer (5 layouts)
-|   |   +-- mocks/
-|   |       +-- fixtures.ts          # Offline preview + stream simulation
-|   |       +-- data/                # 5 JSON samples
-|   +-- components/ui/               # shadcn/ui base components (12)
-|   +-- lib/utils.ts                 # Utility (cn function)
-|   +-- App.tsx                      # Legacy entry (unused)
-|   +-- main.tsx                     # Entry (renders GdnApp directly, no Router)
-|   +-- index.css                    # Global styles + CSS Variables
-+-- scripts/
-|   +-- test-main-flow.mjs           # E2E test
-|   +-- test-step1.mjs               # Step 1 unit test
-+-- package.json
-+-- tsconfig.json / tsconfig.app.json
-+-- vite.config.ts
-+-- tailwind.config.ts
-+-- postcss.config.js
+├── src/
+│   ├── main.tsx                     # App 路由（手写 History）+ CognitionProvider + 状态机流转编排
+│   ├── lib/
+│   │   ├── cognition.tsx            # ★ 认知状态机（Provider/useCognition/存储模型）
+│   │   ├── markdown.ts              # frontmatter 解析 + 文章正文渲染（编辑器/文章页共用）
+│   │   └── utils.ts                 # cn() 等工具
+│   ├── pages/                       # 平台页面（每页对应一个路由/状态机角色）
+│   │   ├── LetterHome.tsx           # 产品文化·一封信
+│   │   ├── Dashboard.tsx            # 认知工作台（文章 + 本周雷达概览）
+│   │   ├── RadarPage.tsx            # 认知雷达（discovered→in-plan）
+│   │   ├── PlanPage.tsx             # 深度计划看板
+│   │   ├── EditorPage.tsx           # 文章编辑器（learning→published）
+│   │   ├── GraphPage.tsx            # 认知图谱（按状态着色）
+│   │   ├── ArticlePage.tsx          # 文章详情页
+│   │   └── SiteHeader.tsx           # 全局导航条（6 Tab）+ useDarkModeShared
+│   ├── components/
+│   │   ├── radar/                   # RadarCard / RadarHero / RadarToolbar / MaturityPill / PlanToggle
+│   │   └── ui/                      # shadcn/ui 基础组件
+│   ├── data/
+│   │   └── radarData.ts             # 雷达周数据（weekId + insights[]，状态机 id 来源）
+│   ├── feynman/                     # 费曼引擎（learning 阶段子系统）
+│   │   ├── FeynmanApp.tsx           # 主应用（接 conceptId/initialQuestion/onGoToEditor）
+│   │   ├── types.ts                 # 数据契约
+│   │   ├── components/              # StepPipeline / FeynmanPrime / DigestPanel / views/ / animations/ …
+│   │   ├── lib/                     # llm.ts / prompts.ts / storage.ts / partialJson.ts / svgRenderer.ts / mdExport.ts
+│   │   ├── data/                    # algorithm-concepts.ts(.md)（30 概念 + arXiv 链接）
+│   │   └── mocks/                   # fixtures.ts + data/（离线样本）
+│   ├── App.tsx                      # 旧单页入口（已无人 import，遗留）
+│   └── index.css                    # 全局样式 + CSS 变量
+├── public/content/                  # 静态文章库（articles.json + *.md/*.html）
+├── design/aicc-html-bundle/         # ★ 设计稿源（归口为唯一来源，与 src/ 对照）
+├── package.json / tsconfig*.json / vite.config.ts / tailwind.config.ts
+└── .claude/launch.json              # dev server 配置（端口 5188）
 ```
 
 ### 4.3 Core Data Flow
 
 ```
-User input -> GdnApp.tsx (state management, no Router)
+User input -> FeynmanApp.tsx (learning 阶段内部状态管理)
               |
     callFeynmanWarmup() -> LLM -> 3 warmup questions
               |
@@ -335,6 +453,21 @@ User input -> GdnApp.tsx (state management, no Router)
 - **Step 3+4 no search**: Algorithm derivation, math, and essence summary are based on prior step context, no external search needed
 
 ### 4.5 Storage System
+
+> 完整数据契约。分两层：**平台状态机层（aicc-*）** 与 **费曼引擎层（gdn_*）**。
+
+**平台层（认知状态机 + 文章 + 主题）**
+
+| Key | 作用域 | 写入方 | Structure |
+|---|---|---|---|
+| `aicc-cognition-state` | localStorage | `cognition.tsx` | `Record<id, CognitionItem>`（状态机核心） |
+| `aicc-deep-plan` | localStorage | `cognition.tsx` | `string[]`（非 discovered 的 id，派生） |
+| `aicc-active-concept` | **sessionStorage** | `main.tsx` | `string`（当前认知点 id，跨刷新保活） |
+| `aicc-published-articles` | localStorage | `EditorPage.tsx` | 已发布文章索引 `{slug,title,subtitle,category,date,status,tags}[]` |
+| `aicc-article-md:<slug>` | localStorage | `EditorPage` → `ArticlePage` | 已发布文章 Markdown 原文（文章页优先回读） |
+| `aicc-theme` | localStorage | `SiteHeader.tsx` | `"dark" \| "light"` |
+
+**费曼引擎层**
 
 | Key | Content | Structure |
 |---|---|---|
@@ -685,7 +818,7 @@ interface Note {
 
 ### 7.1 System Prompts (Independent Per Step)
 
-Each step has its own complete system prompt (defined in `src/gdn/lib/prompts.ts`). Below is SYSTEM_STEP1 as representative example (others follow similar structure with role-specific persona):
+Each step has its own complete system prompt (defined in `src/feynman/lib/prompts.ts`). Below is SYSTEM_STEP1 as representative example (others follow similar structure with role-specific persona):
 
 ```text
 你是面向非算法 / 非技术领域读者的 AI 概念穿透教练，风格深入浅出。
@@ -985,7 +1118,7 @@ This enables progressive rendering: as each field completes in the stream, its c
 | Issue | Risk | Suggestion |
 |---|---|---|
 | localStorage capacity limit | Notes + graph accumulation may exceed 5-10MB | Introduce cleanup or IndexedDB migration |
-| StepPipeline / FeynmanDigestPanel apiKey check | Offline mode blocked if apiKey empty (GdnApp entry correctly handles `!cfg.apiKey && !cfg.offlineMock`) | Unify offlineMock pre-check |
+| StepPipeline / FeynmanDigestPanel apiKey check | Offline mode blocked if apiKey empty (FeynmanApp entry correctly handles `!cfg.apiKey && !cfg.offlineMock`) | Unify offlineMock pre-check |
 
 ---
 
@@ -997,7 +1130,9 @@ This enables progressive rendering: as each field completes in the stream, its c
 - **Path alias**: `@/*` -> `./src/*` (tsconfig.app.json + vite.config.ts)
 - **Component style**: Function components + Hooks, prefer shadcn/ui
 - **Styles**: Tailwind CSS atomic classes, CSS Variables for theme
-- **Compilation scope**: `src/main.tsx`, `src/gdn/**`, `src/components/ui/**`, `src/lib/**`
+- **Compilation scope**: `src/main.tsx`, `src/pages/**`, `src/feynman/**`, `src/components/**`, `src/lib/**`, `src/data/**`
+- **状态机优先**: 任何涉及概念生命周期的逻辑都应经 `useCognition()`，不要绕过直接写 `localStorage`
+- **图标声明**: 项目用自定义 `src/lucide-react.d.ts` 显式声明图标；新增图标需在此补声明，否则 tsc 报错
 
 ### 10.2 Data Standards
 
@@ -1008,17 +1143,19 @@ This enables progressive rendering: as each field completes in the stream, its c
 
 ### 10.3 Testing
 
-- **E2E test**: `scripts/test-main-flow.mjs` (Node.js script)
-- **Unit test**: `scripts/test-step1.mjs`
-- **Offline preview**: `fixtures.ts` + `mocks/data/*.json` (simulates 40 chunks x 35ms stream typewriter)
+- **E2E / 流程**: `scripts/test-main-flow.mjs`、`scripts/test-step1.mjs`、`scripts/test-radar*.mjs`（Playwright/Node 脚本）
+- **平台导航/状态机走查**: `test-screenshots/*.mjs`（run-e2e / test-nav-routing / verify-* 等，含截图产物）
+- **离线预览**: `feynman/mocks/fixtures.ts` + `mocks/data/*.json`（模拟流式打字机）
+- **手动验证**: 本次集成已用浏览器预览全链路实测 discovered→in-plan→learning→published（含刷新保活、误删护栏）
 
 ---
 
 ## 11. Running
 
 ```bash
-# Development
-npm run dev                 # http://localhost:5173
+# Development（默认 Vite 5173；本仓 .claude/launch.json 固定 5188）
+npm run dev
+npm run dev -- --port 5188 --strictPort   # 固定端口
 
 # Production build
 npm run build               # tsc -b && vite build -> dist/
@@ -1031,20 +1168,25 @@ npm run preview
 
 ## 12. Iteration Roadmap
 
-### P0 (High Priority)
-- [ ] Implement step 1/2 loop LLM evaluation (LoopBlock upgrade from placeholder to interactive)
-- [ ] Optimize step3 history context (summary instead of full JSON)
+> 平台级方向（待产品确认，详见与本次梳理同步给出的「产品逻辑建议」）：
 
-### P1 (Medium Priority)
-- [ ] Dynamic search decision by concept type
-- [ ] localStorage capacity warning + data export/cleanup
-- [ ] Clean zombie dependency (react-router-dom)
+### P0 — 状态机闭环（已完成 v3.0.0）
+- [x] 认知状态机 discovered→in-plan→learning→published 全链路打通
+- [x] 计划页 / 编辑器 / 图谱接入，`activeConceptId` 跨刷新保活
+- [x] 雷达删除护栏、编辑器 slug 冲突护栏
+- [x] **雷达数据动态化**：`ai-cognitive-radar` skill 输出 `public/content/radar/*.json`，工程 `useLatestRadarWeek()` 动态加载；id 规范 `{weekId}-{NN}-{slug}`（详见 §3.6）
 
-### P2 (Low Priority)
-- [ ] Add more animation types (cover more algorithm concepts)
-- [ ] Multi-language support (English)
-- [ ] Learning progress tracking + spaced repetition reminders
-- [ ] Clean legacy 6-question code (or mark @deprecated)
+### P1 — 让主线「真正闭环」（剩余高价值缺口）
+- [ ] **已发布文章并入文章库 + 图谱**：编辑器发布写在 localStorage（`aicc-article-md`），而工作台文章库读 `public/content`；published 概念应成为文章库/图谱一等公民（统一来源）
+- [ ] **认知图谱统一数据源**：当前 GraphPage 用 radarData 单周节点；`gdn_graph_v3`（费曼内化）另一套；应合并为「累积 + 关系」的单一图谱模型
+- [ ] **防腐机制系统化**：把「24h 未成稿提醒 / 周度 LLM 审计 / 评价优于问答」从一封信的承诺变成实际功能（如防腐看板）
+
+### P2 — 学习深度与质量
+- [ ] step 1/2 loop LLM 评分（LoopBlock 从占位升级为交互解锁）
+- [ ] 概念 id 命名规范（`<week>-<idx>-<slug>`，让周/序号成为内生元数据）
+- [ ] 学习进度跟踪 + 间隔复习（spaced repetition，呼应「认知复利」）
+- [ ] step3 历史上下文用摘要替代全 JSON；按概念类型动态决定是否联网搜索
+- [ ] 清理僵尸依赖 `react-router-dom`（实际用手写路由）；移除遗留 `App.tsx` / 6 问代码；i18n
 
 ---
 
@@ -1052,7 +1194,7 @@ npm run preview
 
 ### A. Complete Type Definitions
 
-See `src/gdn/types.ts` (287 lines), containing two parallel systems:
+See `src/feynman/types.ts`, containing two parallel systems:
 - **New 4-step**: `StepKey`, `StepEntry`, `Step1Answer`, `Step2Answer`, `Step3Answer`, `Step4Answer` (active)
 - **Legacy 6-question**: `QaKey`, `QaEntry`, `BackgroundAnswer`, `PrincipleAnswer`, etc. (retained for `Note.qa` compat)
 
@@ -1081,7 +1223,7 @@ See `src/gdn/types.ts` (287 lines), containing two parallel systems:
 
 ### D. SVG Template Renderer
 
-`src/gdn/lib/svgRenderer.ts` (13.4KB) supports 5 layout types for Step 1 concept diagrams:
+`src/feynman/lib/svgRenderer.ts` supports 5 layout types for Step 1 concept diagrams:
 - `flowchart`: Linear process flow
 - `comparison`: Old vs new side-by-side
 - `hierarchy`: Tree/pyramid structure
@@ -1104,7 +1246,7 @@ Uses shadcn-compatible color palette, renders nodes (150x72px, rounded 12px) wit
 
 ### D. SVG Template Renderer
 
-`src/gdn/lib/svgRenderer.ts` (13.4KB) supports 5 layout types for Step 1 concept diagrams:
+`src/feynman/lib/svgRenderer.ts` supports 5 layout types for Step 1 concept diagrams:
 - `flowchart`: Linear process flow
 - `comparison`: Old vs new side-by-side
 - `hierarchy`: Tree/pyramid structure

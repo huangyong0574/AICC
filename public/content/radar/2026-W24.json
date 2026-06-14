@@ -1,0 +1,98 @@
+{
+  "weekId": "2026-W24",
+  "dateRange": "2026-06-08 ~ 2026-06-12",
+  "generatedAt": "2026-06-12",
+  "insights": [
+    {
+      "id": "2026-W24-01-mot-world-model",
+      "index": 1,
+      "eyebrow": "Mixture-of-Transformers World Model",
+      "title": "MoT 世界基础模型",
+      "tagline": "NVIDIA Cosmos 3 提出的一种用一个统一架构同时承载「理解物理世界—模拟物理状态—生成物理动作」三种能力的多任务专家路由网络。",
+      "maturity": "frontier",
+      "corePrinciple": "传统物理 AI 流水线把感知、世界模型和动作策略拆成三个独立模型，模态间需要手动桥接接口。Cosmos 3 引入 Mixture-of-Transformers（MoT）架构，把视觉推理、世界模拟、动作生成分别放在三个 Transformer 专家中，但共享底层 token 表征和位置编码，由路由网络根据当前任务把 token 流分发到合适的专家。模型在大规模物理视频和机器人轨迹上联合训练，使三种能力共享对「物理直觉」（重力、刚体、摩擦、因果）的内部表征，避免了传统流水线在模态边界上的信息损失。Cosmos 3 完全开源，模型与数据集都发布在 Hugging Face。",
+      "whyMatters": "物理世界数据采集成本极高，世界基础模型让「在仿真中预训练 + 现实中微调」成为机器人和自动驾驶的主流范式。Cosmos 3 把「物理直觉」做成像 BERT 那样可被全社区复用的基础能力底座，会显著降低具身 AI 的入场门槛。",
+      "org": "NVIDIA",
+      "dateRange": "2026-06-02",
+      "sourceUrl": "https://developer.nvidia.com/blog/develop-physical-ai-reasoning-world-and-action-models-with-nvidia-cosmos-3/"
+    },
+    {
+      "id": "2026-W24-02-extended-test-time-compute",
+      "index": 2,
+      "eyebrow": "Extended Test-Time Compute",
+      "title": "测试时计算研究 Agent",
+      "tagline": "Google Deep Research Max 通过延长测试时计算（test-time compute）让 Agent 可以反复迭代研究计划、自我批判、并补充检索，直到产出「分析师级」的报告。",
+      "maturity": "mature",
+      "corePrinciple": "早期 Deep Research 类 Agent 是「线性多跳」：拟定计划→执行搜索→汇总。Deep Research Max 借助 Gemini 3.1 Pro 的长程推理能力，引入显式的「批判-修订循环」。Agent 在生成中间稿后，会用专门的 critique prompt 自评关键论点是否被证据支撑、有没有逻辑漏洞，然后基于批判结果再生成新的搜索查询、补充资料、修订结论。同一个研究任务可以触发上百次自动检索（边缘案例下达 160 次），最终生成的报告自动嵌入图表和源数据。Deep Research Max 还原生支持 MCP（Model Context Protocol），可以接入用户私有数据源。",
+      "whyMatters": "这是「测试时计算」作为新 Scaling Law（除了模型参数和数据量之外的第三条性能曲线）的最强工业化案例之一。它把「花更多算力买更好答案」做成产品能力，标志着研究/分析类工作流被 Agent 接管的临界点已到。",
+      "org": "Google",
+      "dateRange": "2026-06-04",
+      "sourceUrl": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/next-generation-gemini-deep-research/"
+    },
+    {
+      "id": "2026-W24-03-agent-native-cpu-vera",
+      "index": 3,
+      "eyebrow": "Agent-Native CPU (Vera)",
+      "title": "Agent 原生 CPU（Vera）",
+      "tagline": "NVIDIA Vera 是首款专门为大规模 Agentic AI 工作负载设计的 CPU，把 Agent 在 CPU 端的实际瓶颈（频繁工具调用、上下文切换、多并发会话）作为一阶设计目标。",
+      "maturity": "mature",
+      "corePrinciple": "传统数据中心 CPU 为通用计算优化，在 Agent 工作负载下会出现三类瓶颈——海量轻量级 I/O（每个 Agent 都要调用工具/数据库/API）、低延迟调度（Agent 编排需要快速上下文切换）、高内存带宽（多个 Agent 会话同时持有大上下文）。Vera 针对这三类瓶颈做架构层重构：88 个 Olympus 自研核心、Spatial Multithreading 空间多线程加速 Agent 内并发、配合 LPDDR5X 提供 1.2TB/s 带宽。Vera 与 Rubin GPU 紧耦合形成 Vera Rubin 平台，在「Agent 工厂」（AI Factory）形态下以端到端 token 吞吐为优化指标。NVIDIA 给出的对比数据是相比同代 x86 CPU 在 Agent 负载下吞吐提升 1.8x。",
+      "whyMatters": "这是业界首次把「AI Agent」上升为需要专用硅的计算范式。芯片层面的「Agent 原生」开始与软件框架（Agents SDK、LangChain）形成完整的栈级别协同。",
+      "org": "NVIDIA",
+      "dateRange": "2026-06-03",
+      "sourceUrl": "https://www.nvidia.com/en-us/data-center/technologies/rubin/"
+    },
+    {
+      "id": "2026-W24-04-codex-sites-prompt-to-app",
+      "index": 4,
+      "eyebrow": "Codex Sites · Prompt-to-App",
+      "title": "Codex Sites 内部应用平台",
+      "tagline": "OpenAI Codex Sites 让非开发者用一句话描述需求，就能生成、托管和分享一个完整的内部应用，把「编程」压缩为「说出意图」。",
+      "maturity": "mature",
+      "corePrinciple": "Codex Sites 的关键是把传统 Web 应用开发链路（前端代码、后端 API、数据库、部署、权限）编排成一条由 Codex Agent 自动完成的流水线。用户输入自然语言需求后，Codex 在后台拆解为子任务：选模板、生成 React 组件、生成数据 schema、配置认证、部署到 OpenAI 托管环境，最终给出一个可分享的 URL。配套的 6 个 Role-Specific Plugins（销售、财务、HR、运营、客服、产品）则把「角色任务上下文」作为长记忆注入 Codex，让同一个底层 Agent 在不同业务角色下表现得像专业工具。",
+      "whyMatters": "这是「AI 编程」从「辅助开发者」到「绕过开发者直接服务业务」的明显跨越，对内部 IT 部门、低代码平台和 SaaS 工具的格局都会产生结构性冲击。",
+      "org": "OpenAI",
+      "dateRange": "2026-06-02",
+      "sourceUrl": "https://openai.com/index/codex-for-every-role-tool-workflow/"
+    },
+    {
+      "id": "2026-W24-05-agentic-orchestration-level",
+      "index": 5,
+      "eyebrow": "Agentic Orchestration Level",
+      "title": "攻防侧 Agent 编排分级",
+      "tagline": "Anthropic 提出的一种把「AI 被用作攻击工具的危险程度」标准化的评估框架，从「做了什么动作」升级为「在攻击链中扮演了多自主的协作者」。",
+      "maturity": "frontier",
+      "corePrinciple": "Anthropic 分析了 2025.3—2026.3 一年间被禁用的 832 个滥用账号，用 MITRE ATT&CK 框架对 AI 在攻击链中的角色进行映射。结论是攻击者使用 AI 的成熟度可分为四级：L1 仅生成钓鱼/诈骗文案；L2 用 AI 做侦察、写恶意代码；L3 用 AI 自主执行横向移动、权限提升等后渗透步骤；L4 用 AI 编排多个子 Agent、形成端到端自治攻击链。L3 已是当前主流，L4 已被观测到雏形。这意味着风险评估必须从「模型输出是否有害」升级为「模型是否被编排为攻击工具链中的一个关节」，对应的防御也要从内容审核转向行为模式与编排意图识别。",
+      "whyMatters": "随着 Agent 能力外溢，AI 安全的第一战场从「对齐」转向「反编排」。这个评估框架是当前少数能给出可操作分级的实证研究，是政策制定和企业蓝队都需要内化的认知。",
+      "org": "Anthropic",
+      "dateRange": "2026-06-03",
+      "sourceUrl": "https://www.anthropic.com/news/AI-enabled-cyber-threats-mitre-attack"
+    },
+    {
+      "id": "2026-W24-06-voluntary-ai-governance",
+      "index": 6,
+      "eyebrow": "Voluntary AI Governance Framework",
+      "title": "自愿框架监管（行政令）",
+      "tagline": "2026 年 6 月 2 日签署的「Promoting Advanced AI Innovation and Security」行政令，正式确立美国 AI 监管的「自愿框架 + 网络安全焦点 + 前沿模型透明度」路径。",
+      "maturity": "mature",
+      "corePrinciple": "与此前基于 Defense Production Act 的强制信息披露不同，新行政令把 AI 监管的核心机制改为：(1) 联邦机构与前沿 AI 公司签订自愿合规协议；(2) 把监管焦点从泛化 AI 风险收窄到「网络安全」和「关键基础设施」；(3) 通过 NIST 建立前沿模型评估的自愿透明度基准；(4) 配套出口管制和供应链安全措施。这种「软规则 + 硬基础设施安全」组合代表在不放弃监管的前提下尽量少干预创新速度的取向。",
+      "whyMatters": "这条监管路径将影响未来 2-3 年所有美企 AI 产品的合规边界，也将间接塑造欧盟、英国等司法辖区的监管选择。理解「为什么是自愿」是把握下一阶段 AI 商业化窗口期的关键。",
+      "org": "White House",
+      "dateRange": "2026-06-02",
+      "sourceUrl": "https://www.whitehouse.gov/presidential-actions/2026/06/promoting-advanced-artificial-intelligence-innovation-and-security/"
+    },
+    {
+      "id": "2026-W24-07-embodiment-aware-synthetic-data",
+      "index": 7,
+      "eyebrow": "Embodiment-Aware Synthetic Training",
+      "title": "形态感知合成训练数据",
+      "tagline": "基于 Cosmos 3 这类世界基础模型，把机器人训练数据从「实机采集」转向「由模型按机器人形态生成可执行轨迹」的合成数据范式。",
+      "maturity": "frontier",
+      "corePrinciple": "实机数据采集是机器人最大的成本项——每个机器人都要在物理空间中执行任务、收集成功/失败数据。Cosmos 3 引入「Embodiment-Aware」生成能力：给定机器人形态描述（关节数、自由度、末端执行器、约束），世界模型可以反向生成在该形态下「物理可行」的合成视频和动作轨迹，并自动给出可执行的关节角序列。下游训练 pipeline 把这些合成数据当作真实数据使用，再通过少量真机微调消除 sim-to-real gap。NVIDIA 把这套范式作为 GR00T 人形机器人模型的核心数据来源。",
+      "whyMatters": "这是把「基础模型」概念从语言/视觉/世界推到「机器人形态空间」的第一步。它让「小公司也能训出可用人形机器人模型」在数据成本上变得现实。",
+      "org": "NVIDIA",
+      "dateRange": "2026-06-02",
+      "sourceUrl": "https://developer.nvidia.com/blog/develop-physical-ai-reasoning-world-and-action-models-with-nvidia-cosmos-3/"
+    }
+  ]
+}

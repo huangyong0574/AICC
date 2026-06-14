@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { radarWeekData } from '../data/radarData'
+import { useLatestRadarWeek } from '../data/radarData'
 import { RadarCard } from '../components/radar/RadarCard'
 import { RadarHero } from '../components/radar/RadarHero'
 import { RadarToolbar, type RadarFilter } from '../components/radar/RadarToolbar'
@@ -14,7 +14,8 @@ export function RadarPage({ onNavigate }: RadarPageProps) {
   const [filter, setFilter] = useState<RadarFilter>('all')
   const { map, addToPlan, remove } = useCognition()
 
-  const { insights, weekId, dateRange } = radarWeekData
+  const { week } = useLatestRadarWeek()
+  const { insights, weekId, dateRange } = week
   const total = insights.length
 
   // 计划状态来自认知状态机（aicc-cognition-state，state ≠ discovered 即在计划中）

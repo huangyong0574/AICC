@@ -11,14 +11,37 @@
 
 ## What is AICC?
 
-**AICC**（AI Concept Cognition）是一个**多页面 AI 认知进化平台**，围绕「输出你的理解，而非 AI 的理解」这一核心信念构建，包含四大模块：
+**AICC**（AI Concept Cognition）是一个**个人 AI 认知操作系统**，围绕「输出你的理解，而非 AI 的理解」这一核心信念构建。它把零散的「刷到一个概念 → 看不懂 → 遗忘」循环，重构成一条可追踪、可沉淀的**认知流水线**。
 
-| 模块 | 路由 | 定位 |
-|------|------|------|
-| **产品文化** (Letter) | `/` | 一封写给 AI 认知长期进化者的信，阐述症状、信念、自省与防腐行为设计 |
-| **认知工作台** (Dashboard) | `/dashboard` | AI 概念文章管理与深度阅读入口 |
-| **认知图谱** (Graph) | `/graph` | 学习过的 AI 概念关系可视化 |
-| **认知雷达** (Radar) | `/radar` | AI 技术成熟度雷达，标记「研究前沿 / 成熟可用」，支持深度计划 |
+### 🧭 核心：认知状态机（产品主线）
+
+每一个 AI 概念都在一条状态机上流转，全程持久化于浏览器本地（`localStorage`），构成你的「第二大脑」：
+
+```
+discovered ──► in-plan ──► learning ──► published
+（雷达发现）   （加入计划）  （费曼学习中）  （已成稿）
+   Radar         Plan        Feynman      Editor → Article
+```
+
+| 状态 | 标签 | 含义 | 驱动页面 | 流转动作 |
+|------|------|------|----------|----------|
+| `discovered` | 已发现 | 在认知雷达里被扫描到 | RadarPage | 「加入深入计划」 |
+| `in-plan` | 待启动 | 已加入跨周深度计划 | PlanPage | 「开始费曼学习」 |
+| `learning` | 学习中 | 正在费曼工作台穿透 | FeynmanApp | 「去成稿」 |
+| `published` | 已成稿 | 已输出为自己的文章 | EditorPage | 发布 → 文章页 |
+
+### 页面模块
+
+| 模块 | 路由 | 定位 | 在状态机中的角色 |
+|------|------|------|------|
+| **产品文化** (LetterHome) | `/` | 一封写给 AI 认知长期进化者的信：症状 / 信念 / 自省 / 防腐 | 价值观层 |
+| **认知工作台** (Dashboard) | `/dashboard` | 文章管理与深度阅读入口 + 本周雷达计划概览 | 总览 |
+| **认知雷达** (Radar) | `/radar` | AI 技术成熟度雷达，标「研究前沿 / 成熟可用」 | `discovered → in-plan` |
+| **深度计划** (Plan) | `/plan` | 跨周累积的深度学习计划，按状态筛选/计数 | `in-plan / learning / published` 看板 |
+| **费曼工作台** (Feynman) | `/feynman` | 单概念费曼四步穿透学习引擎 | `in-plan → learning` |
+| **文章编辑器** (Editor) | `/editor` | Markdown 实时预览 + 发布，把理解写成文章 | `learning → published` |
+| **认知图谱** (Graph) | `/graph` | 按状态机着色的概念网络（已成稿=绿 / 学习中=蓝 / 待启动=琥珀 / 未涉及=灰） | 累积可视化 |
+| **文章详情** (Article) | `/article/:slug` | 文章阅读页（先读本地草稿，回退 `public/content`） | `published` 产物 |
 
 核心学习引擎采用 **费曼四步穿透模型**：
 
@@ -26,25 +49,29 @@
 Feynman Warm-up（3 角色提问）→ Step 1 直觉 → Step 2 场景 → Step 3 机制 → Step 4 本质
 ```
 
-内置 **30 个热门 AI/LLM 算法概念**知识库 + **6 篇深度 AI 概念文章**。
+内置 **30 个热门 AI/LLM 算法概念**知识库 + 一批深度 AI 概念文章。设计稿源码归档于 [`design/aicc-html-bundle/`](design/aicc-html-bundle/)，与 `src/` 实现同仓，仓库即唯一事实来源。
 
 ---
 
 ## Multi-Page Architecture
 
 ```
-main.tsx (App Router)
+main.tsx (App Router · 手写 History 路由 + CognitionProvider)
 ├── /              → LetterHome        # 产品文化 · 一封信
-├── /dashboard     → Dashboard         # 认知工作台（文章列表 + 知识图谱）
-├── /graph         → Dashboard#graph   # 认知图谱（Dashboard 锚点跳转）
-├── /article/:slug → ArticlePage       # 文章详情页（HTML 渲染）
-├── /radar         → RadarPage         # 认知雷达
-└── /feynman       → FeynmanApp        # 费曼四步穿透学习引擎
+├── /dashboard     → Dashboard         # 认知工作台（文章列表 + 本周雷达计划概览）
+├── /radar         → RadarPage         # 认知雷达（discovered → in-plan）
+├── /plan          → PlanPage          # 深度计划看板（in-plan / learning / published）
+├── /feynman       → FeynmanApp        # 费曼四步穿透学习引擎（in-plan → learning）
+├── /editor        → EditorPage        # 文章编辑器（learning → published）
+├── /graph         → GraphPage         # 认知图谱（按状态机着色）
+└── /article/:slug → ArticlePage       # 文章详情页（本地草稿优先，回退 public/content）
 ```
+
+整个 `<App>` 包裹在 `CognitionProvider`（`src/lib/cognition.tsx`）内，所有页面通过 `useCognition()` 共享同一份状态机数据。「当前认知点」`activeConceptId` 持久化到 `sessionStorage`，确保 `learning → published` 的回写不因刷新 / 直达 URL / 切换 tab 而断链。
 
 ### 导航系统
 
-`SiteHeader` 全局导航条包含四个 Tab：**产品文化** / **认知工作台** / **认知图谱** / **认知雷达**，支持深色模式切换。
+`SiteHeader` 全局导航条包含六个 Tab：**产品文化** / **认知工作台** / **认知雷达** / **深度计划** / **认知图谱** / **编辑器**，支持深色模式切换。顶部「编辑器」为通用入口（写任意文章，不绑定认知点）；「去成稿」按钮才携带认知点 id 完成 `published` 回写。
 
 ---
 
@@ -78,12 +105,26 @@ main.tsx (App Router)
 
 文章存储在 `public/content/`，支持 HTML 和 Markdown 双格式。
 
-### 4. 认知雷达（Radar）
+### 4. 认知流水线（Radar → Plan → Feynman → Editor）
 
-- **技术成熟度评估**：每项技术标记为「研究前沿」(amber) 或「成熟可用」(green)
-- **过滤与排序**：支持按成熟度、分类筛选
-- **深度计划**：标记想深入研究的技术，跨 Tab 持久化存储（localStorage）
-- **响应式设计**：桌面 / 平板 / 移动端自适应
+围绕认知状态机的四段流转，由四个页面接力驱动：
+
+**4.1 认知雷达（Radar）— `discovered → in-plan`**
+- 技术成熟度评估：每项标记「研究前沿」(amber) 或「成熟可用」(green)
+- 过滤与排序：按成熟度筛选；「加入深入计划」把概念置为 `in-plan`
+- 安全护栏：对已 `learning` / `published` 的卡片再点需二次确认，避免误删进度 / 文章关联
+- 响应式：桌面 / 平板 / 移动端自适应
+
+**4.2 深度计划（Plan）— 跨周累积看板**
+- 汇总所有非 `discovered` 概念，按 `待启动 / 学习中 / 已成稿` 计数与筛选
+- 每项按状态给出操作：待启动→「开始费曼学习」、学习中→「继续学习」、已成稿→「查看文章」
+- 按加入时间排序（新→旧），数据跨周累积，全部存于本地
+
+**4.3 文章编辑器（Editor）— `learning → published`**
+- 左侧 Markdown 输入（支持拖入 `.md`）、右侧实时渲染 AICC 文章页样式
+- 解析 YAML frontmatter（title/subtitle/date/category/tags/status），自动字数与阅读时长
+- 发布 = 写入 `localStorage`（文章页可回读）+ 下载 `.md` 兜底；若携带认知点 id，则回写该概念为 `published` 并记录 slug
+- slug 必填，同名覆盖前二次确认
 
 ### 5. 费曼四步穿透学习引擎
 
@@ -133,12 +174,28 @@ main.tsx (App Router)
 | **UI** | Tailwind CSS + shadcn/ui + Radix Primitives |
 | **Icons** | lucide-react |
 | **Math Rendering** | KaTeX |
-| **Routing** | History API（手写轻量路由） |
-| **State** | React Hooks（无外部状态管理） |
-| **Storage** | localStorage（笔记、图谱、配置、雷达计划） |
+| **Routing** | History API（手写轻量路由，`main.tsx`） |
+| **State** | React Hooks + `CognitionProvider`（认知状态机，无外部状态库） |
+| **Storage** | localStorage（状态机、计划、文章、笔记、图谱、配置）+ sessionStorage（当前认知点） |
 | **LLM** | DashScope compatible-mode API（deepseek-v4-flash） |
 | **Streaming** | SSE (Server-Sent Events) with AbortController |
 | **Testing** | Playwright (E2E) |
+
+### 本地存储键（Storage Keys · 数据契约）
+
+> 这是状态机与持久化的事实来源，新增/改名前务必同步本表。
+
+| Key | 作用域 | 写入方 | 内容 |
+|-----|--------|--------|------|
+| `aicc-cognition-state` | localStorage | `cognition.tsx` | 状态机核心：`{ [id]: CognitionItem }`（state/title/titleEn/slug/addedAt/sourceWeek） |
+| `aicc-deep-plan` | localStorage | `cognition.tsx` | 派生：所有非 `discovered` 的 id 列表 |
+| `aicc-active-concept` | **sessionStorage** | `main.tsx` | 当前正在学习/成稿的认知点 id（跨刷新保活，防 `published` 回写断链） |
+| `aicc-published-articles` | localStorage | `EditorPage.tsx` | 已发布文章索引（slug/title/category/date/…） |
+| `aicc-article-md:<slug>` | localStorage | `EditorPage.tsx` → `ArticlePage.tsx` | 已发布文章的 Markdown 原文（文章页优先回读） |
+| `aicc-theme` | localStorage | `SiteHeader.tsx` | `dark` / `light` |
+| `gdn_llm_cfg_v3` | localStorage | `feynman/lib/storage.ts` | LLM 配置（apiKey/baseUrl/model/offlineMock） |
+| `gdn_notes_v3` | localStorage | `feynman/lib/storage.ts` | 费曼笔记（离线缓存，相同问题复用） |
+| `gdn_graph_v3` | localStorage | `feynman/lib/storage.ts` | 已内化概念（费曼图谱挂载） |
 
 ---
 
@@ -146,12 +203,20 @@ main.tsx (App Router)
 
 ```
 src/
+├── main.tsx                        # App 路由 + CognitionProvider 挂载 + 状态机流转编排
+├── lib/
+│   ├── cognition.tsx               # 认知状态机（Provider / useCognition / 存储模型）★ 主线
+│   ├── markdown.ts                 # frontmatter 解析 + 文章正文渲染（编辑器/文章页共用）
+│   └── utils.ts                    # cn() 等工具
 ├── pages/                          # 多页面路由组件
 │   ├── LetterHome.tsx              # 产品文化 · 一封信
-│   ├── Dashboard.tsx               # 认知工作台 + 知识图谱
+│   ├── Dashboard.tsx               # 认知工作台（文章 + 本周雷达计划概览）
+│   ├── RadarPage.tsx               # 认知雷达（discovered → in-plan）
+│   ├── PlanPage.tsx                # 深度计划看板（跨周累积）
+│   ├── EditorPage.tsx              # 文章编辑器（learning → published）
+│   ├── GraphPage.tsx               # 认知图谱（按状态着色）
 │   ├── ArticlePage.tsx             # 文章详情页
-│   ├── RadarPage.tsx               # 认知雷达
-│   └── SiteHeader.tsx              # 全局导航条
+│   └── SiteHeader.tsx              # 全局导航条（6 Tab）
 ├── components/
 │   ├── radar/                      # 认知雷达组件
 │   │   ├── RadarCard.tsx
@@ -195,6 +260,9 @@ src/
 public/
 └── content/                        # AI 概念文章库
     ├── articles.json               # 文章索引
+    ├── radar/                      # ★ 认知雷达数据（由 ai-cognitive-radar skill 产出，工程动态加载）
+    │   ├── index.json              #   周索引（新→旧）
+    │   └── 2026-W24.json           #   每周认知点（RadarWeek）
     ├── flash-attention.md
     ├── csa-compressed-sparse-attention.md
     ├── mla-multi-head-latent-attention.md
@@ -202,6 +270,9 @@ public/
     ├── swarm-agent-framework.md
     ├── swarm-agent-framework.html
     └── aicc-article-swarm.html
+
+design/
+└── aicc-html-bundle/               # 设计稿源（HTML，归口为唯一来源，与 src/ 实现对照）
 ```
 
 ---
@@ -222,8 +293,9 @@ cd AICC
 # Install
 npm install
 
-# Run dev server (fixed port 5180)
+# Run dev server（默认 Vite 端口 5173；本仓 .claude/launch.json 固定 5188）
 npm run dev
+# 或固定端口：npm run dev -- --port 5188 --strictPort
 
 # Build for production
 npm run build
@@ -232,7 +304,7 @@ npm run preview
 
 ### Configuration
 
-1. Open `http://localhost:5180` in browser
+1. Open `http://localhost:5188` in browser（或你的 dev server 实际端口）
 2. Click **Settings** (gear icon) → enter your DashScope API Key
 3. Toggle **Offline Mock** for offline development (uses pre-recorded fixtures)
 4. Default model: `deepseek-v4-flash` (configurable)
@@ -286,19 +358,20 @@ AICC 采用「认知递进」的分层设计：
 
 | Feature | Status | Priority |
 |---------|--------|----------|
-| 多页面架构 + 全局导航 | Done | P0 |
-| 产品文化页（一封信） | Done | P0 |
-| 认知工作台 + 文章管理 | Done | P0 |
-| 认知雷达（成熟度 + 深度计划） | Done | P0 |
-| 6 篇 AI 概念深度文章 | Done | P0 |
-| 动态 SVG 机制图 | Done | P0 |
-| 30 算法概念知识库 | Done | P0 |
+| 多页面架构 + 全局导航（6 Tab） | Done | P0 |
+| **认知状态机**（discovered→in-plan→learning→published） | Done | P0 |
+| 认知雷达（成熟度 + 加入计划） | Done | P0 |
+| 深度计划看板（跨周累积 + 状态筛选） | Done | P0 |
+| 文章编辑器（Markdown 预览 + 发布回写状态） | Done | P0 |
+| 认知图谱（按状态机着色） | Done | P0 |
 | 费曼四步穿透学习引擎 | Done | P0 |
+| 动态 SVG 机制图 + 30 算法概念知识库 | Done | P0 |
+| 设计稿归档 design/（唯一来源） | Done | P0 |
+| **雷达数据动态化**（skill 输出 JSON → 工程 `useLatestRadarWeek()` 加载） | Done | P0 |
 | ECS 生产部署 | Done | P0 |
-| 多概念并发学习 | Planned | P1 |
-| Error boundary + retry | Planned | P1 |
-| HTTPS + custom domain | Planned | P1 |
-| Multi-language (i18n) | Planned | P2 |
+| 已发布文章并入文章库 + 图谱（统一来源） | Planned | P1 |
+| 防腐机制系统化（24h 未成稿提醒 / 周度审计看板） | Planned | P1 |
+| 多概念并发学习 · Error boundary · i18n | Planned | P2 |
 
 ---
 

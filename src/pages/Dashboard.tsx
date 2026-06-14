@@ -3,7 +3,7 @@ import { FileText, Folder, GitFork, Flame, Bot, Cpu, GraduationCap, ArrowRight, 
 import { SiteHeader } from "./SiteHeader"
 import type { NavPage } from "./SiteHeader"
 import { useCognition } from "../lib/cognition"
-import { radarWeekData } from "../data/radarData"
+import { useLatestRadarWeek } from "../data/radarData"
 
 interface ArticleEntry {
   slug: string
@@ -36,8 +36,9 @@ export function Dashboard({ onNavigate, onOpenArticle }: DashboardProps) {
   const [articles, setArticles] = useState<ArticleEntry[]>([])
   const { map } = useCognition()
 
-  // 本周雷达·深入计划：节点来自 radarData，命中认知状态机（state ≠ discovered）即“在计划”
-  const radarNodes = radarWeekData.insights.map((ins) => ({
+  const { week: radarWeek } = useLatestRadarWeek()
+  // 本周雷达·深入计划：节点来自最新一周雷达，命中认知状态机（state ≠ discovered）即“在计划”
+  const radarNodes = radarWeek.insights.map((ins) => ({
     id: ins.id,
     num: String(ins.index).padStart(2, "0"),
     label: ins.eyebrow,
@@ -446,7 +447,7 @@ export function Dashboard({ onNavigate, onOpenArticle }: DashboardProps) {
                   <div className="rs-title">
                     <Radar style={{ width: 14, height: 14 }} />
                     本周雷达 · 深入计划
-                    <span className="rs-kicker">{radarWeekData.weekId}</span>
+                    <span className="rs-kicker">{radarWeek.weekId}</span>
                   </div>
                   <div className="rs-meta">
                     已选 <span className="num">{radarPlanCount}</span> / {radarNodes.length} ·{" "}

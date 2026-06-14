@@ -1,0 +1,22 @@
+{
+  "weeks": [
+    {
+      "weekId": "2026-W24",
+      "dateRange": "2026-06-08 ~ 2026-06-12",
+      "file": "2026-W24.json",
+      "generatedAt": "2026-06-12"
+    },
+    {
+      "weekId": "2026-W23",
+      "dateRange": "2026-06-01 ~ 2026-06-05",
+      "file": "2026-W23.json",
+      "generatedAt": "2026-06-05"
+    },
+    {
+      "weekId": "2026-W22",
+      "dateRange": "2026-05-26 ~ 2026-06-01",
+      "file": "2026-W22.json",
+      "generatedAt": "2026-06-01"
+    }
+  ]
+}
