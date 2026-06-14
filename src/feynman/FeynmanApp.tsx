@@ -19,17 +19,7 @@ import { FeynmanDigestPanel } from "./components/FeynmanDigestPanel"
 import { ExportBar } from "./components/ExportBar"
 import { CognitiveNavBar } from "./components/CognitiveNavBar"
 import { SettingsDialog } from "./components/SettingsDialog"
-import { LibraryDialog } from "./components/LibraryDialog"
-import { GraphDialog } from "./components/GraphDialog"
-import { ALGORITHM_CONCEPTS } from "./data/algorithm-concepts"
-
-/** 从知识图谱中随机抽取 N 个概念作为示例（每次刷新页面随机） */
-function pickExamples(count: number) {
-  const shuffled = [...ALGORITHM_CONCEPTS].sort(() => Math.random() - 0.5)
-  return shuffled.slice(0, count).map(c => ({ label: c.label, url: c.url }))
-}
-
-const EXAMPLES = pickExamples(5)
+import { useLatestRadarWeek } from "../data/radarData"
 
 function genId() {
   return `note_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
@@ -52,6 +42,13 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
   const [topic, setTopic] = useState("")
   const [tagsInput, setTagsInput] = useState("")
 
+  // 自由模式示例：取自最新一周认知雷达（弃用旧 30 概念库）
+  const { week: radarWeek } = useLatestRadarWeek()
+  const exampleConcepts = useMemo(
+    () => radarWeek.insights.slice(0, 5).map(i => ({ label: i.title, url: i.sourceUrl })),
+    [radarWeek],
+  )
+
   const [started, setStarted] = useState(false)
   const [noteId, setNoteId] = useState<string>("")
   const [steps, setSteps] = useState<StepEntry[]>([])
@@ -69,8 +66,6 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
   }
 
   const [showSettings, setShowSettings] = useState(false)
-  const [showLibrary, setShowLibrary] = useState(false)
-  const [showGraph, setShowGraph] = useState(false)
 
   useEffect(() => {
     const c = loadCfg()
@@ -268,21 +263,23 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
       )}
 
       <main className="mx-auto max-w-6xl px-6 py-8 space-y-8">
-        {/* Hero */}
-        <section className="relative overflow-hidden rounded-xl border border-border bg-background-secondary px-8 py-12 text-center">
-          <div className="relative max-w-2xl mx-auto">
-            <Badge variant="outline" className="mb-4 rounded-full border-border text-muted-foreground bg-background font-normal">
-              <Brain className="mr-1 h-3 w-3" />
-              AI算法概念费曼学习法
-            </Badge>
-            <h1 className="text-2xl md:text-4xl font-bold tracking-tight spectrum-text mb-4 whitespace-nowrap">
-              如果你不能简单地解释它，你就没有真正理解它！
-            </h1>
-            <p className="text-xs md:text-sm text-muted-foreground leading-relaxed whitespace-nowrap">
-              你是否和我一样，看到个算法概念很好奇，但是看论文又很难理解，期望这个网页对你有点帮助
-            </p>
-          </div>
-        </section>
+        {/* Hero —— 仅自由模式展示；概念模式已由来源上下文条 + 锁定卡片定位，无需营销大图 */}
+        {!conceptId && (
+          <section className="relative overflow-hidden rounded-xl border border-border bg-background-secondary px-8 py-12 text-center">
+            <div className="relative max-w-2xl mx-auto">
+              <Badge variant="outline" className="mb-4 rounded-full border-border text-muted-foreground bg-background font-normal">
+                <Brain className="mr-1 h-3 w-3" />
+                AI算法概念费曼学习法
+              </Badge>
+              <h1 className="text-2xl md:text-4xl font-bold tracking-tight spectrum-text mb-4 whitespace-nowrap">
+                如果你不能简单地解释它，你就没有真正理解它！
+              </h1>
+              <p className="text-xs md:text-sm text-muted-foreground leading-relaxed whitespace-nowrap">
+                你是否和我一样，看到个算法概念很好奇，但是看论文又很难理解，期望这个网页对你有点帮助
+              </p>
+            </div>
+          </section>
+        )}
 
         {/* Input Card */}
         <Card>
@@ -319,8 +316,8 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
                   disabled={started}
                 />
                 <div className="flex items-center gap-2 flex-wrap text-[11px]">
-                  <span className="text-muted-foreground shrink-0">示例：</span>
-                  {EXAMPLES.map((ex, i) => (
+                  <span className="text-muted-foreground shrink-0">示例（本周雷达）：</span>
+                  {exampleConcepts.map((ex, i) => (
                     <span key={i} className="relative group/ex">
                       <button
                         onClick={() => !started && setRawQuestion(ex.label)}
@@ -466,8 +463,6 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
       </main>
 
       <SettingsDialog open={showSettings} onOpenChange={setShowSettings} onSaved={setCfg} />
-      <LibraryDialog open={showLibrary} onOpenChange={setShowLibrary} onLoad={loadFromNote} />
-      <GraphDialog open={showGraph} onOpenChange={setShowGraph} />
     </div>
   )
 }

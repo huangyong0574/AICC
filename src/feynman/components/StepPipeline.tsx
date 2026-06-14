@@ -300,7 +300,7 @@ function StepCard({
               </span>
               <span className="font-semibold">{meta.levelTitle}</span>
               <span className="text-sm text-muted-foreground font-normal">{meta.levelQ}</span>
-              {entry.streaming && <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-[10px]"><Loader2 className="h-3 w-3 mr-1 animate-spin" />生成中</Badge>}
+              {entry.streaming && <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-[10px]"><Loader2 className="h-3 w-3 mr-1 animate-spin" />{(entry.key === "step1" || entry.key === "step2") ? "联网检索中…" : "生成中"}</Badge>}
               {entry.answer && !entry.streaming && !entry.confirmed && <Badge variant="outline" className="border-warning/40 text-warning bg-warning/5 text-[10px]">待确认</Badge>}
               {entry.confirmed && <Badge variant="outline" className="border-success/40 text-success bg-success/5 text-[10px]"><CheckCircle2 className="h-3 w-3 mr-1" />已确认</Badge>}
             </div>
