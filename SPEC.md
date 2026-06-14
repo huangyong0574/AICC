@@ -441,10 +441,11 @@ User input -> FeynmanApp.tsx (learning 阶段内部状态管理)
 | Call Point | Function | Default Model | Streaming | Search | Thinking | JSON Format | Temperature | Trigger |
 |---|---|---|---|---|---|---|---|---|
 | Feynman Warmup | `callFeynmanWarmup` | deepseek-v4-flash | No | **No** | No | No (array) | 0.8 | After question input |
-| Step 1 | `callStep("step1")` | deepseek-v4-flash | Yes | **Yes** (forced) | **No** | json_object | 0.3 | After warmup confirm (auto) |
-| Step 2 | `callStep("step2")` | deepseek-v4-flash | Yes | **Yes** (forced) | **No** | json_object | 0.3 | After step1 confirm (auto) |
-| Step 3 | `callStep("step3")` | deepseek-v4-flash | Yes | **No** | **No** | json_object | 0.3 | After step2 confirm (auto) |
-| Step 4 | `callStep("step4")` | deepseek-v4-flash | Yes | **No** | **No** | json_object | 0.3 | After step3 confirm (auto) |
+| Step 1 | `callStep("step1")` | deepseek-v4-flash | Yes | **Yes** (forced) | **No** | json_object | 0.3 | 用户「提交猜想 / 直接看」后（先猜后揭，§5.0） |
+| Step 2 | `callStep("step2")` | deepseek-v4-flash | Yes | **Yes** (forced) | **No** | json_object | 0.3 | 进入该步 → 先写猜想 → 提交后揭晓 |
+| Step 3 | `callStep("step3")` | deepseek-v4-flash | Yes | **No** | **No** | json_object | 0.3 | 同上 |
+| Step 4 | `callStep("step4")` | deepseek-v4-flash | Yes | **No** | **No** | json_object | 0.3 | 同上 |
+| 认知差 Gap | `callGap` | deepseek-v4-flash | No | **No** | No | json_object | 0.3 | 揭晓后，若用户写过非空猜想（对比猜想 vs 答案） |
 | Feynman Review | `callFeynmanReview` | deepseek-v4-flash | No | **Yes** (forced) | **Yes** | json_object | 0.5 | User manual submit |
 
 **Design Rationale for Call Matrix**:
@@ -453,6 +454,8 @@ User input -> FeynmanApp.tsx (learning 阶段内部状态管理)
 - **All steps no thinking**: Avoid thinking token stream slowing response
 - **Step 1+2 search**: Concept perception and scenario selection benefit from real-time web data
 - **Step 3+4 no search**: Algorithm derivation, math, and essence summary are based on prior step context, no external search needed
+- **先猜后揭（不再 auto）**: 每步不再自动触发；进入该步先停在「预测」阶段，用户写下猜想（或选「不确定，直接看」=空猜想）后才调用 `callStep` 揭晓。揭晓后若猜想非空，追加一次 `callGap` 对比生成「认知差（命中/遗漏/偏差）」。详见 §5.0。
+- **Gap 非流式**: `callGap` 返回 `{hit,miss,wrong}`（每类 ≤4 条、≤20 字），失败静默（不阻断揭晓）
 
 ### 4.5 Storage System
 
@@ -486,7 +489,10 @@ DEFAULT_CFG = {
 }
 ```
 
-**Legacy Model Migration**: `loadCfg()` contains auto-migration logic. If stored model is in `LEGACY_MODELS = ["qwen3.6-plus", "qwen-plus", "deepseek-v4-pro"]`, it auto-upgrades to current default (`deepseek-v4-flash`) without changing localStorage key version.
+**Legacy Model Migration**: `loadCfg()` contains auto-migration logic. If stored model is in `LEGACY_MODELS = ["qwen3.6-plus", "qwen-plus"]`, it auto-upgrades to current default (`deepseek-v4-flash`) without changing localStorage key version.
+> ⚠️ `deepseek-v4-pro` 必须**不**在 `LEGACY_MODELS` 里——它是 SettingsDialog 的有效选项（§4.6）。曾误列入导致用户选 pro 后被静默降级回 flash（model-downgrade bug，已修）。
+
+**内化回流（费曼 → 平台图谱）**：`aicc-cognition-state` 的 `CognitionItem` 含可选 `relation?: { parent; text; tags?; oneLine? }`。费曼内化完成时 `FeynmanApp.onInternalized(id, delta)` → `main.tsx:handleInternalized` → `cognition.upsert(id,{relation})`，供 GraphPage 渲染概念间关系边（§3.5 / §5.6）。
 
 ### 4.6 Model Options (SettingsDialog)
 
@@ -505,13 +511,35 @@ DEFAULT_CFG = {
 |---|---|---|
 | No React.StrictMode | Avoids useEffect double-run causing LLM double-call + AbortController race | `main.tsx` |
 | Legacy 6-question code retained | `types.ts` retains QaKey/QaAnswerMap; `llm.ts` retains callQa/callQaStream; `QaPipeline.tsx` retained; `Note.qa?` for old note compat | `types.ts`, `llm.ts`, `QaPipeline.tsx` |
-| react-router-dom unused | Installed but never imported, app is single-page | `package.json` |
+| 手写 History API 路由 | 不用 react-router-dom（已作为僵尸依赖移除）；`main.tsx` 自管 path→page 映射，应用单页 | `main.tsx`, `package.json` |
 | Partial JSON streaming | `partialJson.ts` field-by-field balanced bracket scan instead of try/catch storm | `lib/partialJson.ts` |
 | SVG template for Step1 diagrams | LLM returns structured nodes/edges, `svgRenderer.ts` renders locally (no external image API) | `lib/svgRenderer.ts` |
 
 ---
 
 ## 5. Detailed Functional Spec
+
+### 5.0 先猜后揭（Predict → Reveal → Gap，四步通用交互）
+
+> 费曼核心是「输出倒逼输入」。每一步（Step 1–4）不再进入即自动生成，而是先调用学习者已有认知，再用差异校准——降低「划过即懂」的错觉。
+
+**状态机（每步 StepCard 内）**：
+1. **predict（预测）**：进入该步、未生成时停在此态（`inPredict = active && !answer && !streaming && !error && prediction === undefined`）。展示猜想输入框 + 两个出口：
+   - 「提交猜想，揭晓」（猜想非空才可点）→ `submitPrediction(idx, text)`
+   - 「不确定，直接看」→ `submitPrediction(idx, "")`（空猜想，跳过认知差）
+2. **reveal（揭晓）**：`runOne(idx, prediction)` 流式生成该步答案（`callStep`）。揭晓后「你的猜想」原文保留展示。
+3. **gap（认知差）**：若 `prediction` 非空，揭晓后追加 `callGap`，对比猜想 vs 标准答案，渲染 `GapPanel`：
+   - **命中**（`hit`，绿/success）· **遗漏**（`miss`，琥珀/warning）· **偏差**（`wrong`，红/destructive）
+   - 某类为空则不渲染该行；`callGap` 失败静默（不阻断已揭晓的答案）。
+
+**数据**：`StepEntry.prediction?: string`（`undefined`=未提交、`""`=直接看、非空=猜想原文）、`StepEntry.gap?: StepGap`，`StepGap = { hit: string[]; miss: string[]; wrong: string[] }`。
+
+**实现要点**（`StepPipeline.tsx`）：
+- 取消自动生成（旧 `autoStart` useEffect 已移除），改由 `submitPrediction → runOne` 驱动。
+- `prediction` 随 `runOne` 的**首个** `update` 与 `streaming:true` 同 tick 写入——避免分两次 `update` 时被 `valueRef` 过期值覆盖（曾导致猜想被清空的 bug，已修）。
+- `proceedToNext` 仅 `setActiveIdx(idx+1)`，让下一步重新落到 predict 态。
+
+---
 
 ### 5.1 Feynman Warmup
 
@@ -1181,23 +1209,25 @@ npm run preview
 - [x] **下线认知工作台**：占位数字/假图谱删除；「第二大脑成长总览」以真实数据并入认知图谱页；导航 6→5
 - [x] **费曼学习页外壳归一（第 1 层）**：套 AICC SiteHeader + 来源上下文条，删「笔记库/图谱 soon」假按钮、统一品牌页脚，学习页不再是飞地
 
-### P1 — 费曼学习页交互升级 + 数据归一（剩余）
-- [ ] **「先猜后揭」交互（第 2 层）**：每步先写猜想 → 提交后揭晓 AI 解答 + 认知差（命中/遗漏/偏差）→ 带走修正；需改 `StepPipeline` + `callStep`（gap 字段折进单次调用）+ 真·LLM 迭代
-- [ ] **概念模式锁定 + 示例归一**：从计划带入的概念已确定，费曼页不应再显示「可编辑搜索框 + 无关示例（KAN/AWQ/CoT…）」——概念模式应锁定/确认展示该概念、直接「开始讲解」；仅自由模式才显示输入，且示例改取雷达概念（弃用 `algorithm-concepts.ts` 旧 30 库）
-- [ ] **费曼数据并入平台**：`aicc-feynman-notes`/`aicc-feynman-graph` → `aicc-*`；内化成果直接喂平台认知图谱
+### P1 — 费曼学习页交互升级 + 数据归一（已完成 v3.1.0）
+- [x] **「先猜后揭」交互（第 2 层）**：每步先写猜想 → 提交后揭晓 + 认知差（命中/遗漏/偏差）→ 带走修正；`StepPipeline` + `callStep` + 新增 `callGap`，详见 §5.0（已真·LLM 迭代验证）
+- [x] **概念模式锁定 + 示例归一**：从计划带入的概念已确定——概念模式锁定展示该概念、直接「开始讲解」，不再显示可编辑搜索框 / 无关示例；仅自由模式显示输入，示例改取雷达概念（弃用 `algorithm-concepts.ts` 旧 30 库）
+- [x] **Takeaway 改用户手写 + 内化前置门槛**：每步「带走」弹窗由 AI 直接给改为用户手写（AI 仅作参考点击填入）；「去成稿」前必须完成费曼内化三问（强化「你来输出」）
+- [x] **费曼数据并入平台**：`gdn_* → aicc-*` 一次性迁移（保留用户数据）；内化成果经 `onInternalized` 直接喂平台认知图谱
+- [x] **认知图谱关系边**：GraphPage 接 `CognitionItem.relation`（费曼内化产出的父节点/关系）渲染真实关系边 + 父节点 hub（不再仅节点）
 
 ### P1 — 让主线「真正闭环」（剩余高价值缺口）
-- [ ] **已发布文章的文章库**：编辑器发布写 localStorage（`aicc-article-md` + `aicc-published-articles`）；目前经「深度计划」已成稿筛选访问，可考虑独立文章库视图（或并入图谱页）
-- [ ] **认知图谱关系边**：当前仅节点（按周聚类、按状态着色），无概念间关联；接 `aicc-feynman-graph`（费曼内化产出的父节点/关系）渲染真实边
+- [ ] **已发布文章的独立文章库视图**：发布已写 localStorage（`aicc-article-md` + `aicc-published-articles`），目前经「深度计划」已成稿筛选 / 图谱访问；可考虑独立文章库视图（或并入图谱页）
 - [ ] **每周回顾（链路⑤）**：在图谱上做「认知水平回顾 + 避免遗忘」的复习机制（间隔重复）
 - [ ] **防腐机制系统化**：把「24h 未成稿提醒 / 周度 LLM 审计 / 评价优于问答」从一封信的承诺变成实际功能（如防腐看板）
 
 ### P2 — 学习深度与质量
 - [ ] step 1/2 loop LLM 评分（LoopBlock 从占位升级为交互解锁）
-- [ ] 概念 id 命名规范（`<week>-<idx>-<slug>`，让周/序号成为内生元数据）
 - [ ] 学习进度跟踪 + 间隔复习（spaced repetition，呼应「认知复利」）
 - [ ] step3 历史上下文用摘要替代全 JSON；按概念类型动态决定是否联网搜索
-- [ ] 清理僵尸依赖 `react-router-dom`（实际用手写路由）；移除遗留 `App.tsx` / 6 问代码；i18n
+- [ ] i18n（界面文案中英双语）
+
+> 已完成并从本路线图移除：概念 id 命名规范 `{week}-{idx}-{slug}`（见 P0 / §3.6）、清理僵尸依赖 `react-router-dom` + 移除遗留 `App.tsx`（6 问代码按 §4.7 有意保留作笔记兼容）。
 
 ---
 
@@ -1207,6 +1237,8 @@ npm run preview
 
 See `src/feynman/types.ts`, containing two parallel systems:
 - **New 4-step**: `StepKey`, `StepEntry`, `Step1Answer`, `Step2Answer`, `Step3Answer`, `Step4Answer` (active)
+  - `StepEntry` 含 `prediction?: string`（先猜后揭：`undefined`=未提交 / `""`=直接看 / 非空=猜想原文）与 `gap?: StepGap`
+  - `StepGap = { hit: string[]; miss: string[]; wrong: string[] }`（认知差：命中/遗漏/偏差）
 - **Legacy 6-question**: `QaKey`, `QaEntry`, `BackgroundAnswer`, `PrincipleAnswer`, etc. (retained for `Note.qa` compat)
 
 ### B. （已移除）离线 Fixture 数据
@@ -1237,35 +1269,4 @@ Uses shadcn-compatible color palette, renders nodes (150x72px, rounded 12px) wit
 ---
 
 > **Document Maintenance**: This SPEC is verified against engineering source code file-by-file and must be kept in sync with every code change.
-> **Change Log**: Every feature change must update the corresponding section of this document.
-> **Change Log**: Every feature change must update the corresponding section of this document.
-|---|---|---|---|
-| MechanismAnim | `components/MechanismAnim.tsx` | `gdn-gate` | React useState + setTimeout sequence |
-| AttentionOnTwoAnim | `views/animations/AttentionOnTwoAnim.tsx` | `attention-on2` | CSS @keyframes + React state |
-| MambaSsmAnim | `views/animations/MambaSsmAnim.tsx` | `mamba-ssm` | CSS @keyframes + React state |
-| MoeRouteAnim | `views/animations/MoeRouteAnim.tsx` | `moe-route` | CSS @keyframes + React state |
-| GenericFlowAnim | `views/animations/GenericFlowAnim.tsx` | `generic-flow` | CSS @keyframes + React state |
-
-### D. SVG Template Renderer
-
-`src/feynman/lib/svgRenderer.ts` supports 5 layout types for Step 1 concept diagrams:
-- `flowchart`: Linear process flow
-- `comparison`: Old vs new side-by-side
-- `hierarchy`: Tree/pyramid structure
-- `cycle`: Iterative loop
-- `architecture`: Layered system
-
-Uses shadcn-compatible color palette, renders nodes (150x72px, rounded 12px) with edges and labels.
-
----
-
-> **Document Maintenance**: This SPEC is verified against engineering source code file-by-file and must be kept in sync with every code change.
-> **Change Log**: Every feature change must update the corresponding section of this document.
-
-> **Document Maintenance**: This SPEC is verified against engineering source code file-by-file and must be kept in sync with every code change.
-> **Change Log**: Every feature change must update the corresponding section of this document.
----
-
-> **Document Maintenance**: This SPEC is verified against engineering source code file-by-file and must be kept in sync with every code change.
-> **Change Log**: Every feature change must update the corresponding section of this document.
 > **Change Log**: Every feature change must update the corresponding section of this document.

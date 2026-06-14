@@ -141,17 +141,20 @@ main.tsx (App Router · 手写 History 路由 + CognitionProvider)
 - 渐进式卡片揭示，减少等待感
 - 用户触发：等待明确确认后才开始（不自动推进）
 
-#### 4 Learning Steps（递进式深化）
+#### 4 Learning Steps（递进式深化 · 每步「先猜后揭」）
+> 每步不自动生成：先停在「预测」——你写下猜想（或选「不确定，直接看」）→ 提交后才揭晓 AI 解答 → 若写过猜想，再生成**认知差（命中 / 遗漏 / 偏差）**校准。输出倒逼输入。
+
 | 步骤 | 焦点 | 输出 |
 |------|------|------|
-| **Step 1: 直觉** | "是什么？" | 类比 + 定义 + 术语表 + Takeaway |
+| **Step 1: 直觉** | "是什么？" | 类比 + 定义 + 术语表 + Takeaway（你手写，AI 仅供参考） |
 | **Step 2: 场景** | "用在哪？" | 适用/不适用场景 + 选择标准 |
 | **Step 3: 机制** | "怎么工作？" | 分步帧 + **动态 SVG** + Token 级数学 (LaTeX) |
 | **Step 4: 本质** | "一句话？" | 一句话 + 锚点隐喻 + 前后对比 + 3 个要点 |
 
 #### = 1 概念掌握
-- 每步确认后才进阶
-- 自动挂载到本地知识图谱
+- 每步先猜后揭、确认后才进阶
+- 「去成稿」前必须先完成费曼内化三问（内化前置门槛）
+- 内化成果回流平台认知图谱：写入 `CognitionItem.relation`（父节点 + 关系 + 标签），在图谱上渲染真实关系边
 
 ### 6. 动态 SVG 机制图
 
@@ -320,11 +323,15 @@ npm run preview
 
 | Endpoint | Function | Model | Streaming | Web Search | Thinking |
 |----------|----------|-------|-----------|-----------|----------|
-| Feynman Warm-up | `callFeynmanWarmup()` | deepseek-v4-flash | No | Yes | No |
-| Step 1 | `callStep("step1")` | deepseek-v4-flash | Yes | Yes | Yes |
-| Step 2 | `callStep("step2")` | deepseek-v4-flash | Yes | Yes | Yes |
-| Step 3 | `callStep("step3")` | deepseek-v4-flash | Yes | No | Yes |
-| Step 4 | `callStep("step4")` | deepseek-v4-flash | Yes | No | Yes |
+| Feynman Warm-up | `callFeynmanWarmup()` | deepseek-v4-flash | No | No | No |
+| Step 1 | `callStep("step1")` | deepseek-v4-flash | Yes | Yes | No |
+| Step 2 | `callStep("step2")` | deepseek-v4-flash | Yes | Yes | No |
+| Step 3 | `callStep("step3")` | deepseek-v4-flash | Yes | No | No |
+| Step 4 | `callStep("step4")` | deepseek-v4-flash | Yes | No | No |
+| 认知差 Gap | `callGap()` | deepseek-v4-flash | No | No | No |
+| Feynman Review | `callFeynmanReview()` | deepseek-v4-flash | No | Yes | Yes |
+
+> Step 1–4 采「先猜后揭」触发：进入该步先写猜想 →「提交猜想，揭晓」才调用 `callStep`；揭晓后若猜想非空再调 `callGap` 生成认知差。Warm-up 关闭联网（避免同名业务概念误导）；各步关闭 thinking（JSON 稳定 + 更快）。
 
 ### Prompt Engineering
 
@@ -353,7 +360,7 @@ AICC 采用「认知递进」的分层设计，对齐产品链路：
 ### 费曼方法集成
 
 - **预热**：3 道问题迫使用户在学习前预测答案（减少能力错觉）
-- **Takeaway 卡片**：每步结束后用户通过模态交互「收集」关键洞察
+- **Takeaway 卡片**：每步结束后由用户**手写**带走关键洞察（AI 仅供参考点击填入），强化「你来输出」
 - **渐进深度**：L1（任何人）→ L2（PM）→ L3（工程师）→ L4（专家）
 
 ---
@@ -376,7 +383,11 @@ AICC 采用「认知递进」的分层设计，对齐产品链路：
 | 设计稿归档 design/（唯一来源） | Done | P0 |
 | **雷达数据动态化**（skill 输出 JSON → 工程 `useLatestRadarWeek()` 加载） | Done | P0 |
 | ECS 生产部署 | Done | P0 |
-| 已发布文章并入文章库 + 图谱（统一来源） | Planned | P1 |
+| **费曼「先猜后揭」**（每步先写猜想 → 揭晓 + 认知差：命中/遗漏/偏差） | Done | P1 |
+| 费曼概念模式锁定 + 示例归一（弃用旧 30 库，改取雷达概念） | Done | P1 |
+| Takeaway 改用户手写 + 内化前置成稿门槛 | Done | P1 |
+| 费曼数据归一 `gdn_*→aicc-*` + 内化成果回流认知图谱（关系边） | Done | P1 |
+| 已发布文章并入独立文章库视图（统一来源） | Planned | P1 |
 | 防腐机制系统化（24h 未成稿提醒 / 周度审计看板） | Planned | P1 |
 | 多概念并发学习 · Error boundary · i18n | Planned | P2 |
 
