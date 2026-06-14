@@ -9,11 +9,11 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import type {
-  StepEntry, StepKey, LlmConfig,
+  StepEntry, StepKey, StepGap, LlmConfig,
   Step1Answer, Step2Answer, Step3Answer, Step4Answer, GlossaryTerm,
 } from "../types"
 import { STEP_ORDER } from "../types"
-import { callStep } from "../lib/llm"
+import { callStep, callGap } from "../lib/llm"
 import { getDefaultStepQuestion } from "../lib/prompts"
 import { extractCompletedFields, STEP1_KEYS, STEP2_KEYS, STEP3_KEYS, STEP4_KEYS } from "../lib/partialJson"
 import { Step1View } from "./views/Step1View"
@@ -81,13 +81,8 @@ export function StepPipeline({
       onChange(emptySteps())
       return
     }
-    if (!rawQuestion.trim()) return
-    if (autoStartedRef.current) return
-    const first = value[0]
-    if (!first.answer && !first.streaming) {
-      autoStartedRef.current = true
-      runOne(0)
-    }
+    // 先猜后揭：不再自动生成首步；step0 进入「预测」阶段，等用户写下猜想后才揭晓
+    void autoStartedRef
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawQuestion])
 
@@ -97,17 +92,23 @@ export function StepPipeline({
     return next
   }
 
-  async function runOne(idx: number) {
+  /** 先猜后揭：提交猜想后才生成该步（空猜想=「不确定，直接看」，跳过认知差） */
+  function submitPrediction(idx: number, prediction: string) {
+    runOne(idx, prediction)
+  }
+
+  async function runOne(idx: number, prediction?: string) {
     if (!cfg.apiKey) {
       toast.error("请先设置 API Key")
       return
     }
-    const cur = value[idx]
+    const cur = valueRef.current[idx]
     if (!cur) return
     setActiveIdx(idx)
     setStreamBuf("")
-    const prev = value.slice(0, idx)
-    update(idx, { streaming: true, error: undefined, answer: null })
+    const prev = valueRef.current.slice(0, idx)
+    // 同一 tick 写入 prediction + streaming，避免分两次 update 被 valueRef 过期值覆盖
+    update(idx, { streaming: true, error: undefined, answer: null, gap: undefined, ...(prediction !== undefined ? { prediction } : {}) })
     abortRef.current?.abort()
     abortRef.current = new AbortController()
     try {
@@ -122,6 +123,13 @@ export function StepPipeline({
       const next = update(idx, { streaming: false, answer: parsed as any, confirmed: false })
       setStreamBuf("")
       if (idx === STEP_ORDER.length - 1 && onAllDone) onAllDone(next)
+      // 认知差：若用户写过猜想，对比猜想与揭晓答案，标出命中/遗漏/偏差
+      const pred = (prediction ?? valueRef.current[idx]?.prediction ?? "").trim()
+      if (pred) {
+        callGap(cur.key as StepKey, rawQuestion, pred, parsed, cfg)
+          .then(gap => update(idx, { gap }))
+          .catch(() => {})
+      }
     } catch (e: any) {
       const isAbort =
         e?.name === "AbortError" ||
@@ -161,15 +169,10 @@ export function StepPipeline({
     }
   }
 
-  /** 进入下一步的实际逻辑（从弹窗回调或直接调用） */
+  /** 进入下一步：先猜后揭——只切换到下一步的「预测」阶段，等用户写猜想后才揭晓 */
   function proceedToNext(idx: number, next: StepEntry[]) {
     if (idx < STEP_ORDER.length - 1) {
-      const nextEntry = next[idx + 1]
-      if (!nextEntry.answer && !nextEntry.streaming) {
-        runOne(idx + 1)
-      } else {
-        setActiveIdx(idx + 1)
-      }
+      setActiveIdx(idx + 1)
     } else {
       if (onAllDone) onAllDone(next)
       toast.success("四大步骤讲解完成，去底部做费曼内化吧")
@@ -212,6 +215,7 @@ export function StepPipeline({
           glossaryTerms={i > 0 ? glossaryTerms : []}
           onRerun={() => runOne(i)}
           onConfirm={() => confirmAndNext(i)}
+          onSubmitPrediction={(text) => submitPrediction(i, text)}
         />
       ))}
 
@@ -267,7 +271,7 @@ export function StepPipeline({
 }
 
 function StepCard({
-  idx, entry, active, streamBuf, glossaryTerms, onRerun, onConfirm,
+  idx, entry, active, streamBuf, glossaryTerms, onRerun, onConfirm, onSubmitPrediction,
 }: {
   idx: number
   entry: StepEntry
@@ -276,11 +280,15 @@ function StepCard({
   glossaryTerms: GlossaryTerm[]
   onRerun: () => void
   onConfirm: () => void
+  onSubmitPrediction: (text: string) => void
 }) {
   void idx
   const meta = META[entry.key]
   const Icon = meta.icon
   const [expanded, setExpanded] = useState(true)
+  const [predictDraft, setPredictDraft] = useState("")
+  // 先猜后揭：本步处于「预测」阶段——当前激活、未生成、未揭晓、尚未提交猜想
+  const inPredict = active && !entry.answer && !entry.streaming && !entry.error && entry.prediction === undefined
 
   useEffect(() => {
     if (entry.confirmed) setExpanded(false)
@@ -350,6 +358,13 @@ function StepCard({
 
           {entry.answer && !entry.streaming && (
             <>
+              {entry.prediction !== undefined && entry.prediction.trim() !== "" && (
+                <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-[12.5px]">
+                  <span className="text-muted-foreground">你的猜想：</span>
+                  <span className="text-foreground/80">{entry.prediction}</span>
+                </div>
+              )}
+              {entry.gap && <GapPanel gap={entry.gap} />}
               {renderView(entry, glossaryTerms)}
               {!entry.confirmed && (
                 <div className="flex justify-end pt-3 border-t border-border/50">
@@ -362,9 +377,35 @@ function StepCard({
             </>
           )}
 
-          {!entry.answer && !entry.streaming && !entry.error && (
+          {/* 先猜后揭：预测阶段——先写猜想，提交后才揭晓 AI 解答 */}
+          {inPredict && (
+            <div className="space-y-3">
+              <div className="text-sm font-medium text-foreground">先写下你的猜想 —— {meta.levelQ}</div>
+              <div className="text-xs text-muted-foreground">费曼·先猜后揭：先输出你的理解，再对照 AI 看「命中 / 遗漏 / 偏差」。</div>
+              <Textarea
+                value={predictDraft}
+                onChange={e => setPredictDraft(e.target.value)}
+                placeholder={`我猜，关于这一步……（用自己的话）`}
+                className="min-h-[84px]"
+              />
+              <div className="flex items-center gap-2">
+                <Button variant="glow" size="sm" disabled={!predictDraft.trim()} onClick={() => onSubmitPrediction(predictDraft.trim())}>
+                  提交猜想，揭晓
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => onSubmitPrediction("")}
+                  className="text-[12px] text-muted-foreground hover:text-foreground underline underline-offset-2"
+                >
+                  不确定，直接看
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!entry.answer && !entry.streaming && !entry.error && !inPredict && (
             <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
-              等待上一步确认后自动生成…
+              确认上一步后，进入本步
             </div>
           )}
         </CardContent>
@@ -381,4 +422,25 @@ function renderView(entry: StepEntry, glossaryTerms: GlossaryTerm[]) {
     case "step4": return <Step4View data={entry.answer as Step4Answer} streaming={false} glossaryTerms={glossaryTerms} />
     default: return null
   }
+}
+
+/** 认知差面板（先猜后揭）：对照猜想，标出命中/遗漏/偏差 */
+function GapPanel({ gap }: { gap: StepGap }) {
+  const rows = [
+    { label: "命中", items: gap.hit, cls: "text-success" },
+    { label: "遗漏", items: gap.miss, cls: "text-warning" },
+    { label: "偏差", items: gap.wrong, cls: "text-destructive" },
+  ].filter(r => r.items && r.items.length)
+  if (!rows.length) return null
+  return (
+    <div className="rounded-lg border border-border/60 bg-card/40 p-3 space-y-1.5">
+      <div className="text-[11px] font-medium text-muted-foreground tracking-wide">认知差 · 对照你的猜想</div>
+      {rows.map(r => (
+        <div key={r.label} className="flex items-start gap-2 text-[12.5px] leading-relaxed">
+          <span className={`shrink-0 font-medium ${r.cls}`}>{r.label}</span>
+          <span className="text-foreground/80">{r.items.join("　·　")}</span>
+        </div>
+      ))}
+    </div>
+  )
 }

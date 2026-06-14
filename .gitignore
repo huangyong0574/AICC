@@ -4,3 +4,10 @@ dist-ssr
 *.local
 .DS_Store
 .env.local.json
+
+# IDE / tooling / verification artifacts (not product code)
+.qoder/
+.vercel-tmp/
+.claude/
+*.tsbuildinfo
+test-screenshots/

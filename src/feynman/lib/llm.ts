@@ -1,6 +1,6 @@
 import type {
   LlmConfig, QaKey, QaAnswerMap, QaEntry,
-  StepKey, StepAnswerMap, StepEntry,
+  StepKey, StepAnswerMap, StepEntry, StepGap,
   FeynmanAnswers, FeynmanReviewItem, GraphDelta,
 } from "../types"
 
@@ -400,3 +400,41 @@ export async function callFeynmanReview(
   return { reviews, graph }
 }
 
+
+// ============================================================
+// 认知差（先猜后揭）：对比"学习者猜想"与"揭晓答案"，标出命中/遗漏/偏差
+// ============================================================
+export async function callGap(
+  stepKey: StepKey,
+  rawQuestion: string,
+  prediction: string,
+  answer: unknown,
+  cfg: LlmConfig,
+): Promise<StepGap> {
+  if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
+  const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
+  const sys = `你是费曼学习法的"认知差"评估器。学习者在看到标准答案前，先用自己的话写了对某 AI 概念某一步的猜想。请对比"学习者猜想"与"标准答案"，输出三类要点（每类 1-3 条、每条 ≤20 字、简体中文、务实具体，对着学习者说"你"）：
+- hit：学习者猜对/命中的关键点
+- miss：答案里重要、但学习者完全没提到的点（遗漏）
+- wrong：学习者说错或理解偏差的点
+只返回单一合法 JSON：{"hit":[],"miss":[],"wrong":[]}，不加任何 Markdown 围栏或前后缀；某类没有就给空数组。`
+  const user = `概念：${rawQuestion}\n步骤：${stepKey}\n\n【学习者猜想】\n${prediction}\n\n【标准答案 JSON】\n${JSON.stringify(answer).slice(0, 4000)}`
+  const res = await fetch(`${base}/chat/completions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` },
+    body: JSON.stringify({
+      model: cfg.model || "deepseek-v4-flash",
+      messages: [{ role: "system", content: sys }, { role: "user", content: user }],
+      temperature: 0.3,
+      enable_thinking: false,
+      response_format: { type: "json_object" },
+      stream: false,
+    }),
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const data = await res.json()
+  let parsed: { hit?: unknown; miss?: unknown; wrong?: unknown } = {}
+  try { parsed = JSON.parse(data?.choices?.[0]?.message?.content || "{}") } catch { /* tolerate */ }
+  const arr = (v: unknown) => (Array.isArray(v) ? v.filter(x => typeof x === "string").slice(0, 4) : [])
+  return { hit: arr(parsed.hit), miss: arr(parsed.miss), wrong: arr(parsed.wrong) }
+}

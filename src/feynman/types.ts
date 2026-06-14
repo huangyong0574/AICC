@@ -273,6 +273,17 @@ export interface StepEntry<K extends StepKey = StepKey> {
   streaming: boolean
   confirmed: boolean
   error?: string
+  /** 先猜后揭：用户在揭晓前写下的猜想（空=「不确定，直接看」） */
+  prediction?: string
+  /** 认知差：对比猜想与揭晓答案的命中/遗漏/偏差 */
+  gap?: StepGap
+}
+
+/** 认知差（先猜后揭）：命中 / 遗漏 / 偏差 */
+export interface StepGap {
+  hit: string[]
+  miss: string[]
+  wrong: string[]
 }
 
 // ---- 完整笔记 v5 -------------------------------------------------
