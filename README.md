@@ -1,4 +1,4 @@
-# AICC — AI Concept Cognition
+# AICC — AI Cognition Connector
 
 **献给 AI 认知进化追求者的一封信 · 用费曼学习法穿透理解 AI 算法概念**
 
@@ -11,7 +11,7 @@
 
 ## What is AICC?
 
-**AICC**（AI Concept Cognition）是一个**个人 AI 认知操作系统**，围绕「输出你的理解，而非 AI 的理解」这一核心信念构建。它把零散的「刷到一个概念 → 看不懂 → 遗忘」循环，重构成一条可追踪、可沉淀的**认知流水线**。
+**AICC**（AI Cognition Connector）是一个**个人 AI 认知操作系统**，围绕「输出你的理解，而非 AI 的理解」这一核心信念构建。它把零散的「刷到一个概念 → 看不懂 → 遗忘」循环，重构成一条可追踪、可沉淀的**认知流水线**。
 
 ### 🧭 核心：认知状态机（产品主线）
 
@@ -160,8 +160,7 @@ main.tsx (App Router · 手写 History 路由 + CognitionProvider)
 
 ### 8. 本地优先架构
 
-- **无需后端**：所有 LLM 调用直接走 DashScope（阿里云百炼）
-- **离线 Mock 模式**：预录制 fixture 用于快速 UI 调试
+- **无需后端**：所有 LLM 调用直接走 DashScope（阿里云百炼）；**本产品必须连接 LLM，无离线/Mock 模式**
 - **笔记持久化**：localStorage + Markdown 导出
 - **知识图谱**：已学习概念的可视化
 
@@ -194,8 +193,8 @@ main.tsx (App Router · 手写 History 路由 + CognitionProvider)
 | `aicc-published-articles` | localStorage | `EditorPage.tsx` | 已发布文章索引（slug/title/category/date/…） |
 | `aicc-article-md:<slug>` | localStorage | `EditorPage.tsx` → `ArticlePage.tsx` | 已发布文章的 Markdown 原文（文章页优先回读） |
 | `aicc-theme` | localStorage | `SiteHeader.tsx` | `dark` / `light` |
-| `gdn_llm_cfg_v3` | localStorage | `feynman/lib/storage.ts` | LLM 配置（apiKey/baseUrl/model/offlineMock） |
-| `gdn_notes_v3` | localStorage | `feynman/lib/storage.ts` | 费曼笔记（离线缓存，相同问题复用） |
+| `gdn_llm_cfg_v3` | localStorage | `feynman/lib/storage.ts` | LLM 配置（apiKey/baseUrl/model） |
+| `gdn_notes_v3` | localStorage | `feynman/lib/storage.ts` | 费曼笔记（本地缓存，相同问题复用真实结果） |
 | `gdn_graph_v3` | localStorage | `feynman/lib/storage.ts` | 已内化概念（费曼图谱挂载） |
 
 ---
@@ -253,9 +252,6 @@ src/
 │   │   ├── storage.ts              # localStorage 持久化
 │   │   ├── svgRenderer.ts          # SVG 模板渲染
 │   │   └── mdExport.ts             # Markdown 导出
-│   ├── mocks/
-│   │   ├── fixtures.ts             # 离线 Mock 数据加载器
-│   │   └── data/                   # 预录制样本
 │   ├── FeynmanApp.tsx              # 主应用 + 状态管理
 │   └── types.ts                    # 完整数据契约
 public/
@@ -306,9 +302,8 @@ npm run preview
 ### Configuration
 
 1. Open `http://localhost:5188` in browser（或你的 dev server 实际端口）
-2. Click **Settings** (gear icon) → enter your DashScope API Key
-3. Toggle **Offline Mock** for offline development (uses pre-recorded fixtures)
-4. Default model: `deepseek-v4-flash` (configurable)
+2. Click **Settings** (gear icon) → enter your DashScope API Key（**本产品必须连接 LLM，无离线模式**）
+3. Default model: `deepseek-v4-flash`（可在设置里改，如 `deepseek-v4-pro`）
 
 ---
 

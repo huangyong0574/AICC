@@ -396,7 +396,7 @@ export function LetterHome({ onEnter, onNavigate }: { onEnter: () => void; onNav
         <div className="max-w-screen-xl mx-auto px-6 flex items-center justify-between gap-4 flex-wrap">
           <div className="inline-flex items-center gap-2 text-[13px] text-muted-foreground">
             <BrandMark size={22} />
-            <span>AICC · A Cognition Protocol</span>
+            <span>AICC · AI Cognition Connector</span>
           </div>
           <div className="font-mono text-[12px] text-muted-foreground">
             v1.0 · 2026 · 05

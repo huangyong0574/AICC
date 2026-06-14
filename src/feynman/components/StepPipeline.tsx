@@ -95,7 +95,7 @@ export function StepPipeline({
   }
 
   async function runOne(idx: number) {
-    if (!cfg.offlineMock && !cfg.apiKey) {
+    if (!cfg.apiKey) {
       toast.error("请先设置 API Key")
       return
     }

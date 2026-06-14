@@ -60,7 +60,7 @@ export function FeynmanDigestPanel({
 
   async function submit() {
     if (!hasAny) return toast.error("请至少回答一个角色的问题（只有回答过的才会存到知识图谱）")
-    if (!cfg.apiKey && !cfg.offlineMock) return toast.error("请先配置 API Key")
+    if (!cfg.apiKey) return toast.error("请先配置 API Key")
     setLoading(true)
     try {
       const { reviews, graph } = await callFeynmanReview(rawQuestion, topic, context, answers, cfg)

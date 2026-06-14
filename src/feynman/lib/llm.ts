@@ -15,11 +15,6 @@ import {
   buildFeynmanWarmupPrompt,
 } from "./prompts"
 
-// 离线预览 fixtures
-import {
-  FIXTURE_WARMUP, FIXTURE_STEP1, FIXTURE_STEP2, FIXTURE_STEP3, FIXTURE_STEP4, FIXTURE_REVIEW,
-  simulateStream, mockDelay,
-} from "../mocks/fixtures"
 // ============================================================
 // Legacy 六问 QA API 调用（已废弃，保留兼容）
 // ============================================================
@@ -37,11 +32,6 @@ export async function callFeynmanWarmup(
   rawQuestion: string,
   cfg: LlmConfig,
 ): Promise<FeynmanWarmupQuestion[]> {
-  // 离线预览：直接回 fixture
-  if (cfg.offlineMock) {
-    await mockDelay(600)
-    return FIXTURE_WARMUP.map(x => ({ role: x.role, question: x.question }))
-  }
   if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
   const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
 
@@ -99,10 +89,6 @@ export async function callQa<K extends QaKey>(
   history: QaEntry[],
   cfg: LlmConfig,
 ): Promise<QaAnswerMap[K]> {
-  if (cfg.offlineMock) {
-    // 旧版六问不提供离线 fixture，直接报错
-    throw new Error("离线预览仅支持新版四大步骤（step1/2/3/4）的 fixture 渲染")
-  }
   if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
   const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
 
@@ -169,9 +155,6 @@ export async function callQaStream<K extends QaKey>(
   onText: (accumulated: string) => void,
   signal?: AbortSignal,
 ): Promise<QaAnswerMap[K]> {
-  if (cfg.offlineMock) {
-    throw new Error("离线预览仅支持新版四大步骤（step1/2/3/4）的 fixture 渲染")
-  }
   if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
   const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
 
@@ -266,18 +249,6 @@ export async function callStep<K extends StepKey>(
   onText: (accumulated: string) => void,
   signal?: AbortSignal,
 ): Promise<StepAnswerMap[K]> {
-  // 离线预览：用 fixture 串流式喘出
-  if (cfg.offlineMock) {
-    const fixtureMap: Record<StepKey, unknown> = {
-      step1: FIXTURE_STEP1,
-      step2: FIXTURE_STEP2,
-      step3: FIXTURE_STEP3,
-      step4: FIXTURE_STEP4,
-    }
-    const data = fixtureMap[stepKey]
-    await simulateStream(data, onText, { chunks: 40, intervalMs: 35, signal })
-    return data as StepAnswerMap[K]
-  }
   if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
   const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
 
@@ -374,13 +345,6 @@ export async function callFeynmanReview(
   answers: FeynmanAnswers,
   cfg: LlmConfig,
 ): Promise<{ reviews: FeynmanReviewItem[]; graph: GraphDelta }> {
-  if (cfg.offlineMock) {
-    await mockDelay(800)
-    return {
-      reviews: FIXTURE_REVIEW.reviews.map(r => ({ ...r })),
-      graph: { ...FIXTURE_REVIEW.graph, concept: topic || FIXTURE_REVIEW.graph.concept },
-    }
-  }
   if (!cfg.apiKey) throw new Error("请先填入 API Key")
   const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
 

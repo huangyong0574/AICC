@@ -25,10 +25,10 @@ export function SettingsDialog({ open, onOpenChange, onSaved }: { open: boolean;
   }, [open])
 
   function save() {
-    if (!cfg.offlineMock && !cfg.apiKey.trim()) return toast.error("API Key 不能为空（或开启离线预览）")
+    if (!cfg.apiKey.trim()) return toast.error("API Key 不能为空（本产品需连接 LLM）")
     saveCfg(cfg)
     onSaved(cfg)
-    toast.success(cfg.offlineMock ? "已切换到离线预览模式✓" : "设置已保存")
+    toast.success("设置已保存")
     onOpenChange(false)
   }
 
@@ -56,31 +56,17 @@ export function SettingsDialog({ open, onOpenChange, onSaved }: { open: boolean;
           <DialogDescription>接入阿里云百炼 / DashScope 兼容端点。Key 仅存本地 localStorage。</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <label className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 p-3 cursor-pointer hover:bg-muted/60 transition">
-            <input
-              type="checkbox"
-              className="mt-1 h-4 w-4 accent-foreground"
-              checked={!!cfg.offlineMock}
-              onChange={e => setCfg({ ...cfg, offlineMock: e.target.checked })}
-            />
-            <div className="space-y-0.5 text-sm">
-              <div className="font-medium">离线预览模式</div>
-              <div className="text-xs text-muted-foreground leading-relaxed">
-                使用内置 GDN 样本数据渲染 UI，不调用真实 LLM。适合调 UI / 展示大屏，不消耗 API 额度。
-              </div>
-            </div>
-          </label>
           <div className="space-y-1.5">
             <Label htmlFor="key">API Key</Label>
-            <Input id="key" type="password" value={cfg.apiKey} onChange={e => setCfg({ ...cfg, apiKey: e.target.value })} placeholder="sk-xxxxxxxxxxxxxx" disabled={!!cfg.offlineMock} />
+            <Input id="key" type="password" value={cfg.apiKey} onChange={e => setCfg({ ...cfg, apiKey: e.target.value })} placeholder="sk-xxxxxxxxxxxxxx" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="base">Base URL</Label>
-            <Input id="base" value={cfg.baseUrl} onChange={e => setCfg({ ...cfg, baseUrl: e.target.value })} disabled={!!cfg.offlineMock} />
+            <Input id="base" value={cfg.baseUrl} onChange={e => setCfg({ ...cfg, baseUrl: e.target.value })} />
           </div>
           <div className="space-y-1.5">
             <Label>模型</Label>
-            <Select value={cfg.model} onValueChange={v => setCfg({ ...cfg, model: v })} disabled={!!cfg.offlineMock}>
+            <Select value={cfg.model} onValueChange={v => setCfg({ ...cfg, model: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {MODEL_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
@@ -89,7 +75,7 @@ export function SettingsDialog({ open, onOpenChange, onSaved }: { open: boolean;
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={test} disabled={!!cfg.offlineMock}>测试连通</Button>
+          <Button variant="outline" onClick={test}>测试连通</Button>
           <Button onClick={save}>保存</Button>
         </DialogFooter>
       </DialogContent>

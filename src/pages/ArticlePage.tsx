@@ -285,7 +285,7 @@ export function ArticlePage({ slug, onNavigate }: ArticlePageProps) {
             >
               A
             </span>
-            <span>AICC · AI 认知进化</span>
+            <span>AICC · AI Cognition Connector</span>
           </div>
           <div className="footer-meta">v1.0</div>
         </div>

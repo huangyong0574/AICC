@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Toaster, toast } from "sonner"
 import {
-  Settings, Play, Zap, MessageCircle, Brain, SquarePen, ArrowLeft,
+  Settings, Play, MessageCircle, Brain, SquarePen, ArrowLeft,
 } from "lucide-react"
 import { SiteHeader, type NavPage } from "../pages/SiteHeader"
 
@@ -75,7 +75,7 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
   useEffect(() => {
     const c = loadCfg()
     setCfg(c)
-    if (!c.apiKey && !c.offlineMock) {
+    if (!c.apiKey) {
       setTimeout(() => setShowSettings(true), 500)
     }
   }, [])
@@ -133,8 +133,8 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
       toast.error("先写下你想讲透的 AI 概念问题")
       return
     }
-    if (!cfg.apiKey && !cfg.offlineMock) {
-      toast.error("请先在右上角设置 API Key（或开启离线预览）")
+    if (!cfg.apiKey) {
+      toast.error("请先在右上角设置 API Key（本产品需连接 LLM）")
       setShowSettings(true)
       return
     }
@@ -142,13 +142,13 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
       setTopic(rawQuestion.slice(0, 24))
     }
 
-    // 检查本地缓存：如果之前已完成过同一问题，直接复用离线资料
+    // 检查本地缓存：如果之前已完成过同一问题，直接复用此前的真实 LLM 结果
     const cached = findCachedNote(rawQuestion)
     if (cached) {
       loadFromNote(cached)
       setWarmupQuestions(cached.warmupQuestions || [])
       setWarmupConfirmed(true)
-      toast.success("已从本地离线资料加载，无需再次调用 LLM")
+      toast.success("已从本地缓存加载（此前已生成），无需重复调用 LLM")
       return
     }
 
@@ -250,12 +250,6 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
               <span className="font-mono text-[11px] text-muted-foreground">
                 来源 · {conceptId.match(/^\d{4}-W\d{2}/)?.[0]} 雷达
               </span>
-            )}
-            {cfg.offlineMock && (
-              <Badge variant="outline" className="gap-1 border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400" title="当前使用内置样本数据，未调用真实 LLM">
-                <Zap className="h-3 w-3" />
-                离线预览
-              </Badge>
             )}
             <Button variant="outline" size="sm" onClick={() => setShowSettings(true)}>
               <Settings className="mr-1.5 h-4 w-4" />
@@ -389,7 +383,7 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
                 prefills={{ biz: stepTakeaways.step1, dev: stepTakeaways.step2, internal: stepTakeaways.step3 }}
                 onDigest={(d) => {
                   setFeynman(d)
-                  // 费曼评估完成后，自动保存为离线资料
+                  // 费曼评估完成后，自动保存为本地缓存
                   const note: Note = {
                     id: noteId || genId(),
                     topic: topic.trim() || rawQuestion.slice(0, 24),
@@ -401,7 +395,7 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
                     createdAt: new Date().toISOString(),
                   }
                   addNote(note)
-                  toast.success("整份资料已保存为离线资料，下次提问相同问题将直接加载")
+                  toast.success("整份资料已存入本地缓存，下次提问相同问题将直接加载")
                 }}
               />
             )}

@@ -295,8 +295,6 @@ export interface LlmConfig {
   apiKey: string
   baseUrl: string
   model: string
-  /** 离线预览：跳过真实 LLM 调用，使用内置样本（fixtures）渲染 UI */
-  offlineMock?: boolean
 }
 
 // ---- 流式事件 ---------------------------------------------------

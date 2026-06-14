@@ -8,7 +8,6 @@ export const DEFAULT_CFG: LlmConfig = {
   apiKey: "",
   baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
   model: "deepseek-v4-flash",
-  offlineMock: false,
 }
 
 export function loadCfg(): LlmConfig {

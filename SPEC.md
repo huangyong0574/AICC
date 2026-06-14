@@ -1,4 +1,4 @@
-# AICC — AI 认知操作系统 / AI Concept Cognition Platform
+# AICC — AI 认知操作系统 / AI Cognition Connector Platform
 ## Product Specification（总纲 · 唯一事实来源）
 
 > Version: v3.0.0
@@ -18,7 +18,7 @@
 
 ## 1. Product Positioning
 
-**Product Name**: AICC (AI Concept Cognition) / ai-knowledge-explorer
+**Product Name**: AICC (AI Cognition Connector) / ai-knowledge-explorer
 **One-liner**: 个人「AI 认知操作系统」——把「刷到一个 AI 概念 → 看不懂 → 遗忘」的零散循环，
 重构成一条可追踪、可沉淀的认知流水线：**发现 → 计划 → 费曼学习 → 成稿**，全程本地持久化为你的「第二大脑」。
 **核心信念**：**输出你的理解，而非 AI 的理解。**
@@ -167,12 +167,11 @@ User inputs natural language question (e.g. "GDN是什么意思？")  ← 计划
 | **Feynman Digest** | 3-role review + knowledge graph generation | Done | `callFeynmanReview()` |
 | **Knowledge Graph** | Transformer-based auto-mount | Pending (待上线) | Header button disabled + "soon" badge |
 | **Note Library** | Local storage & management | Pending (待上线) | Header button disabled + "soon" badge |
-| **LLM Settings** | API Key / Base URL / Model / Offline Mode | Done | deepseek-v4-flash default |
+| **LLM Settings** | API Key / Base URL / Model | Done | deepseek-v4-flash default |
 | **Export** | Save + MD download/copy + speech script + PPT bullets | Done | 5 export methods |
 | **Animation** | 5 built-in animations (GDN-gate/Attention/Mamba/MoE/Generic) | Done | CSS @keyframes + React state |
 | **Formula Render** | KaTeX math rendering | Done | LaTeX syntax |
 | **SVG Diagrams** | Step1 concept diagram via SVG template renderer | Done | 5 layout types |
-| **Offline Preview** | Local fixture demo without API consumption | Done | 6 JSON samples |
 | **Streaming Parse** | Partial JSON field-by-field rendering during SSE | Done | `partialJson.ts` |
 | **Loop Evaluation** | Step 1/2/3 loop question LLM scoring + unlock | UI Placeholder | disabled textarea, next iteration |
 | **Cognitive NavBar** | Top sticky progress bar showing 6 cognitive nodes | Implemented & Tested | `CognitiveNavBar` component, maps flow: 开场提问→L1-L4→闭环 |
@@ -396,8 +395,7 @@ AICC/
 │   │   ├── types.ts                 # 数据契约
 │   │   ├── components/              # StepPipeline / FeynmanPrime / DigestPanel / views/ / animations/ …
 │   │   ├── lib/                     # llm.ts / prompts.ts / storage.ts / partialJson.ts / svgRenderer.ts / mdExport.ts
-│   │   ├── data/                    # algorithm-concepts.ts(.md)（30 概念 + arXiv 链接）
-│   │   └── mocks/                   # fixtures.ts + data/（离线样本）
+│   │   └── data/                    # algorithm-concepts.ts(.md)（30 概念 + arXiv 链接）
 │   ├── App.tsx                      # 旧单页入口（已无人 import，遗留）
 │   └── index.css                    # 全局样式 + CSS 变量
 ├── public/content/                  # 静态文章库（articles.json + *.md/*.html）
@@ -475,7 +473,7 @@ User input -> FeynmanApp.tsx (learning 阶段内部状态管理)
 
 | Key | Content | Structure |
 |---|---|---|
-| `gdn_llm_cfg_v3` | LLM config | `{ apiKey, baseUrl, model, offlineMock }` |
+| `gdn_llm_cfg_v3` | LLM config | `{ apiKey, baseUrl, model }` |
 | `gdn_notes_v3` | Note library | `Note[]` array |
 | `gdn_graph_v3` | Knowledge graph | `GraphDelta[]` array |
 
@@ -485,7 +483,6 @@ DEFAULT_CFG = {
   apiKey: "",
   baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
   model: "deepseek-v4-flash",
-  offlineMock: false,
 }
 ```
 
@@ -1122,7 +1119,7 @@ This enables progressive rendering: as each field completes in the stream, its c
 | Issue | Risk | Suggestion |
 |---|---|---|
 | localStorage capacity limit | Notes + graph accumulation may exceed 5-10MB | Introduce cleanup or IndexedDB migration |
-| StepPipeline / FeynmanDigestPanel apiKey check | Offline mode blocked if apiKey empty (FeynmanApp entry correctly handles `!cfg.apiKey && !cfg.offlineMock`) | Unify offlineMock pre-check |
+| apiKey 必填 | 无 apiKey 时各调用入口直接报错并弹设置（产品必须连接 LLM，已无离线兜底） | 保持各入口 `!cfg.apiKey` 前置校验一致 |
 
 ---
 
@@ -1149,7 +1146,7 @@ This enables progressive rendering: as each field completes in the stream, its c
 
 - **E2E / 流程**: `scripts/test-main-flow.mjs`、`scripts/test-step1.mjs`、`scripts/test-radar*.mjs`（Playwright/Node 脚本）
 - **平台导航/状态机走查**: `test-screenshots/*.mjs`（run-e2e / test-nav-routing / verify-* 等，含截图产物）
-- **离线预览**: `feynman/mocks/fixtures.ts` + `mocks/data/*.json`（模拟流式打字机）
+- **真实 LLM E2E**: 本产品必须连接 LLM（已移除离线 Mock）；费曼链路需配置 DashScope key 走真实调用
 - **手动验证**: 本次集成已用浏览器预览全链路实测 discovered→in-plan→learning→published（含刷新保活、误删护栏）
 
 ---
@@ -1212,18 +1209,9 @@ See `src/feynman/types.ts`, containing two parallel systems:
 - **New 4-step**: `StepKey`, `StepEntry`, `Step1Answer`, `Step2Answer`, `Step3Answer`, `Step4Answer` (active)
 - **Legacy 6-question**: `QaKey`, `QaEntry`, `BackgroundAnswer`, `PrincipleAnswer`, etc. (retained for `Note.qa` compat)
 
-### B. Offline Fixture Data
+### B. （已移除）离线 Fixture 数据
 
-| File | Content | Size |
-|---|---|---|
-| `mocks/data/feynman-warmup-sample.json` | Feynman warmup 3 questions | 474B |
-| `mocks/data/step1-sample.json` | Step 1 example | 1.7KB |
-| `mocks/data/step2-sample.json` | Step 2 example (scenario selection) | 2.8KB |
-| `mocks/data/step3-sample.json` | Step 3 example (timeline/principle/math) | 3.5KB |
-| `mocks/data/step4-sample.json` | Step 4 example (McKinsey essence) | 1.2KB |
-| `mocks/data/feynman-review-sample.json` | Feynman review example | 3.5KB |
-
-**simulateStream** defaults: 50 chunks x 30ms. But `callStep` invokes with `{ chunks: 40, intervalMs: 35 }`.
+> 本产品必须连接 LLM。原 `feynman/mocks/`（fixtures + 6 个样本 JSON）与 `offlineMock` 模式已整体移除——所有费曼调用走真实 DashScope LLM。
 
 ### C. Animation Components
 
