@@ -430,14 +430,24 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
               </Card>
             )}
 
-            {/* 学习完成 → 整理成文：进入成稿编辑器（learning → published 入口） */}
-            {onGoToEditor && (feynman || allConfirmed) && (
+            {/* 内化前置成成稿门槛：四步确认后，必须先完成费曼内化三问，才解锁「去成稿」 */}
+            {onGoToEditor && allConfirmed && !feynman && (
+              <Card className="border-dashed">
+                <CardContent className="pt-5 flex items-center gap-3 text-sm text-muted-foreground">
+                  <span className="font-semibold text-foreground">成稿前，先完成上方「费曼内化三问」</span>
+                  —— 输出倒逼输入：你能讲清、经评分，才算真懂，才能成文。
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 内化完成 → 整理成文：进入成稿编辑器（learning → published 入口） */}
+            {onGoToEditor && feynman && (
               <Card className="border-primary/30">
                 <CardContent className="pt-5 flex items-center justify-between gap-4 flex-wrap">
                   <div className="space-y-1">
                     <div className="text-sm font-semibold">已讲透？整理成文，沉淀为文章</div>
                     <div className="text-xs text-muted-foreground">
-                      {feynman ? "费曼内化已完成" : "四步已确认"}，进入成稿编辑器把它写成文章，发布后该认知点将标记为「已成稿」。
+                      费曼内化已完成，进入成稿编辑器把它写成文章，发布后该认知点将标记为「已成稿」。
                     </div>
                   </div>
                   <Button variant="glow" size="lg" onClick={() => onGoToEditor(conceptId)}>

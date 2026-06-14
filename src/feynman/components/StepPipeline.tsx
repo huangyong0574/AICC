@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Sparkles, Target, Layers, Gem,
   Loader2, CheckCircle2, ChevronDown, AlertCircle, Zap,
@@ -68,10 +69,12 @@ export function StepPipeline({
   const valueRef = useRef(value)
   valueRef.current = value
 
-  // Takeaway 弹窗状态
+  // Takeaway 弹窗状态：takeawayText = 用户手写；aiHint = AI 提炼参考（可一键填入）
   const [takeawayText, setTakeawayText] = useState("")
+  const [aiHint, setAiHint] = useState("")
   const [showTakeaway, setShowTakeaway] = useState(false)
   const pendingNextRef = useRef<(() => void) | null>(null)
+  const pendingStepRef = useRef<StepKey | null>(null)
 
   useEffect(() => {
     if (!value || value.length === 0) {
@@ -175,22 +178,18 @@ export function StepPipeline({
 
   function confirmAndNext(idx: number) {
     const next = update(idx, { confirmed: true })
-    const gain = extractCognitiveGain(next[idx])
-
-    if (gain) {
-      setTakeawayText(gain)
-      setShowTakeaway(true)
-      pendingNextRef.current = () => proceedToNext(idx, next)
-      // 通知外层：传递 stepKey + takeaway
-      if (onTakeaway) onTakeaway(STEP_ORDER[idx], gain)
-      return
-    }
-
-    // fallback：无 takeaway 时直接进入下一步
-    proceedToNext(idx, next)
+    // AI 提炼仅作参考草稿；让用户用自己的话写"带走"（输出倒逼输入）
+    setAiHint(extractCognitiveGain(next[idx]) || "")
+    setTakeawayText("")
+    setShowTakeaway(true)
+    pendingStepRef.current = STEP_ORDER[idx]
+    pendingNextRef.current = () => proceedToNext(idx, next)
   }
 
   function handleTakeawayDismiss() {
+    // 带走的是用户手写的 takeaway（而非 AI 自动提取）
+    if (onTakeaway && pendingStepRef.current) onTakeaway(pendingStepRef.current, takeawayText.trim())
+    pendingStepRef.current = null
     setShowTakeaway(false)
     if (pendingNextRef.current) {
       pendingNextRef.current()
@@ -229,20 +228,35 @@ export function StepPipeline({
                   <Sparkles className="h-6 w-6 text-amber-600" />
                 </div>
               </div>
-              {/* 标题 + 正文 */}
-              <div className="space-y-3">
-                <div className="text-center text-base font-bold text-foreground">一句话带走</div>
-                <div className="text-[15px] text-foreground/85 leading-relaxed font-medium text-center">
-                  {takeawayText}
-                </div>
+              {/* 标题：让用户自己写（输出倒逼输入） */}
+              <div className="space-y-1.5">
+                <div className="text-center text-base font-bold text-foreground">用你自己的话，写一句「带走」</div>
+                <div className="text-center text-xs text-muted-foreground">费曼精髓 · 先自己提炼，再对照 AI</div>
               </div>
-              {/* 按钮 */}
+              <Textarea
+                value={takeawayText}
+                onChange={e => setTakeawayText(e.target.value)}
+                placeholder="这一步我最大的收获是…（用自己的话）"
+                className="min-h-[84px]"
+                autoFocus
+              />
+              {aiHint && (
+                <button
+                  type="button"
+                  onClick={() => setTakeawayText(aiHint)}
+                  className="w-full text-left text-[12px] text-muted-foreground rounded-lg border border-border/60 bg-muted/40 px-3 py-2 hover:border-amber-300/60 hover:text-foreground transition-colors"
+                >
+                  <span className="text-amber-600 font-medium">AI 参考</span>：{aiHint}　<span className="underline underline-offset-2">点击填入</span>
+                </button>
+              )}
+              {/* 必须写一句才能带走 —— 内化每一步 */}
               <Button
                 variant="glow"
                 className="w-full"
                 onClick={handleTakeawayDismiss}
+                disabled={!takeawayText.trim()}
               >
-                好的，那我带走！
+                带走，下一步
               </Button>
             </div>
           </div>
