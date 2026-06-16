@@ -324,7 +324,7 @@ type CognitionMap = Record<string /* id */, CognitionItem>
 每周扫描 YouTube 频道 / AI 公司博客 / 权威媒体 → 速览层 + 精选 5-8 个深度认知点（带成熟度）。
 产出 4 件：
 - ① Markdown 周报 → Obsidian `AICC-Input/AI认知雷达-{本周五日期}.md`
-- ② 静态 HTML → 部署 ECS `/weekly/{本周五日期}.html`（独立阅读页，供微信推送）
+- ② 静态 HTML → 部署 ECS `/weekly/{本周五日期}.html`（独立阅读页，供微信推送）；该 HTML 亦可作工程数据源——见摄取链路 1b（`parse-radar-html` 解析回流）
 - ③ **结构化 JSON（喂工程）→ Obsidian `AICC-Input/{weekId}.json`**（`RadarWeek` 契约，见下）—— ⚠️ 当前定时任务缺这一步，是 skill ↔ 应用未打通的根因
 - ④ 微信推送链接
 
@@ -335,9 +335,11 @@ type CognitionMap = Record<string /* id */, CognitionItem>
 | 文件 | 内容 |
 |---|---|
 | `index.json` | `{ weeks: RadarIndexEntry[] }`，新→旧，`weeks[0]` 为最新周 |
-| `{weekId}.json` | 一周的 `RadarWeek`：`{ weekId, dateRange, generatedAt, insights: RadarInsight[] }` |
+| `{weekId}.json` | 一周的 `RadarWeek`：`{ weekId, dateRange, generatedAt, heroCopy?, insights: RadarInsight[], videos?, companies?, news? }` |
 
-`RadarInsight` 字段：`id`(=`{weekId}-{NN}-{slug}`) / index / eyebrow(英) / title(中) / tagline(一句话) / maturity(`frontier`🟡 \| `mature`🟢 \| `experimental`🔴) / corePrinciple / whyMatters / org / dateRange / sourceUrl。
+`RadarInsight`（**深度层**，可加入计划→费曼）字段：`id`(=`{weekId}-{NN}-{slug}`) / index / eyebrow(英) / title(中) / tagline(一句话) / maturity(`frontier`🟡 \| `mature`🟢 \| `experimental`🔴) / corePrinciple / whyMatters / org / dateRange / sourceUrl。
+
+**速览层**（只读情报，均可选，旧周无则不渲染该区块）：`videos: {rank?,title,channel,note?,views?,url}[]` / `companies: {org,title,type?,concept?,summary,url}[]` / `news: {source,title,summary?,url}[]`。由 `RadarBriefing` 组件在 `RadarPage` 认知点下方渲染（视频精选 / 公司动态表 / 新闻卡片）。
 
 **下游：工程动态加载**（`src/data/radarData.ts`，三个 hook）
 - `useRadarArchive()` → 读 `index.json` 全部周 + 各周 JSON → 归档页（`RadarArchivePage`）列每期卡片；**`GraphPage` 也用它做全局累积**。
@@ -348,8 +350,11 @@ type CognitionMap = Record<string /* id */, CognitionItem>
 **两级雷达 IA（对齐产品链路②③）**：`/radar` 归档全集合 → 点某期 → `/radar/{weekId}` 该周切片 → 选 1 个认知点 → 费曼。
 
 **摄取链路（Obsidian 中转 + AICC 侧集成；git 为唯一事实来源）**：
-> 该例程封装为项目级 skill `.claude/skills/aicc-radar`（在 Claude Code 手动 `/aicc-radar` 触发，可配 `/schedule` 定时）；以下是它执行的步骤。
-1. skill 把 ③ JSON 产到 Obsidian `AICC-Input/{weekId}.json`（与 MD 并列；skill **不**碰 git、**不**碰 ECS `content/radar`）。
+> 该例程封装为项目级 skill `.claude/skills/aicc-radar`（在 Claude Code 手动 `/aicc-radar` 触发，可配 `/schedule` 定时）。
+
+**第 1 步有两种喂数据方式（任选其一，都落到 `AICC-Input/{weekId}.json`）**：
+- **1a · skill 直接产 JSON**：`aicc-radar` 采集 → 提炼 → 按 `RadarWeek` 契约写 `AICC-Input/{weekId}.json`。
+- **1b · 外部成品 HTML → 解析**：若用另一个程序每周生成「认知雷达」成品 HTML（含速览层 + 认知点），跑 `node scripts/parse-radar-html.mjs <…/AI认知雷达-YYYY-MM-DD.html>` 解析为 `AICC-Input/{weekId}.json`（认知点 **+** videos/companies/news 一并抽出）。**依赖 HTML 模板结构**（`.insight` / `.eyebrow` / `data-index` / `#videos` / `#companies` table / `#news` / `.logo-version`=weekId / `<title>` 含本周五日期），外部程序须保持该模板。
 2. AICC 侧运行 `node scripts/ingest-radar.mjs <…/AICC-Input/{weekId}.json>`：校验 `RadarWeek` 契约 + id 规范 `{weekId}-{NN}-{slug}` → 复制到 `public/content/radar/{weekId}.json` → 扫描目录重建 `index.json`（按 weekId 降序）。
 3. `git commit + push`（事实来源更新）→ `npm run build` → `bash scripts/deploy-dist.sh`（增量部署 `dist/`，含 `content/radar/`，保留 `weekly/` + `demo/`；ECS 密码走环境变量 `$AICC_ECS_PASS`，不入库）。
 4. 结果：归档页自动多出一期，**认知图谱 / 深度计划 / 费曼自由模式示例随之增长**。

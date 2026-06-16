@@ -1,0 +1,312 @@
+{
+  "weekId": "2026-W25",
+  "dateRange": "2026-06-15 ~ 2026-06-19",
+  "generatedAt": "2026-06-19",
+  "heroCopy": "本期聚焦 Fable/Mythos 级前沿模型、智能体基础设施、多智能体安全、扩散式文本生成与实时语音翻译。生成时间：2026-06-16 08:04 CST。",
+  "insights": [
+    {
+      "id": "2026-W25-01-mythos-class-safeguards",
+      "index": 1,
+      "eyebrow": "Mythos-class safeguards",
+      "title": "高能力模型的风险降级护栏",
+      "tagline": "用外置分类器识别高风险请求，并把主模型回答降级给较低风险模型，是前沿模型面向通用用户发布的一种安全架构。",
+      "maturity": "frontier",
+      "corePrinciple": "Fable 5 与 Mythos 5 使用同一底层模型，但在通用版本外包裹了安全分类器。分类器识别网络安全、生物化学、蒸馏等高风险请求后，不让 Fable 直接回答，而是回退到 Opus 4.8；这样把“能力边界”从模型权重本身转移到运行时路由与访问控制层。",
+      "whyMatters": "这说明前沿模型发布正在从单一“模型能力”问题变成“能力、场景、身份、日志、审计”共同构成的系统工程。对产品团队来说，未来的安全不是一个拒答提示词，而是一整套模型路由与策略执行栈。",
+      "org": "Anthropic",
+      "dateRange": "2026-06-19",
+      "sourceUrl": "https://www.anthropic.com/news/claude-fable-5-mythos-5"
+    },
+    {
+      "id": "2026-W25-02-multi-agent-safety",
+      "index": 2,
+      "eyebrow": "Multi-agent safety",
+      "title": "多智能体群体安全",
+      "tagline": "多智能体安全研究关注大量自主 Agent 相互通信、交易、协商时涌现出的群体级风险。",
+      "maturity": "frontier",
+      "corePrinciple": "传统安全评估通常把模型当作单体来测；多智能体系统则需要观察 Agent 网络中的身份、声誉、承诺、协调、失败传播和群体能力突变。测试床、仿真市场、跨组织工作流和持续监控成为新的评估对象。",
+      "whyMatters": "Agent 真正进入企业和互联网后，事故往往不来自一个模型的一次错误，而来自许多 Agent 在开放网络中彼此放大。提前研究群体动力学，是下一代 AI 安全和基础设施的核心命题。",
+      "org": "Google DeepMind",
+      "dateRange": "2026-06-19",
+      "sourceUrl": "https://deepmind.google/blog/investing-in-multi-agent-ai-safety-research/"
+    },
+    {
+      "id": "2026-W25-03-diffusion-lms",
+      "index": 3,
+      "eyebrow": "Diffusion LMs",
+      "title": "扩散式文本生成",
+      "tagline": "扩散语言模型尝试用并行去噪/细化替代严格逐 token 自回归生成，以换取更低延迟和更高吞吐。",
+      "maturity": "experimental",
+      "corePrinciple": "自回归模型每一步依赖前一个 token，天然串行；扩散式文本生成先生成粗糙序列或噪声表示，再多轮并行修正。它的关键挑战是如何让离散文本空间中的去噪过程保持语义一致、可控且足够快。",
+      "whyMatters": "如果扩散式语言模型在质量上继续接近主流 LLM，它可能改变推理成本结构，尤其适合低延迟草稿、批量生成和端侧文本场景。",
+      "org": "Google",
+      "dateRange": "2026-06-19",
+      "sourceUrl": "https://blog.google/innovation-and-ai/technology/developers-tools/diffusion-gemma-faster-text-generation/"
+    },
+    {
+      "id": "2026-W25-04-live-speech-translation",
+      "index": 4,
+      "eyebrow": "Live speech translation",
+      "title": "流式语音到语音翻译",
+      "tagline": "流式语音翻译在说话人尚未完全停顿时持续生成目标语言音频，并尽量保留语调、节奏和音高。",
+      "maturity": "mature",
+      "corePrinciple": "模型需要在低延迟与上下文充分之间动态权衡：等待越久翻译越准，但交互越不自然。Gemini 3.5 Live Translate 通过流式音频输入、自动语言检测、连续生成和 SynthID 音频水印，把翻译、语音合成和内容溯源合并成实时系统。",
+      "whyMatters": "这是语音 AI 从“转写后翻译”走向“跨语言实时对话接口”的关键一步，会影响会议、客服、教育、出行和跨境协作。",
+      "org": "Google",
+      "dateRange": "2026-06-19",
+      "sourceUrl": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-live-3-5-translate/"
+    },
+    {
+      "id": "2026-W25-05-agentic-infrastructure",
+      "index": 5,
+      "eyebrow": "Agentic infrastructure",
+      "title": "智能体云基础设施",
+      "tagline": "Agentic 基础设施把算力、记忆、调度、沙箱、模型路由和行业工具链打包成智能体可调用的运行底座。",
+      "maturity": "mature",
+      "corePrinciple": "企业 Agent 不只需要模型，还需要低延迟推理集群、长任务记忆、跨资源调度、安全沙箱、机密推理、模型路由和强化学习训练环境。云平台因此从“给人操作的控制台”变成“给 Agent 调用的能力网络”。",
+      "whyMatters": "这会决定智能体能否进入核心业务。只有当记忆、权限、成本、吞吐、审计都变成基础设施能力，Agent 才能从演示走向生产。",
+      "org": "Huawei Cloud / 量子位",
+      "dateRange": "2026-06-19",
+      "sourceUrl": "https://www.qbitai.com/2026/06/435531.html"
+    },
+    {
+      "id": "2026-W25-06-workflow-literacy",
+      "index": 6,
+      "eyebrow": "Workflow literacy",
+      "title": "从提示到可复用工作流",
+      "tagline": "AI 采用的关键不再是会写提示词，而是能把输入、模型、工具、检查点和人工复核组织成可复用流程。",
+      "maturity": "mature",
+      "corePrinciple": "OpenAI Academy 的 Agents and Workflows 课程把工作拆成上下文定义、输出边界、工具调用、审查反馈与迭代改进。它强调模型不是单次问答工具，而是受约束的执行者；人类负责定义目标、质量门槛和关键判断。",
+      "whyMatters": "这对个人知识系统和企业 AI 落地都很重要：真正可积累的不是一次漂亮回答，而是一套能复盘、迁移、迭代的工作流资产。",
+      "org": "OpenAI",
+      "dateRange": "2026-06-19",
+      "sourceUrl": "https://openai.com/index/academy-courses-applying-ai-at-work/"
+    }
+  ],
+  "videos": [
+    {
+      "rank": 1,
+      "title": "Introducing Claude Fable 5",
+      "channel": "Anthropic · Anthropic",
+      "note": "Mythos-class 模型面向通用用户发布，并用分类器/降级机制控制高风险能力。",
+      "views": "680,464 views",
+      "url": "https://www.youtube.com/watch?v=Y9Wz2PV404E"
+    },
+    {
+      "rank": 2,
+      "title": "Sarah Paine - Why Putin and Xi can't escape geography",
+      "channel": "Dwarkesh Patel · Sarah Paine",
+      "note": "地缘结构如何限制大国战略选择；非 AI，但本周热度最高。",
+      "views": "436,734 views",
+      "url": "https://www.youtube.com/watch?v=OS1NZLgKM2c"
+    },
+    {
+      "rank": 3,
+      "title": "The historical trap Putin can't escape - Sarah Paine",
+      "channel": "Dwarkesh Patel · Sarah Paine",
+      "note": "用历史路径依赖解释俄乌与大国战略困境。",
+      "views": "358,289 views",
+      "url": "https://www.youtube.com/watch?v=z5BkwnEBw8I"
+    },
+    {
+      "rank": 4,
+      "title": "Claude Fable 5 beats Pokémon FireRed only using vision",
+      "channel": "Claude · Claude",
+      "note": "以视觉-only 游戏通关作为长程智能体能力评估样例。",
+      "views": "206,448 views",
+      "url": "https://www.youtube.com/watch?v=Ty_50J84fMY"
+    },
+    {
+      "rank": 5,
+      "title": "NVIDIA's Jensen Huang on Building the Dynamo of the Intelligence Age",
+      "channel": "Sequoia Capital · Jensen Huang",
+      "note": "AI Factory 与智能时代基础设施的产业叙事。",
+      "views": "200,954 views",
+      "url": "https://www.youtube.com/watch?v=2UpQbeAZuqA"
+    },
+    {
+      "rank": 6,
+      "title": "What sanctions are actually designed to do - Sarah Paine",
+      "channel": "Dwarkesh Patel · Sarah Paine",
+      "note": "制裁作为地缘战略工具的真实目标与限制。",
+      "views": "175,338 views",
+      "url": "https://www.youtube.com/watch?v=2JZtp7i8ICE"
+    },
+    {
+      "rank": 7,
+      "title": "Claude Fable 5 plays Factorio",
+      "channel": "Claude · Claude",
+      "note": "用 Factorio 测试模型在复杂系统中的规划、资源管理与持续执行。",
+      "views": "85,872 views",
+      "url": "https://www.youtube.com/watch?v=6YPqoARpYuQ"
+    },
+    {
+      "rank": 8,
+      "title": "Why Particle Physics Became a Victim of Its Own Success - Adam Brown",
+      "channel": "Dwarkesh Patel · Adam Brown",
+      "note": "基础物理研究在模型成功后进入高成本低信号阶段的解释。",
+      "views": "57,363 views",
+      "url": "https://www.youtube.com/watch?v=U7aYxYwNS5Y"
+    },
+    {
+      "rank": 9,
+      "title": "Claude FM music for thinking and building",
+      "channel": "Claude · Claude",
+      "note": "面向工作流场景的品牌化音频内容实验。",
+      "views": "47,080 views",
+      "url": "https://www.youtube.com/watch?v=tRsQsTMvPNg"
+    },
+    {
+      "rank": 10,
+      "title": "How a perfectly even universe grew galaxies - Adam Brown",
+      "channel": "Dwarkesh Patel · Adam Brown",
+      "note": "从宇宙微扰到星系结构形成的科普解释。",
+      "views": "30,152 views",
+      "url": "https://www.youtube.com/watch?v=v-BMWHEaFdw"
+    }
+  ],
+  "companies": [
+    {
+      "org": "OpenAI",
+      "title": "Introducing the OpenAI Partner Network",
+      "type": "产品发布",
+      "concept": "Partner Network / Forward Deployed Experts",
+      "summary": "OpenAI 发布合作伙伴网络，投资 1.5 亿美元支持企业 AI 落地，并规划 Codex、网络安全、智能体等专长认证。",
+      "url": "https://openai.com/index/introducing-openai-partner-network/"
+    },
+    {
+      "org": "OpenAI",
+      "title": "New OpenAI Academy courses for the next era of work",
+      "type": "技术更新",
+      "concept": "Agents and Workflows / workflow plan",
+      "summary": "OpenAI Academy 新增三门课程，把提示工程推进到可复用工作流与智能体协作训练。",
+      "url": "https://openai.com/index/academy-courses-applying-ai-at-work/"
+    },
+    {
+      "org": "OpenAI",
+      "title": "How an astrophysicist uses Codex to help simulate black holes",
+      "type": "应用案例",
+      "concept": "research coding agents",
+      "summary": "展示 Codex 在科研代码、模拟与调试中的辅助方式，说明 coding agent 正进入科学计算场景。",
+      "url": "https://openai.com/index/using-codex-to-simulate-black-holes/"
+    },
+    {
+      "org": "OpenAI",
+      "title": "Access OpenAI models and Codex through your Oracle cloud commitment",
+      "type": "产品发布",
+      "concept": "cloud procurement integration",
+      "summary": "OpenAI 模型与 Codex 可通过 Oracle 云承诺使用，降低企业采购和云预算整合门槛。",
+      "url": "https://openai.com/index/openai-on-oracle-cloud/"
+    },
+    {
+      "org": "Anthropic",
+      "title": "Claude Fable 5 and Claude Mythos 5",
+      "type": "产品发布",
+      "concept": "Mythos-class safeguards",
+      "summary": "Anthropic 发布 Fable 5/Mythos 5：同一底层模型面向不同风险等级，用分类器将高风险请求降级给 Opus 4.8。",
+      "url": "https://www.anthropic.com/news/claude-fable-5-mythos-5"
+    },
+    {
+      "org": "Anthropic",
+      "title": "Statement on the US government directive to suspend access to Fable 5 and Mythos 5",
+      "type": "技术更新",
+      "concept": "frontier model access control",
+      "summary": "Anthropic 因美国政府指令暂停 Fable 5 与 Mythos 5 访问，前沿模型访问控制上升为国家安全议题。",
+      "url": "https://www.anthropic.com/news/fable-mythos-access"
+    },
+    {
+      "org": "Anthropic",
+      "title": "Policy on the AI Exponential",
+      "type": "研究成果",
+      "concept": "Advanced AI Framework",
+      "summary": "Anthropic 提出面向快速能力增长的治理框架，强调独立评估、透明报告、模型安全与高风险部署阻断权。",
+      "url": "https://www.anthropic.com/policy-on-the-ai-exponential"
+    },
+    {
+      "org": "Google DeepMind",
+      "title": "Investing in multi-agent AI safety research",
+      "type": "研究成果",
+      "concept": "multi-agent safety testbeds",
+      "summary": "Google DeepMind 与合作方发起最高 1000 万美元资助，研究多智能体系统的群体行为、测试环境、基础设施与监督控制。",
+      "url": "https://deepmind.google/blog/investing-in-multi-agent-ai-safety-research/"
+    },
+    {
+      "org": "Google DeepMind",
+      "title": "DiffusionGemma: 4x faster text generation",
+      "type": "研究成果",
+      "concept": "diffusion language model",
+      "summary": "Google 发布 DiffusionGemma，把扩散式生成路线带入文本生成，以并行细化而非严格自回归逐 token 生成来提升速度。",
+      "url": "https://blog.google/innovation-and-ai/technology/developers-tools/diffusion-gemma-faster-text-generation/"
+    },
+    {
+      "org": "Google DeepMind",
+      "title": "Fluid, natural voice translation with Gemini 3.5 Live Translate",
+      "type": "产品发布",
+      "concept": "streaming speech-to-speech translation",
+      "summary": "Gemini 3.5 Live Translate 支持 70+ 语言近实时语音到语音翻译，保留语调节奏，并使用 SynthID 水印。",
+      "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-live-3-5-translate/"
+    }
+  ],
+  "news": [
+    {
+      "source": "The Verge",
+      "title": "Trump’s Anthropic shutdown just made the case for non-American AI",
+      "summary": "Anthropic Fable/Mythos 被关停事件把“主权 AI”从政策口号推到企业采购和国家安全决策前台。",
+      "url": "https://www.theverge.com/ai-artificial-intelligence/949986/anthropic-fable-mythos-shutdown-sovereign-ai"
+    },
+    {
+      "source": "The Verge",
+      "title": "Big Tech’s desperate last push at AI regulation",
+      "summary": "跟踪美国 AI 监管窗口期，尤其是儿童安全、平台责任与行业游说之间的拉扯。",
+      "url": "https://www.theverge.com/policy/949970/ai-regulation-child-safety-kosa-congress"
+    },
+    {
+      "source": "WIRED",
+      "title": "Artificial Intelligence Sneaks Into the World Cup Thanks to Google Gemini",
+      "summary": "Gemini 进入世界杯训练、战术分析与球迷体验，是 AI 进入大众体育场景的标志性案例。",
+      "url": "https://www.wired.com/story/artificial-intelligence-sneaks-into-the-world-cup-thanks-to-google-gemini"
+    },
+    {
+      "source": "The Verge",
+      "title": "Apple's AI promises are finally, almost, sort of here",
+      "summary": "苹果用 Siri AI、私有云计算与 Gemini 合作补课，体现端侧生态厂商进入智能体竞争的路径。",
+      "url": "https://www.theverge.com/ai-artificial-intelligence/946780/apples-ai-promises-are-finally-almost-sort-of-here"
+    },
+    {
+      "source": "The Verge",
+      "title": "Google will save your Lens photos, Search Live recordings, and Translate audio for AI training",
+      "summary": "Google 扩大多模态用户数据保存范围，隐私与模型训练数据来源再次成为 AI 产品默认设置问题。",
+      "url": "https://www.theverge.com/tech/947836/google-search-privacy-settings-images-audio"
+    },
+    {
+      "source": "The Verge",
+      "title": "Deezer launches an AI music detector for other streaming services",
+      "summary": "音乐平台开始把 AI 生成内容检测做成服务，内容溯源和分发治理正在产品化。",
+      "url": "https://www.theverge.com/ai-artificial-intelligence/948153/deezer-ai-music-detector-spotify-apple"
+    },
+    {
+      "source": "量子位",
+      "title": "Agent时代，华为云开始重新造地基了",
+      "summary": "华为云发布面向 Agent 的算力、记忆、调度、沙箱与模型路由基础设施，是企业智能体落地的底座信号。",
+      "url": "https://www.qbitai.com/2026/06/435531.html"
+    },
+    {
+      "source": "量子位",
+      "title": "HuggingFace CEO力荐，Bengio团队也押注：这个1500美元训出的HRM模型，凭什么火了？",
+      "summary": "低成本 HRM 模型受到关注，值得跟踪小模型/高效训练路线是否形成新的开源突破。",
+      "url": "https://www.qbitai.com/2026/06/435483.html"
+    },
+    {
+      "source": "量子位",
+      "title": "4步出声，单卡0.24秒！Noiz AI联合港科大清华，开源音频生成大模型",
+      "summary": "开源音频生成模型强调低步数、低延迟与时间戳理解，补上实时音频生成场景的工程缺口。",
+      "url": "https://www.qbitai.com/2026/06/435802.html"
+    },
+    {
+      "source": "36氪 / 机器之心",
+      "title": "DeepMind震撼报告：四条通往超级人工智能之路",
+      "summary": "围绕 AGI 到 ASI 的路径拆解，有助于理解 scaling、范式迁移、递归改进和多智能体集体智能四类前沿叙事。",
+      "url": "https://www.36kr.com/p/3851379175822341"
+    }
+  ]
+}

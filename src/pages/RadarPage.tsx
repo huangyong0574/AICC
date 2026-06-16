@@ -4,6 +4,7 @@ import { useRadarWeekById } from '../data/radarData'
 import { RadarCard } from '../components/radar/RadarCard'
 import { RadarHero } from '../components/radar/RadarHero'
 import { RadarToolbar, type RadarFilter } from '../components/radar/RadarToolbar'
+import { RadarBriefing } from '../components/radar/RadarBriefing'
 import { SiteHeader, type NavPage } from './SiteHeader'
 import { useCognition } from '../lib/cognition'
 
@@ -109,6 +110,8 @@ export function RadarPage({ onNavigate, weekId: weekIdProp }: RadarPageProps) {
               />
             ))}
           </section>
+
+          <RadarBriefing week={week} />
         </div>
       </main>
 

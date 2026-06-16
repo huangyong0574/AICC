@@ -38,6 +38,34 @@ export interface RadarInsight {
   sourceUrl: string
 }
 
+/** 视频精选（速览层） */
+export interface RadarVideo {
+  rank?: number
+  title: string
+  channel: string
+  note?: string
+  views?: string
+  url: string
+}
+
+/** 公司技术动态（速览层，表格行） */
+export interface RadarCompany {
+  org: string
+  title: string
+  type?: string
+  concept?: string
+  summary: string
+  url: string
+}
+
+/** 热门新闻（速览层） */
+export interface RadarNews {
+  source: string
+  title: string
+  summary?: string
+  url: string
+}
+
 export interface RadarWeek {
   /** 周编号（用于 Hero kicker），ISO 周号如 2026-W24 */
   weekId: string
@@ -45,8 +73,14 @@ export interface RadarWeek {
   dateRange: string
   /** 生成日期（= 本周五日期 = weekly HTML 文件名），由 skill 写入 */
   generatedAt?: string
-  /** 5-8 条认知点 */
+  /** Hero 描述文案（可选） */
+  heroCopy?: string
+  /** 5-8 条认知点（深度层） */
   insights: RadarInsight[]
+  /** 速览层（均可选；外部 HTML/skill 提供，旧数据无则不渲染对应区块） */
+  videos?: RadarVideo[]
+  companies?: RadarCompany[]
+  news?: RadarNews[]
 }
 
 export const radarWeekData: RadarWeek = {
