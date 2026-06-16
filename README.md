@@ -281,9 +281,10 @@ design/
 └── aicc-html-bundle/               # 设计稿源（HTML，归口为唯一来源，与 src/ 实现对照）
 
 scripts/
+├── weekly-radar.sh                 # 一键集成：HTML → parse → ingest → commit/push → build --base=/aicc/ → 部署（见 SPEC §3.6）
 ├── parse-radar-html.mjs            # 解析外部成品 HTML → RadarWeek JSON（含速览层；见 SPEC §3.6 摄取 1b）
-├── ingest-radar.mjs                # 雷达摄取：AICC-Input/{weekId}.json → public/content/radar/ + 重建 index（见 SPEC §3.6）
-└── deploy-dist.sh                  # 增量部署 dist 到 ECS（保留 weekly/，密码走 $AICC_ECS_PASS）
+├── ingest-radar.mjs                # 雷达摄取：AICC-Input/{weekId}.json → public/content/radar/ + 重建 index
+└── deploy-dist.sh                  # 增量部署 dist/ → ECS /aicc/（build 须 --base=/aicc/；sshpass -e 读 SSHPASS；保留 dist/weekly/）
 
 .claude/
 └── skills/
@@ -392,6 +393,8 @@ AICC 采用「认知递进」的分层设计，对齐产品链路：
 | **雷达数据动态化**（skill 输出 JSON → 工程 `useLatestRadarWeek()` 加载） | Done | P0 |
 | 雷达摄取脚本 `ingest-radar` + `RadarWeek.generatedAt` 对齐（AICC 侧集成就绪，见 SPEC §3.6） | Done | P1 |
 | 雷达速览层（视频/公司动态/新闻）+ 外部成品 HTML 解析摄取（`parse-radar-html` → `RadarBriefing`） | Done | P1 |
+| 周报一键集成 `weekly-radar.sh` + 部署对齐 `/aicc/`（路径式，`--base=/aicc/`，`RADAR_BASE` 跟随 base） | Done | P1 |
+| 本地 Desktop 定时任务驱动 weekly-radar（云端 routine 够不着本地资源，故用本地） | Planned | P1 |
 | `aicc-radar` skill（Claude Code 端雷达周报例程：采集→认知点→ingest→commit/push→部署） | Done | P1 |
 | 定时雷达自动跑（Qoder 端补产 JSON，或本地 `/schedule` 跑 `aicc-radar`） | Planned | P1 |
 | ECS 生产部署 | Done | P0 |

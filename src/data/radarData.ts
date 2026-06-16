@@ -206,7 +206,9 @@ export const radarWeekData: RadarWeek = {
  * 动态加载层：从 public/content/radar/ 读取 skill 产出的真实周报数据
  * ────────────────────────────────────────────────────────────── */
 
-const RADAR_BASE = '/content/radar'
+// base 感知：dev/根部署 = '/content/radar'；以 `vite build --base=/aicc/` 构建时 = '/aicc/content/radar'。
+// 让数据 fetch 路径跟随应用部署的子路径，避免 /aicc/ 下数据 404。
+const RADAR_BASE = `${import.meta.env.BASE_URL}content/radar`
 
 export interface RadarIndexEntry {
   weekId: string

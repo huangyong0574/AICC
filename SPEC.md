@@ -350,18 +350,26 @@ type CognitionMap = Record<string /* id */, CognitionItem>
 **两级雷达 IA（对齐产品链路②③）**：`/radar` 归档全集合 → 点某期 → `/radar/{weekId}` 该周切片 → 选 1 个认知点 → 费曼。
 
 **摄取链路（Obsidian 中转 + AICC 侧集成；git 为唯一事实来源）**：
-> 该例程封装为项目级 skill `.claude/skills/aicc-radar`（在 Claude Code 手动 `/aicc-radar` 触发，可配 `/schedule` 定时）。
+> 一键脚本 `scripts/weekly-radar.sh` 把第 1–3 步串起来；定时由「本地」载体驱动（见下「定时载体」）。
 
 **第 1 步有两种喂数据方式（任选其一，都落到 `AICC-Input/{weekId}.json`）**：
 - **1a · skill 直接产 JSON**：`aicc-radar` 采集 → 提炼 → 按 `RadarWeek` 契约写 `AICC-Input/{weekId}.json`。
-- **1b · 外部成品 HTML → 解析**：若用另一个程序每周生成「认知雷达」成品 HTML（含速览层 + 认知点），跑 `node scripts/parse-radar-html.mjs <…/AI认知雷达-YYYY-MM-DD.html>` 解析为 `AICC-Input/{weekId}.json`（认知点 **+** videos/companies/news 一并抽出）。**依赖 HTML 模板结构**（`.insight` / `.eyebrow` / `data-index` / `#videos` / `#companies` table / `#news` / `.logo-version`=weekId / `<title>` 含本周五日期），外部程序须保持该模板。
-2. AICC 侧运行 `node scripts/ingest-radar.mjs <…/AICC-Input/{weekId}.json>`：校验 `RadarWeek` 契约 + id 规范 `{weekId}-{NN}-{slug}` → 复制到 `public/content/radar/{weekId}.json` → 扫描目录重建 `index.json`（按 weekId 降序）。
-3. `git commit + push`（事实来源更新）→ `npm run build` → `bash scripts/deploy-dist.sh`（增量部署 `dist/`，含 `content/radar/`，保留 `weekly/` + `demo/`；ECS 密码走环境变量 `$AICC_ECS_PASS`，不入库）。
+- **1b · 外部成品 HTML → 解析**（**当前采用**）：Codex 定时任务每周生成「认知雷达」成品 HTML 存到 `AICC-Input/AI认知雷达-{本周五}.html`；`node scripts/parse-radar-html.mjs <html>` 解析为 `AICC-Input/{weekId}.json`（认知点 **+** 速览层 videos/companies/news 一并抽出）。**依赖 HTML 模板结构**（`.insight` / `.eyebrow` / `data-index` / `#videos` / `#companies` table / `#news` / `.logo-version`=weekId / `<title>` 含本周五日期），外部程序须保持该模板。
+2. `node scripts/ingest-radar.mjs <…/{weekId}.json>`：校验 `RadarWeek` 契约 + id 规范 `{weekId}-{NN}-{slug}` → 复制到 `public/content/radar/{weekId}.json` → 重建 `index.json`。
+3. `git commit + push` → `npm run build -- --base=/aicc/`（**必须带 base**，否则 `/aicc/assets` 与数据路径 404）→ `bash scripts/deploy-dist.sh`（`sshpass -e` 读 `SSHPASS` 环境变量；增量部署到 `/opt/AI-33CC/dist/aicc/`，保留 dist 根 `weekly/`）。
 4. 结果：归档页自动多出一期，**认知图谱 / 深度计划 / 费曼自由模式示例随之增长**。
 
-**状态机边界**：skill 只负责 `discovered` 层数据；`in-plan / learning / published` 存在用户浏览器 `aicc-cognition-state`（localStorage），skill 不触碰、也无法触碰。
+**一键集成**：`SSHPASS='***' bash scripts/weekly-radar.sh`（自动取 `AICC-Input` 最新 HTML，跑完 1→2→3；`--no-deploy` 只到 commit/push）。
 
-> 即：**skill 每周摄取 → 写 `AICC-Input/{weekId}.json` → `ingest-radar` 纳入 `public/content/radar/`（+ 重建 index）→ commit/push + 部署 → 归档页自动多一期 → 加入计划进入状态机**。新增一周无需改代码。
+**定时载体**（集成要碰本地文件 + 本地 git + 本地 SSH，**云端 routine 够不着**）：
+- ✅ **Claude Desktop「本地」Scheduled Task** 或 **macOS launchd** 每周跑 `weekly-radar.sh`——本地执行、能访问本地资源。代价：定时那刻电脑要开着、不睡眠。
+- ❌ `/schedule` **云端** Routine：在 Anthropic 云端 fresh-clone，访问不了本地 `AICC-Input` / 本地仓库 / 本地 SSH，**不适用**本流程。
+
+**状态机边界**：skill / 外部程序只负责 `discovered` 层数据；`in-plan / learning / published` 存在用户浏览器 `aicc-cognition-state`（localStorage），不触碰。
+
+**路径式部署（2026-06 起）**：站点路径式——root `/` 302→`/aicc/`，应用在 `/opt/AI-33CC/dist/aicc/`。故构建必须 `--base=/aicc/`，且 `RADAR_BASE = ${import.meta.env.BASE_URL}content/radar` 跟随 base（`/aicc/` 下数据 fetch `/aicc/content/radar/`）。详见 memory `aicc-ecs-deploy`。
+
+> 即：**Codex 产 HTML → `AICC-Input` → `weekly-radar.sh`（parse→ingest→commit/push→build --base=/aicc/→部署 /aicc/）→ 归档页多一期 → 加入计划进状态机**。本地 Desktop 定时任务驱动；新增一周无需改代码。
 
 ---
 

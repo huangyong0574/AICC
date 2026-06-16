@@ -120,8 +120,9 @@ const outPath = resolve(outDir, `${weekId}.json`)
 if (!existsSync(outDir)) { console.error(`✗ 输出目录不存在：${outDir}`); process.exit(1) }
 writeFileSync(outPath, JSON.stringify(week, null, 2) + '\n', 'utf8')
 
-console.log(`✓ 从 ${basename(htmlPath)} 解析出 ${insights.length} 个认知点 → ${outPath}`)
-console.log(`  weekId=${weekId}  dateRange=${week.dateRange}  generatedAt=${generatedAt}`)
-insights.forEach((it) => console.log(`  ${it.id}  [${it.maturity}] ${it.title}  ${it.sourceUrl ? '✓src' : '✗无来源'}`))
-console.log(`  速览层: ${videos.length} 视频 / ${companies.length} 公司动态 / ${news.length} 新闻`)
-console.log(`\n下一步：node scripts/ingest-radar.mjs "${outPath}"`)
+// 进度信息走 stderr；stdout 只输出最终 JSON 路径，便于 weekly-radar.sh 用 $(...) 捕获
+console.error(`✓ 从 ${basename(htmlPath)} 解析出 ${insights.length} 个认知点 → ${outPath}`)
+console.error(`  weekId=${weekId}  dateRange=${week.dateRange}  generatedAt=${generatedAt}`)
+insights.forEach((it) => console.error(`  ${it.id}  [${it.maturity}] ${it.title}  ${it.sourceUrl ? '✓src' : '✗无来源'}`))
+console.error(`  速览层: ${videos.length} 视频 / ${companies.length} 公司动态 / ${news.length} 新闻`)
+console.log(outPath)

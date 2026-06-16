@@ -1,46 +1,45 @@
 #!/usr/bin/env bash
-# deploy-dist.sh —— 把本地 dist/ 增量部署到 AICC 生产 ECS。
-# 见 SPEC §3.6 与 .claude/skills/aicc-radar。
+# deploy-dist.sh —— 增量部署本地 dist/ 到 AICC 生产 ECS 的 /aicc/ 子路径。
+# 见 SPEC §3.6 与 memory aicc-ecs-deploy。
 #
-# 用法：
-#   npm run build && AICC_ECS_PASS='***' bash scripts/deploy-dist.sh
+# 前提：先用 `npm run build -- --base=/aicc/` 构建（否则 /aicc/assets 全 404）。
+# 用法：SSHPASS='***' bash scripts/deploy-dist.sh
 #
 # 安全约定：
-#   - 增量上传（assets/content/images 先，index.html 最后），绝不 rsync --delete
-#   - 保留服务器上的 weekly/（周报 HTML）与 demo/（独立子应用）——它们不在 dist/ 里
-#   - 密码只从环境变量 AICC_ECS_PASS 读，绝不硬编码或入库
+#   - 部署进 /opt/AI-33CC/dist/aicc/（路径式站点；root / 302→/aicc/），绝不动 dist 根的 weekly/
+#   - 增量上传（assets/content/images 先，index.html 最后），不 rsync --delete
+#   - 密码用 sshpass -e 从 SSHPASS 环境变量读（安全分类器禁止 -p 明文与写文件）；绝不入库
 set -euo pipefail
+cd "$(dirname "$0")/.."
 
 HOST="root@101.37.128.102"
-DEST="/opt/AI-33CC/dist"
+DEST="/opt/AI-33CC/dist/aicc"
 BASE_URL="http://101.37.128.102"
 SSH_OPTS=(-o StrictHostKeyChecking=accept-new -o ConnectTimeout=25)
 
-cd "$(dirname "$0")/.."   # 切到仓库根
-
-: "${AICC_ECS_PASS:?需要设置环境变量 AICC_ECS_PASS（ECS root 密码），不要写进文件}"
+: "${SSHPASS:?需要设置环境变量 SSHPASS（ECS root 密码）；用 sshpass -e 读取，绝不写进文件}"
 command -v sshpass >/dev/null || { echo "缺少 sshpass（brew install hudochenkov/sshpass/sshpass）"; exit 1; }
-[ -f dist/index.html ] || { echo "dist/index.html 不存在，请先 npm run build"; exit 1; }
+[ -f dist/index.html ] || { echo "dist/index.html 不存在，请先 npm run build -- --base=/aicc/"; exit 1; }
+grep -q '/aicc/assets/' dist/index.html || {
+  echo "⚠️ dist/index.html 未引用 /aicc/assets/——大概率漏了 --base=/aicc/。中止以免线上 404。"
+  echo "   请改用：npm run build -- --base=/aicc/"
+  exit 1
+}
 
-# 只打包实际存在的子目录（index.html 留到最后单独传）
 subdirs=()
 for d in assets content images; do [ -d "dist/$d" ] && subdirs+=("$d"); done
 
-echo "==> 1/3 上传 ${subdirs[*]}（tar-pipe；保留服务器 weekly/ + demo/）"
+echo "==> 1/3 上传 ${subdirs[*]} → $DEST（tar-pipe；不触碰 dist 根的 weekly/）"
 COPYFILE_DISABLE=1 tar czf - -C dist "${subdirs[@]}" | \
-  sshpass -p "$AICC_ECS_PASS" ssh "${SSH_OPTS[@]}" "$HOST" "tar xzf - -C $DEST && echo '   解压完成'"
+  sshpass -e ssh "${SSH_OPTS[@]}" "$HOST" "mkdir -p $DEST && tar xzf - -C $DEST && echo '   解压完成'"
 
-echo "==> 2/3 上传 index.html（入口，最后传，避免半完成态指向缺失资源）"
-sshpass -p "$AICC_ECS_PASS" scp "${SSH_OPTS[@]}" dist/index.html "$HOST:$DEST/index.html"
+echo "==> 2/3 上传 index.html（入口，最后传）"
+sshpass -e scp "${SSH_OPTS[@]}" dist/index.html "$HOST:$DEST/index.html"
 
 echo "==> 3/3 验收"
-served="$(curl -s --max-time 20 "$BASE_URL/")"
-if [ "$served" = "$(cat dist/index.html)" ]; then
-  echo "   ✅ 线上 / 与本地 dist/index.html 一致"
-else
-  echo "   ⚠️ 线上 / 与本地 index.html 不一致（缓存或上传问题），请人工核对"
-fi
-js="$(grep -oE 'assets/[^"]+\.js' dist/index.html | head -1)"
-code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$BASE_URL/$js")"
-echo "   入口 JS（$js）HTTP $code"
-echo "✅ 部署完成。weekly/ 与 demo/ 未触碰。"
+home="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$BASE_URL/aicc/")"
+js="$(grep -oE '/aicc/assets/[^"]+\.js' dist/index.html | head -1)"
+jscode="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$BASE_URL$js")"
+radar="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$BASE_URL/aicc/content/radar/index.json")"
+echo "   /aicc/ → $home ; 入口 JS → $jscode ; /aicc/content/radar/index.json → $radar"
+[ "$home" = "200" ] && [ "$jscode" = "200" ] && [ "$radar" = "200" ] && echo "✅ 部署完成（dist/weekly/ 未触碰）。" || echo "⚠️ 有非 200，请人工核对。"
