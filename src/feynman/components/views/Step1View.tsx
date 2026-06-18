@@ -20,21 +20,69 @@ export function Step1View({
 
   return (
     <div className="space-y-5">
-      {/* ① 价值铺垫 */}
+      {/* ① 价值铺垫：优先精致类比叙事（痛点两难 → 换个思路 → 金句），缺则回退 valueLead */}
       <StreamingSection
         icon={<AlertCircle className="h-4 w-4 text-warning" />}
         title="1. 我们先打个比方"
         tone="warning"
-        ready={!!d.valueLead}
+        ready={!!(d.analogy || d.valueLead)}
         streaming={streaming}
         loadingText="正在从生活化案例入手，组织通俗类比…"
         skeletonLines={3}
       >
-        {d.valueLead && (
-          <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
+        {d.analogy ? (
+          <div className="space-y-3.5">
+            {d.analogy.title && (
+              <div className="text-[12px] font-medium tracking-wide text-muted-foreground">{d.analogy.title}</div>
+            )}
+            {d.analogy.lead && (
+              <p className="text-sm leading-relaxed text-foreground/90">
+                <RichText text={d.analogy.lead} />
+              </p>
+            )}
+            {!!d.analogy.dilemmas?.length && (
+              <div className="divide-y divide-border rounded-lg border border-border bg-muted/30">
+                {d.analogy.dilemmas.map((di, i) => (
+                  <div key={i} className="flex gap-3 px-3 py-2.5">
+                    <span className="min-w-[3.25rem] shrink-0 text-[12px] font-semibold text-muted-foreground">{di.label}</span>
+                    <span className="text-[13px] leading-relaxed text-foreground/80">{di.text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex items-center gap-2.5 text-[11px] tracking-[0.2em] text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />换个思路<span className="h-px flex-1 bg-border" />
+            </div>
+            <div className="flex gap-3">
+              <span className="w-[3px] shrink-0 rounded-full bg-emerald-500" />
+              <div className="space-y-1">
+                {d.analogy.resolveTitle && (
+                  <div className="text-[12px] font-semibold text-emerald-600 dark:text-emerald-400">{d.analogy.resolveTitle}</div>
+                )}
+                {d.analogy.resolve && (
+                  <p className="text-[13px] leading-relaxed text-foreground/85">
+                    <RichText text={d.analogy.resolve} />
+                  </p>
+                )}
+              </div>
+            </div>
+            {d.analogy.quote && (
+              <figure className="py-1 text-center">
+                <span className="mx-auto block h-px w-8 bg-border" />
+                <p className="my-3 text-[17px] font-medium leading-relaxed text-foreground" style={{ fontFamily: "Georgia, 'Songti SC', serif" }}>
+                  {d.analogy.quote}
+                </p>
+                {d.analogy.quoteCaption && (
+                  <figcaption className="text-[12px] text-muted-foreground">{d.analogy.quoteCaption}</figcaption>
+                )}
+              </figure>
+            )}
+          </div>
+        ) : d.valueLead ? (
+          <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">
             <RichText text={d.valueLead} />
           </p>
-        )}
+        ) : null}
       </StreamingSection>
 
       {/* ② 专业定义 */}

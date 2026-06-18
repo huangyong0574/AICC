@@ -269,6 +269,7 @@ export function buildStep1Prompt(question?: string): QaPrompt {
     question: question ?? STEP_DEFAULT_QUESTIONS.step1,
     schema: `{
   "valueLead": "用生活化案例先揭示旧问题/痛点，为技术价值做铺垫（多段深入讲解，让读者建立共鸣，不限字数）。核心类比短语用**双星号**包裹高亮，如：**如同让万人同时互相通话**。仅高亮类比映射本体。",
+  "analogy": {"title":"一个贴切的类比标题（如「天才外科医生 · 分诊台」）","lead":"用这个类比铺垫旧的两难处境，一段","dilemmas":[{"label":"旧路 A","text":"一种旧做法 —— 它的代价"},{"label":"旧路 B","text":"另一种旧做法 —— 它的代价"}],"resolveTitle":"新思路的核心做法（短标题，如「门口加一位分诊护士」）","resolve":"新思路如何同时保住能力与安全，一段，呼应上面的类比","quote":"一句凝练本质的金句（≤30字）","quoteCaption":"金句的一句注解，点出本质转变"},
   "officialDefinition": "该概念的权威专业定义（引用论文/官方文档，展开解读，不限字数）。数学公式用 $LaTeX$ 行内格式（如 $h_t = h_{t-1} + g_t \\\\odot \\\\Delta h_t$）。重点概念（即 glossaryTerms 会拆解的术语）用**双星号**高亮。",
   "source": {"title":"论文或文档标题","url":"arxiv 论文链接或全球 AI 公司官网技术文档链接（仅接受 arxiv.org / 公司官方域名）"},
   "glossaryTerms": [

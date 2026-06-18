@@ -215,9 +215,21 @@ export interface LoopReview {
   nextHint: string              // 是否建议进入下一步的一句话
 }
 
+/** 精致类比叙事（可选增强；缺则回退 valueLead 渲染）：痛点两难 → 换个思路 → 一句金句 */
+export interface Step1Analogy {
+  title: string                 // 类比标题（如：天才外科医生 · 分诊台）
+  lead: string                  // 痛点铺垫，引出旧两难
+  dilemmas: { label: string; text: string }[] // 旧路 A/B：各一条做法 → 代价
+  resolveTitle: string          // 新思路核心做法标题
+  resolve: string               // 新思路如何同时保住能力与安全
+  quote: string                 // 一句凝练本质的金句
+  quoteCaption?: string         // 金句注解（可选）
+}
+
 /** 步骤1 L1 类比理解｜它是什么？ */
 export interface Step1Answer {
   valueLead: string             // 生活化类比揭示旧问题
+  analogy?: Step1Analogy        // 精致类比叙事（可选；缺则用 valueLead 渲染）
   officialDefinition: string    // 权威专业定义（含 $公式$ 和 **高亮**）
   source: {                     // 引用来源（仅 arxiv 论文或 AI 公司官网）
     title: string               // 论文/文档标题
