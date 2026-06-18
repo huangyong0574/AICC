@@ -15,8 +15,8 @@ import { callFeynmanWarmup } from "./lib/llm"
 
 import { FeynmanPrime } from "./components/FeynmanPrime"
 import { StepPipeline, emptySteps } from "./components/StepPipeline"
+import { FeynmanProgress } from "./components/FeynmanProgress"
 import { FeynmanDigestPanel } from "./components/FeynmanDigestPanel"
-import { CognitiveNavBar } from "./components/CognitiveNavBar"
 import { SettingsDialog } from "./components/SettingsDialog"
 import { useLatestRadarWeek, useRadarWeekById } from "../data/radarData"
 
@@ -102,45 +102,7 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
   const confirmedCnt = steps.filter(s => s.confirmed).length
   const allConfirmed = steps.length === 4 && confirmedCnt === 4
 
-  // Cognitive nav bar state computation (6 nodes)
-  // 开场提问(1) → 类比理解(2) → 场景边界(3) → 深入原理(4) → 本质总结(5) → 开场提问闭环(6)
-  const cognitiveState = useMemo(() => {
-    const completed: number[] = []
-    let current = 1
-
-    // Node 1 (开场提问): completed when warmup confirmed
-    if (warmupConfirmed) {
-      completed.push(1)
-      current = 2
-    }
-    // Node 2 (类比理解): completed when step1 confirmed
-    if (steps[0]?.confirmed) {
-      completed.push(2)
-      current = 3
-    }
-    // Node 3 (场景边界): completed when step2 confirmed
-    if (steps[1]?.confirmed) {
-      completed.push(3)
-      current = 4
-    }
-    // Node 4 (深入原理): completed when step3 confirmed
-    if (steps[2]?.confirmed) {
-      completed.push(4)
-      current = 5
-    }
-    // Node 5 (本质总结): completed when step4 confirmed
-    if (steps[3]?.confirmed) {
-      completed.push(5)
-      current = 6
-    }
-    // Node 6 (开场提问闭环): completed when feynman digest done
-    if (feynman) {
-      completed.push(6)
-      current = 6
-    }
-
-    return { current, completed }
-  }, [steps, feynman, warmupConfirmed])
+  // （已移除 CognitiveNavBar 的 cognitiveState 计算——四步进度改由 FeynmanProgress 基于 steps 渲染）
 
   function onStart() {
     if (!rawQuestion.trim()) {
@@ -273,13 +235,6 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
         </div>
       </div>
 
-      {/* Cognitive Navigation Bar - appears once learning started */}
-      {started && (
-        <CognitiveNavBar
-          currentNode={cognitiveState.current}
-          completedNodes={cognitiveState.completed}
-        />
-      )}
 
       <main className="mx-auto max-w-6xl px-6 py-8 space-y-8">
         {/* Hero —— 仅自由模式展示；概念模式已由来源上下文条 + 锁定卡片定位，无需营销大图 */}
@@ -300,7 +255,8 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
           </section>
         )}
 
-        {/* Input Card */}
+        {/* Input Card —— 仅 warmup 前显示；进入四步后由 FeynmanProgress 接管标题/进度/重新开始 */}
+        {!warmupConfirmed && (
         <Card>
           <CardContent className="pt-6 space-y-4">
             {conceptId ? (
@@ -383,6 +339,7 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* 已开始：预热 → 六问 → 内化 → 导出 */}
         {started && (
@@ -401,14 +358,17 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
             )}
 
             {warmupConfirmed && (
-              <StepPipeline
-                rawQuestion={rawQuestion}
-                grounding={grounding}
-                cfg={cfg}
-                value={steps}
-                onChange={setSteps}
-                onTakeaway={handleTakeaway}
-              />
+              <>
+                <FeynmanProgress steps={steps} topic={rawQuestion || initialQuestion} onReset={onReset} sourceWeek={conceptWeekId} />
+                <StepPipeline
+                  rawQuestion={rawQuestion}
+                  grounding={grounding}
+                  cfg={cfg}
+                  value={steps}
+                  onChange={setSteps}
+                  onTakeaway={handleTakeaway}
+                />
+              </>
             )}
 
             {allConfirmed && (
