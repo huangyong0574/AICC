@@ -9,6 +9,10 @@ interface RadarToolbarProps {
   total: number
   frontierCount: number
   matureCount: number
+  /** 学习中条目数（learning） */
+  learningCount: number
+  /** 已掌握条目数（published） */
+  masteredCount: number
   onClearPlan: () => void
 }
 
@@ -19,6 +23,8 @@ export function RadarToolbar({
   total,
   frontierCount,
   matureCount,
+  learningCount,
+  masteredCount,
   onClearPlan,
 }: RadarToolbarProps) {
   return (
@@ -61,7 +67,7 @@ export function RadarToolbar({
         />
       </div>
 
-      {/* Plan summary */}
+      {/* Plan summary：全局进度（已加入 N/total）+ 在学/已掌握细分，一目了然 */}
       <div className="inline-flex items-center gap-2.5 px-3 py-1.5 border border-border rounded-full bg-card text-[12.5px] text-muted-foreground">
         <Bookmark style={{ width: 13, height: 13 }} className="text-foreground" />
         <span>深入计划</span>
@@ -78,6 +84,13 @@ export function RadarToolbar({
             style={{ width: total > 0 ? `${(planCount / total) * 100}%` : 0 }}
           />
         </span>
+        {(learningCount > 0 || masteredCount > 0) && (
+          <span className="font-mono text-[11px] whitespace-nowrap">
+            {learningCount > 0 && <span style={{ color: 'hsl(var(--mature))' }}>在学 {learningCount}</span>}
+            {learningCount > 0 && masteredCount > 0 && <span className="opacity-40"> · </span>}
+            {masteredCount > 0 && <span style={{ color: 'hsl(var(--mature))' }}>已掌握 {masteredCount}</span>}
+          </span>
+        )}
         <button
           type="button"
           onClick={onClearPlan}

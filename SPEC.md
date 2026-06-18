@@ -146,7 +146,7 @@ User inputs natural language question (e.g. "GDN是什么意思？")  ← 计划
 |---|---|---|---|---|
 | LetterHome | `/` (`/philosophy`) | 产品文化·一封信（症状/信念/自省/防腐） | 价值观层 | `onEnter`（→ 雷达归档）/ `onNavigate` |
 | RadarArchivePage | `/radar` | 认知雷达**归档/全集合**：按周列出每期，时间轴卡片（期号/标题/日期/认知点数/前沿·成熟·已加入计划） | 入口 | `onNavigate` / `onOpenWeek(weekId)` |
-| RadarPage | `/radar/:weekId` | 某一**周切片**的雷达卡片（缺省 weekId 时取最新周） | **discovered→in-plan** | `weekId` / `onNavigate`；`addToPlan()`；learning/published 卡片删除需二次确认；含「← 归档」返回 |
+| RadarPage | `/radar/:weekId` | 某一**周切片**的雷达卡片（缺省 weekId 时取最新周）；卡片底栏按认知状态显示状态机入口；顶部 filter 旁全局进度概览 | **discovered→in-plan→learning 入口** | `weekId` / `onNavigate` / `onOpenFeynman(id)`；`addToPlan()`；4 态 CTA（加入＋/开始学习→/继续学习 N/4→/复习↺）；learning 卡左 accent，其余中性；learning/published 删除需二次确认；含「← 归档」返回 |
 | PlanPage | `/plan` | 跨周深度计划看板 | in-plan/learning/published 看板 | `onOpenFeynman(id)` / `onOpenArticle(slug)` |
 | FeynmanApp | `/feynman` | 费曼四步穿透学习引擎；**套 AICC SiteHeader + 来源上下文条**（← 深度计划 / 学习中 / 概念 / 来源周 / 设置），不再是飞地 | **in-plan→learning** | `conceptId` / `initialQuestion` / `onGoToEditor(id)` / `onNavigate` |
 | EditorPage | `/editor` | Markdown 编辑 + 实时预览 + 发布 | **learning→published** | `conceptId` / `onBack` / `onPublished(slug)` |
@@ -271,6 +271,7 @@ interface CognitionItem {
   addedAt?: number      // 加入计划时间戳（ms）；流转中保持不变
   sourceWeek?: string   // 来源周，如 2026-W22
   sourceFile?: string   // 来源雷达快照文件名（可选）
+  progress?: number     // learning 阶段费曼已确认步数（0–4）；FeynmanApp 实时写回，雷达 learning 卡据此显示「N/4」+ 迷你进度条
 }
 
 type CognitionMap = Record<string /* id */, CognitionItem>
@@ -291,7 +292,9 @@ type CognitionMap = Record<string /* id */, CognitionItem>
 | From → To | 触发 UI | 代码路径 | 副作用 |
 |---|---|---|---|
 | ∅ → in-plan | 雷达「加入深入计划」 | `RadarPage.addToPlan(id, meta)` | 写 title/titleEn/sourceWeek，补 `addedAt` |
-| in-plan → learning | 计划「开始费曼学习」 | `PlanPage.onOpenFeynman(id)` → `main.handleOpenFeynman` | `setState(id,'learning')` + 写 `aicc-active-concept` + 进 `/feynman`，标题预填 |
+| in-plan → learning | 计划 / **雷达卡**「开始学习 →」 | `PlanPage` / `RadarCard.onOpenFeynman(id)` → `main.handleOpenFeynman` | `setState(id,'learning')` + 写 `aicc-active-concept` + 进 `/feynman`，标题预填 |
+| learning 续学 / published 复习 | 雷达卡「继续学习 · N/4 →」 /「复习 ↺」 | `RadarCard.onOpenFeynman(id)` → `main.handleOpenFeynman` | 同上；learning 保持进度续学，published 进费曼复习（不改状态） |
+| learning 进度回写 | 费曼每确认一步 | `FeynmanApp.onProgress(id,n)` → `main.upsert(id,{progress:n})` | 写 `CognitionItem.progress`（0–4）；雷达 learning 卡据此实时显示 N/4 + 迷你进度条 |
 | learning → published | 费曼「去成稿」→ 编辑器发布 | `FeynmanApp.onGoToEditor(id)` → `EditorPage.confirmPublish` | `upsert(id,{slug,title,state:'published'})`；发布后清 `aicc-active-concept` |
 | any(非discovered) → ∅ | 雷达再次点击 / 计划「移除」 | `remove(id)` | 硬删除条目；**雷达页对 learning/published 需二次确认** |
 
@@ -302,6 +305,7 @@ type CognitionMap = Record<string /* id */, CognitionItem>
 | `map` | 当前 `CognitionMap` |
 | `upsert(id, patch)` | 浅合并写入（保留已有字段）；EditorPage 发布走此路径 |
 | `setState(id, state)` | 仅切状态；切到非 discovered 且无 `addedAt` 时补时间戳 |
+| `setProgress(id, n)` | 写 learning 进度（0–4）；值未变/条目不存在时返回原 map，不触发 re-render（避免费曼 `onProgress` ↔ 雷达回写循环） |
 | `addToPlan(id, meta)` | discovered → in-plan |
 | `remove(id)` | 删除条目 |
 | `plannedItems()` | 返回非 discovered 条目，按 `addedAt` 新→旧 |

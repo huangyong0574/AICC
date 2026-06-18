@@ -38,6 +38,8 @@ export interface CognitionItem {
   sourceWeek?: string
   /** 来源雷达快照文件名，如 2026-06-12.html */
   sourceFile?: string
+  /** learning 阶段费曼已确认步数（0–4）；FeynmanApp 实时写回，雷达 learning 卡据此显示「N/4」+ 迷你进度条 */
+  progress?: number
   /** 费曼内化产出的图谱关系（用于认知图谱的关系边）：concept → parent */
   relation?: { parent: string; text: string; tags?: string[]; oneLine?: string }
 }
@@ -80,6 +82,8 @@ interface CognitionContextValue {
   upsert: (id: string, patch: Partial<CognitionItem> & { title: string }) => void
   /** 仅切换状态；切到非 discovered 且原本没有 addedAt 时补时间戳 */
   setState: (id: string, state: CognitionStateValue) => void
+  /** 写 learning 进度（0–4）；值未变或条目不存在时返回原 map（不触发 re-render，避免费曼↔雷达回写循环） */
+  setProgress: (id: string, progress: number) => void
   /** 加入深度计划（discovered → in-plan） */
   addToPlan: (id: string, meta: Partial<CognitionItem> & { title: string }) => void
   /** 从计划中移除（彻底删除该条目） */
@@ -132,6 +136,17 @@ export function CognitionProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  const setProgress = useCallback<CognitionContextValue["setProgress"]>((id, progress) => {
+    setMap((prev) => {
+      const existing = prev[id]
+      // 条目不存在或进度未变：返回原引用，不触发 re-render（FeynmanApp 的 onProgress effect 才不会回环）
+      if (!existing || existing.progress === progress) return prev
+      const next = { ...prev, [id]: { ...existing, progress } }
+      persist(next)
+      return next
+    })
+  }, [])
+
   const addToPlan = useCallback<CognitionContextValue["addToPlan"]>((id, meta) => {
     setMap((prev) => {
       const existing = prev[id]
@@ -167,8 +182,8 @@ export function CognitionProvider({ children }: { children: ReactNode }) {
   }, [map])
 
   const value = useMemo<CognitionContextValue>(
-    () => ({ map, upsert, setState, addToPlan, remove, plannedItems }),
-    [map, upsert, setState, addToPlan, remove, plannedItems],
+    () => ({ map, upsert, setState, setProgress, addToPlan, remove, plannedItems }),
+    [map, upsert, setState, setProgress, addToPlan, remove, plannedItems],
   )
 
   // commit 暴露给需要批量写的极少数场景（当前未直接用，保留以防 lint 抱怨）

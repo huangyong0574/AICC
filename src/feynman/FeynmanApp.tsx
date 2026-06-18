@@ -35,9 +35,11 @@ interface FeynmanAppProps {
   onNavigate?: (page: NavPage) => void
   /** 费曼内化完成时回调：把图谱关系（concept→parent）回写平台认知状态 */
   onInternalized?: (id: string, delta: GraphDelta) => void
+  /** learning 进度回写：每确认一步把已确认步数（0–4）写回认知状态，供雷达 learning 卡显示 N/4 */
+  onProgress?: (id: string, progress: number) => void
 }
 
-export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigate, onInternalized }: FeynmanAppProps = {}) {
+export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigate, onInternalized, onProgress }: FeynmanAppProps = {}) {
   const [cfg, setCfg] = useState<LlmConfig>(DEFAULT_CFG)
   const [rawQuestion, setRawQuestion] = useState(initialQuestion ?? "")
   const [topic, setTopic] = useState("")
@@ -101,6 +103,11 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
 
   const confirmedCnt = steps.filter(s => s.confirmed).length
   const allConfirmed = steps.length === 4 && confirmedCnt === 4
+
+  // learning 进度回写：conceptId 存在且已开始讲解时，把已确认步数写回认知状态（雷达 learning 卡据此显示 N/4）
+  useEffect(() => {
+    if (conceptId && started) onProgress?.(conceptId, confirmedCnt)
+  }, [conceptId, started, confirmedCnt, onProgress])
 
   // （已移除 CognitiveNavBar 的 cognitiveState 计算——四步进度改由 FeynmanProgress 基于 steps 渲染）
 

@@ -51,7 +51,7 @@ function stateToPath(page: AppPage, slug: string, week: string): string {
 }
 
 function App() {
-  const { setState, map, upsert } = useCognition()
+  const { setState, setProgress, map, upsert } = useCognition()
   const [page, setPage] = useState<AppPage>(() => pathToState(location.pathname).page)
   const [articleSlug, setArticleSlug] = useState<string>(() => pathToState(location.pathname).slug || 'flash-attention')
   // 当前查看的雷达周（'' = 最新周）。深链 /radar/<week> 时从 URL 初始化。
@@ -121,10 +121,11 @@ function App() {
   const handleOpenFeynman = useCallback((id: string) => {
     if (id) {
       setActiveConcept(id)
-      setState(id, 'learning')
+      // 复习已成稿（published）不降级回 learning；其余（in-plan / learning）进入即标记学习中
+      if (map[id]?.state !== 'published') setState(id, 'learning')
     }
     navigateTo('feynman')
-  }, [navigateTo, setState, setActiveConcept])
+  }, [navigateTo, setState, setActiveConcept, map])
 
   // 费曼学习完成 → 去成稿编辑器（携带认知点 id，发布时回写 published）
   const handleGoToEditor = useCallback((id?: string) => {
@@ -163,7 +164,7 @@ function App() {
     return <RadarArchivePage onNavigate={handleNavigate} onOpenWeek={handleOpenWeek} />
   }
   if (page === 'radar') {
-    return <RadarPage weekId={radarWeek} onNavigate={handleNavigate} />
+    return <RadarPage weekId={radarWeek} onNavigate={handleNavigate} onOpenFeynman={handleOpenFeynman} />
   }
   if (page === 'plan') {
     return (
@@ -195,6 +196,7 @@ function App() {
       onGoToEditor={handleGoToEditor}
       onNavigate={handleNavigate}
       onInternalized={handleInternalized}
+      onProgress={setProgress}
     />
   )
 }

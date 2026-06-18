@@ -10,11 +10,13 @@ import { useCognition } from '../lib/cognition'
 
 interface RadarPageProps {
   onNavigate: (page: NavPage) => void
+  /** 进费曼（开始 / 继续 / 复习）；由 main.handleOpenFeynman 处理 in-plan→learning + 深链 */
+  onOpenFeynman: (id: string) => void
   /** 要展示的周；缺省取最新周 */
   weekId?: string
 }
 
-export function RadarPage({ onNavigate, weekId: weekIdProp }: RadarPageProps) {
+export function RadarPage({ onNavigate, onOpenFeynman, weekId: weekIdProp }: RadarPageProps) {
   const [filter, setFilter] = useState<RadarFilter>('all')
   const { map, addToPlan, remove } = useCognition()
 
@@ -71,6 +73,16 @@ export function RadarPage({ onNavigate, weekId: weekIdProp }: RadarPageProps) {
   )
   const matureCount = total - frontierCount
 
+  // 全局进度细分：学习中 / 已掌握（供 toolbar「在学 X · 已掌握 Y」一目了然）
+  const learningCount = useMemo(
+    () => insights.filter(i => map[i.id]?.state === 'learning').length,
+    [insights, map],
+  )
+  const masteredCount = useMemo(
+    () => insights.filter(i => map[i.id]?.state === 'published').length,
+    [insights, map],
+  )
+
   const filtered = useMemo(
     () => (filter === 'all' ? insights : insights.filter(i => i.maturity === filter)),
     [insights, filter],
@@ -97,6 +109,8 @@ export function RadarPage({ onNavigate, weekId: weekIdProp }: RadarPageProps) {
             total={total}
             frontierCount={frontierCount}
             matureCount={matureCount}
+            learningCount={learningCount}
+            masteredCount={masteredCount}
             onClearPlan={handleClearPlan}
           />
 
@@ -105,8 +119,10 @@ export function RadarPage({ onNavigate, weekId: weekIdProp }: RadarPageProps) {
               <RadarCard
                 key={insight.id}
                 insight={insight}
-                inPlan={inPlan(insight.id)}
+                state={map[insight.id]?.state}
+                progress={map[insight.id]?.progress}
                 onTogglePlan={() => togglePlan(insight.id)}
+                onOpenFeynman={() => onOpenFeynman(insight.id)}
               />
             ))}
           </section>
