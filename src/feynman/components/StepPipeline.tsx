@@ -47,6 +47,7 @@ export function emptySteps(): StepEntry[] {
 
 export function StepPipeline({
   rawQuestion,
+  grounding,
   cfg,
   value,
   onChange,
@@ -54,6 +55,8 @@ export function StepPipeline({
   onTakeaway,
 }: {
   rawQuestion: string
+  /** 认知雷达对该概念的权威原文/提炼，用作讲解与认知差评测的事实依据 */
+  grounding?: string
   cfg: LlmConfig
   value: StepEntry[]
   onChange: (next: StepEntry[]) => void
@@ -119,6 +122,7 @@ export function StepPipeline({
         cfg,
         (acc: string) => setStreamBuf(acc),
         abortRef.current.signal,
+        grounding,
       )
       const next = update(idx, { streaming: false, answer: parsed as any, confirmed: false })
       setStreamBuf("")
@@ -126,7 +130,7 @@ export function StepPipeline({
       // 认知差：若用户写过猜想，对比猜想与揭晓答案，标出命中/遗漏/偏差
       const pred = (prediction ?? valueRef.current[idx]?.prediction ?? "").trim()
       if (pred) {
-        callGap(cur.key as StepKey, rawQuestion, pred, parsed, cfg)
+        callGap(cur.key as StepKey, rawQuestion, pred, parsed, cfg, grounding)
           .then(gap => update(idx, { gap }))
           .catch(() => {})
       }
@@ -424,23 +428,25 @@ function renderView(entry: StepEntry, glossaryTerms: GlossaryTerm[]) {
   }
 }
 
-/** 认知差面板（先猜后揭）：对照猜想，标出命中/遗漏/偏差 */
+/** 认知差面板（先猜后揭）：对照猜想，标出命中/遗漏/偏差（三色 badge 行，对齐新 UI 设计稿） */
 function GapPanel({ gap }: { gap: StepGap }) {
   const rows = [
-    { label: "命中", items: gap.hit, cls: "text-success" },
-    { label: "遗漏", items: gap.miss, cls: "text-warning" },
-    { label: "偏差", items: gap.wrong, cls: "text-destructive" },
+    { label: "命中", items: gap.hit, cls: "text-emerald-700 bg-emerald-50 border-emerald-200" },
+    { label: "遗漏", items: gap.miss, cls: "text-amber-700 bg-amber-50 border-amber-200" },
+    { label: "偏差", items: gap.wrong, cls: "text-red-700 bg-red-50 border-red-200" },
   ].filter(r => r.items && r.items.length)
   if (!rows.length) return null
   return (
-    <div className="rounded-lg border border-border/60 bg-card/40 p-3 space-y-1.5">
-      <div className="text-[11px] font-medium text-muted-foreground tracking-wide">认知差 · 对照你的猜想</div>
-      {rows.map(r => (
-        <div key={r.label} className="flex items-start gap-2 text-[12.5px] leading-relaxed">
-          <span className={`shrink-0 font-medium ${r.cls}`}>{r.label}</span>
-          <span className="text-foreground/80">{r.items.join("　·　")}</span>
-        </div>
-      ))}
+    <div className="space-y-2">
+      <div className="text-[12px] text-muted-foreground tracking-[0.02em]">认知差 · 对照你的猜想（基于认知雷达原文评判）</div>
+      <div className="flex flex-col gap-2">
+        {rows.map(r => (
+          <div key={r.label} className="flex items-start gap-2.5 rounded-lg border border-border bg-card px-3 py-2.5">
+            <span className={`shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-semibold ${r.cls}`}>{r.label}</span>
+            <span className="text-[13px] leading-relaxed text-foreground/80">{r.items.join("　·　")}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

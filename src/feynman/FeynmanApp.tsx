@@ -18,7 +18,7 @@ import { StepPipeline, emptySteps } from "./components/StepPipeline"
 import { FeynmanDigestPanel } from "./components/FeynmanDigestPanel"
 import { CognitiveNavBar } from "./components/CognitiveNavBar"
 import { SettingsDialog } from "./components/SettingsDialog"
-import { useLatestRadarWeek } from "../data/radarData"
+import { useLatestRadarWeek, useRadarWeekById } from "../data/radarData"
 
 function genId() {
   return `note_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
@@ -49,6 +49,24 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
     () => radarWeek.insights.slice(0, 5).map(i => ({ label: i.title, url: i.sourceUrl })),
     [radarWeek],
   )
+
+  // grounding：从 conceptId 所在周的雷达数据查回该认知点的原文/提炼，
+  // 作为四步讲解与「认知差」评测的事实依据（需求2：评测依赖雷达原文，而非纯 LLM 现场重编）
+  const conceptWeekId = conceptId?.match(/^\d{4}-W\d{2}/)?.[0]
+  const { week: conceptRadarWeek } = useRadarWeekById(conceptWeekId)
+  const grounding = useMemo(() => {
+    if (!conceptId) return undefined
+    const it = conceptRadarWeek.insights.find(i => i.id === conceptId)
+    if (!it) return undefined
+    return [
+      `概念：${it.title}（${it.eyebrow}）`,
+      `一句话：${it.tagline}`,
+      `核心原理：${it.corePrinciple}`,
+      `为什么重要：${it.whyMatters}`,
+      it.org ? `来源机构：${it.org}` : "",
+      it.sourceUrl ? `原文链接：${it.sourceUrl}` : "",
+    ].filter(Boolean).join("\n")
+  }, [conceptId, conceptRadarWeek])
 
   const [started, setStarted] = useState(false)
   const [noteId, setNoteId] = useState<string>("")
@@ -385,6 +403,7 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
             {warmupConfirmed && (
               <StepPipeline
                 rawQuestion={rawQuestion}
+                grounding={grounding}
                 cfg={cfg}
                 value={steps}
                 onChange={setSteps}

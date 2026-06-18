@@ -248,6 +248,7 @@ export async function callStep<K extends StepKey>(
   cfg: LlmConfig,
   onText: (accumulated: string) => void,
   signal?: AbortSignal,
+  grounding?: string,
 ): Promise<StepAnswerMap[K]> {
   if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
   const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
@@ -257,6 +258,13 @@ export async function callStep<K extends StepKey>(
     { role: "system", content: SYSTEM_PROMPTS[stepKey] },
     { role: "user", content: `学习者想要深入理解的概念：「${rawQuestion}」` },
   ]
+  // grounding：认知雷达对该概念的权威原文/提炼，作为讲解的事实依据，避免与雷达内容相悖
+  if (grounding && grounding.trim()) {
+    messages.push({
+      role: "user",
+      content: `🔹 以下是「认知雷达」对该概念的权威原文与提炼，请以此为事实依据展开本步讲解，与之保持一致、不要另起炉灶或自相矛盾：\n${grounding.trim()}`,
+    })
+  }
   // 追加历史步骤上下文（已确认的步骤才追加）
   for (const h of history) {
     if (!h.answer || !h.confirmed) continue
@@ -410,15 +418,16 @@ export async function callGap(
   prediction: string,
   answer: unknown,
   cfg: LlmConfig,
+  grounding?: string,
 ): Promise<StepGap> {
   if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
   const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
-  const sys = `你是费曼学习法的"认知差"评估器。学习者在看到标准答案前，先用自己的话写了对某 AI 概念某一步的猜想。请对比"学习者猜想"与"标准答案"，输出三类要点（每类 1-3 条、每条 ≤20 字、简体中文、务实具体，对着学习者说"你"）：
-- hit：学习者猜对/命中的关键点
-- miss：答案里重要、但学习者完全没提到的点（遗漏）
-- wrong：学习者说错或理解偏差的点
-只返回单一合法 JSON：{"hit":[],"miss":[],"wrong":[]}，不加任何 Markdown 围栏或前后缀；某类没有就给空数组。`
-  const user = `概念：${rawQuestion}\n步骤：${stepKey}\n\n【学习者猜想】\n${prediction}\n\n【标准答案 JSON】\n${JSON.stringify(answer).slice(0, 4000)}`
+  const sys = `你是费曼学习法的"认知差"评估器。学习者在看到答案前，先用自己的话写了对某 AI 概念某一步的猜想。请**以「认知雷达原文」为权威事实标准**（若提供），对比"学习者猜想"与"权威标准 + 标准答案"，输出三类要点（每类 1-3 条、每条 ≤20 字、简体中文、务实具体，对着学习者说"你"）：
+- hit：学习者猜对/命中的关键点（须与雷达原文一致）
+- miss：雷达原文/答案里重要、但学习者完全没提到的点（遗漏）
+- wrong：学习者说错、或与雷达原文相悖的点（偏差）
+评判优先以雷达原文为准；标准答案 JSON 仅作辅助。只返回单一合法 JSON：{"hit":[],"miss":[],"wrong":[]}，不加任何 Markdown 围栏或前后缀；某类没有就给空数组。`
+  const user = `概念：${rawQuestion}\n步骤：${stepKey}\n\n【认知雷达原文（权威标准，评判优先以此为准）】\n${(grounding || "（未提供，仅依据下方标准答案）").slice(0, 2500)}\n\n【学习者猜想】\n${prediction}\n\n【标准答案 JSON（讲解生成，辅助参考）】\n${JSON.stringify(answer).slice(0, 2500)}`
   const res = await fetch(`${base}/chat/completions`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` },
