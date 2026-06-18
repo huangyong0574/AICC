@@ -148,7 +148,7 @@ User inputs natural language question (e.g. "GDN是什么意思？")  ← 计划
 | RadarArchivePage | `/radar` | 认知雷达**归档/全集合**：按周列出每期，时间轴卡片（期号/标题/日期/认知点数/前沿·成熟·已加入计划） | 入口 | `onNavigate` / `onOpenWeek(weekId)` |
 | RadarPage | `/radar/:weekId` | 某一**周切片**的雷达卡片（缺省 weekId 时取最新周）；卡片底栏按认知状态显示状态机入口；顶部 filter 旁全局进度概览 | **discovered→in-plan→learning 入口** | `weekId` / `onNavigate` / `onOpenFeynman(id)`；`addToPlan()`；4 态 CTA（加入＋/开始学习→/继续学习 N/4→/复习↺）；learning 卡左 accent，其余中性；learning/published 删除需二次确认；含「← 归档」返回 |
 | PlanPage | `/plan` | 跨周深度计划看板 | in-plan/learning/published 看板 | `onOpenFeynman(id)` / `onOpenArticle(slug)` |
-| FeynmanApp | `/feynman` | 费曼四步穿透学习引擎；**套 AICC SiteHeader + 来源上下文条**（← 深度计划 / 学习中 / 概念 / 来源周 / 设置），不再是飞地 | **in-plan→learning** | `conceptId` / `initialQuestion` / `onGoToEditor(id)` / `onNavigate` |
+| FeynmanApp | `/feynman` | 费曼四步穿透学习引擎；**套 AICC SiteHeader + 来源上下文条**；**实时持久化学习草稿（按 conceptId 防抖写回 `aicc-feynman-notes`），重进/刷新提示「继续 N/4 / 重新开始」** | **in-plan→learning**（含续学/复习入口） | `conceptId` / `initialQuestion` / `onGoToEditor(id)` / `onNavigate` / `onInternalized(id,delta)` / `onProgress(id,n)` |
 | EditorPage | `/editor` | Markdown 编辑 + 实时预览 + 发布 | **learning→published** | `conceptId` / `onBack` / `onPublished(slug)` |
 | GraphPage | `/graph` | 认知图谱（**全局累积**：跨周全部认知点按概念去重，按来源周聚类、按状态着色）+ 第二大脑成长总览（已成稿/学习中/累积概念/积累天数，真实数据） | 累积 + 成长仪表盘 | `onNavigate`（`useRadarArchive` 取全部周；节点 click→雷达归档） |
 | ArticlePage | `/article/:slug` | 文章阅读页 | published 产物 | 先读 `aicc-article-md:<slug>`，回退 `public/content/<slug>.md` |
@@ -509,7 +509,7 @@ User input -> FeynmanApp.tsx (learning 阶段内部状态管理)
 | Key | Content | Structure |
 |---|---|---|
 | `aicc-llm-cfg` | LLM config | `{ apiKey, baseUrl, model }` |
-| `aicc-feynman-notes` | Note library | `Note[]` array |
+| `aicc-feynman-notes` | 费曼笔记 + **学习草稿** | `Note[]`；`Note.conceptId` 关联认知点；FeynmanApp 实时防抖写回（steps/warmup/feynman），含中途草稿；重进按 `findNoteByConceptId` 提示「继续 N/4 / 重新开始」 |
 | `aicc-feynman-graph` | Knowledge graph | `GraphDelta[]` array |
 
 **Default Config** (`storage.ts`):

@@ -85,6 +85,14 @@ export function findCachedNote(rawQuestion: string): Note | undefined {
     n => n.rawQuestion.trim() === q && n.feynman && n.steps?.length === 4,
   )
 }
+
+/** 按 conceptId 查笔记（含中途草稿，不要求完成）——费曼页据此恢复学习进度 */
+export function findNoteByConceptId(conceptId: string): Note | undefined {
+  const id = conceptId?.trim()
+  if (!id) return undefined
+  return loadNotes().find(n => n.conceptId === id)
+}
+
 export function deleteNote(id: string) {
   saveNotes(loadNotes().filter(n => n.id !== id))
 }

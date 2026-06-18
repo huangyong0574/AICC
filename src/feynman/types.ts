@@ -302,6 +302,7 @@ export interface StepGap {
 
 export interface Note {
   id: string
+  conceptId?: string             // 关联认知点 id（雷达/计划带入）；据此实时持久化 + 重进恢复学习进度
   topic: string                  // 概念名
   rawQuestion: string            // 用户最初那句话
   steps: StepEntry[]             // 四步穿透讲解（主字段）

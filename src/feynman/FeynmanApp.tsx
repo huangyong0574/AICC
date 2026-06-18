@@ -10,7 +10,7 @@ import {
 import { SiteHeader, type NavPage } from "../pages/SiteHeader"
 
 import type { FeynmanDigest, GraphDelta, LlmConfig, Note, StepEntry, FeynmanWarmupQuestion } from "./types"
-import { DEFAULT_CFG, loadCfg, addNote, findCachedNote } from "./lib/storage"
+import { DEFAULT_CFG, loadCfg, addNote, findCachedNote, findNoteByConceptId, deleteNote } from "./lib/storage"
 import { callFeynmanWarmup } from "./lib/llm"
 
 import { FeynmanPrime } from "./components/FeynmanPrime"
@@ -87,6 +87,8 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
   }
 
   const [showSettings, setShowSettings] = useState(false)
+  // 重进/刷新时按 conceptId 查到的可恢复笔记（含中途草稿）；非空则在「未开始」处提示「继续 / 重新开始」
+  const [resumable, setResumable] = useState<Note | null>(null)
 
   useEffect(() => {
     const c = loadCfg()
@@ -108,6 +110,13 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
   useEffect(() => {
     if (conceptId && started) onProgress?.(conceptId, confirmedCnt)
   }, [conceptId, started, confirmedCnt, onProgress])
+
+  // 重进/刷新：按 conceptId 查上次笔记（含中途草稿），有进度则提示「继续 / 重新开始」（不自动覆盖当前会话）
+  useEffect(() => {
+    if (!conceptId || started) return
+    const prev = findNoteByConceptId(conceptId)
+    setResumable(prev && (prev.steps?.length ?? 0) > 0 ? prev : null)
+  }, [conceptId, started])
 
   // （已移除 CognitiveNavBar 的 cognitiveState 计算——四步进度改由 FeynmanProgress 基于 steps 渲染）
 
@@ -162,10 +171,19 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
 
   function onReset() {
     if (started && !confirm("重新开始会清空当前四大步骤进度，确定？")) return
+    if (noteId) deleteNote(noteId)  // 清掉当前草稿，避免下次重进又恢复到这次的半成品
     setStarted(false)
     setSteps([])
     setFeynman(null)
     setNoteId("")
+    setResumable(null)
+  }
+
+  // 「未开始」处「重新开始」：丢弃上次可恢复的草稿，从零开始
+  function handleDiscardResume() {
+    if (resumable && !confirm("重新开始会清空上次的学习进度，确定？")) return
+    if (resumable) deleteNote(resumable.id)
+    setResumable(null)
   }
 
   function loadFromNote(n: Note) {
@@ -175,6 +193,9 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
     setSteps(n.steps || [])
     setFeynman(n.feynman || null)
     setNoteId(n.id)
+    setWarmupQuestions(n.warmupQuestions || [])
+    // 有四步内容或已生成预热问题 → 已过热身，直接进入四步管线（不退回预热引导）
+    setWarmupConfirmed((n.steps?.length ?? 0) > 0 || (n.warmupQuestions?.length ?? 0) > 0)
     setStarted(true)
     if (!n.steps || n.steps.length === 0) {
       toast.message(`载入的是旧版六问笔记：${n.topic}，请重新开始一次以生成三步结构`)
@@ -188,6 +209,7 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
 
   const currentNote: Note = {
     id: noteId || genId(),
+    conceptId: conceptId || undefined,
     topic: topic.trim() || rawQuestion.slice(0, 24),
     rawQuestion,
     steps,
@@ -196,6 +218,14 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
     tags,
     createdAt: new Date().toISOString(),
   }
+
+  // 实时持久化：开始后 steps/warmup/feynman 等变化即防抖写回笔记（含中途草稿，按 conceptId 关联），刷新/重进可恢复
+  useEffect(() => {
+    if (!started || !noteId) return
+    const t = setTimeout(() => addNote(currentNote), 400)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [started, noteId, steps, feynman, warmupQuestions, warmupConfirmed, topic, rawQuestion, tagsInput])
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -326,6 +356,8 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
               <div className="text-[11px] text-muted-foreground font-mono">
                 {started ? (
                   <>进度：已确认 <span className="text-primary">{confirmedCnt}/4</span> {feynman ? "· 已内化" : allConfirmed ? "· 待内化" : ""}</>
+                ) : resumable ? (
+                  <>上次学到 <span className="text-primary">{resumable.steps.filter(s => s.confirmed).length}/4</span> · 可继续</>
                 ) : (
                   <>未开始讲解</>
                 )}
@@ -336,7 +368,18 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
                     重新开始
                   </Button>
                 )}
-                {!started && (
+                {!started && resumable && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={handleDiscardResume}>
+                      重新开始
+                    </Button>
+                    <Button variant="glow" size="lg" onClick={() => { const n = resumable; setResumable(null); loadFromNote(n) }}>
+                      <Play className="mr-2 h-4 w-4" />
+                      继续学习
+                    </Button>
+                  </>
+                )}
+                {!started && !resumable && (
                   <Button variant="glow" size="lg" onClick={onStart}>
                     <Play className="mr-2 h-4 w-4" />
                     开始讲解
