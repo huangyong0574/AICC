@@ -601,8 +601,19 @@ DEFAULT_CFG = {
 **LLM Output Schema**:
 
 ```typescript
+interface Step1Analogy {      // 精致类比叙事（可选增强；缺则回退 valueLead 渲染）
+  title: string;              // 类比标题（如：天才外科医生 · 分诊台）
+  lead: string;               // 痛点铺垫，引出旧两难
+  dilemmas: { label: string; text: string }[]; // 旧路 A/B：做法 → 代价
+  resolveTitle: string;       // 新思路核心做法标题
+  resolve: string;            // 新思路如何兼顾能力与安全
+  quote: string;              // 一句凝练本质的金句
+  quoteCaption?: string;      // 金句注解（可选）
+}
+
 interface Step1Answer {
   valueLead: string;          // Popular case leading (no word limit)
+  analogy?: Step1Analogy;     // 精致类比叙事（可选；存在时优先于 valueLead 渲染）
   officialDefinition: string; // Authoritative definition (no word limit)
   glossaryTerms: {            // GlossaryTerm[]
     term: string;             // Technical term name
@@ -639,6 +650,7 @@ interface LoopCheck {
 
 **Content Structure**:
 1. **Value Lead**: Life-like case revealing old problem/pain point
+   - **Analogy（可选精致叙事，`Step1Analogy`）**: 痛点 lead → 旧路 A/B 两难（label + text）→「换个思路」分隔 → 绿条新解（resolveTitle + resolve）→ 衬线金句（quote + quoteCaption）；存在时优先于 Value Lead 渲染
 2. **Official Definition**: Precise definition from authoritative sources
 3. **Glossary Terms**: Based on Transformer baseline, pick unfamiliar terms (dual explanation: analogy + technical)
 4. **SVG Diagram**: LLM returns structured nodes/edges/templateType, `svgRenderer.ts` renders locally
