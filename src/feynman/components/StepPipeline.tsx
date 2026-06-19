@@ -63,7 +63,11 @@ export function StepPipeline({
   onAllDone?: (list: StepEntry[]) => void
   onTakeaway?: (stepKey: string, takeaway: string) => void
 }) {
-  const [activeIdx, setActiveIdx] = useState(0)
+  // 恢复学习时 value 已含已确认步：初始定位到第一个未确认步，避免停在已确认的 step1 导致无法进入下一步
+  const [activeIdx, setActiveIdx] = useState(() => {
+    const i = value.findIndex(s => !s.confirmed)
+    return i < 0 ? Math.max(0, value.length - 1) : i
+  })
   const [streamBuf, setStreamBuf] = useState<string>("")
   const abortRef = useRef<AbortController | null>(null)
   const autoStartedRef = useRef(false)
