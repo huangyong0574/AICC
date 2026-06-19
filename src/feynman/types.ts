@@ -226,6 +226,20 @@ export interface Step1Analogy {
   quoteCaption?: string         // 金句注解（可选）
 }
 
+/** 机制路由图：把「输入 → 关键判断节点 → 多分支走向」可视化（如 用户请求→安全分类器→[放行/降级]）。
+ *  泛化适用于路由/分类/门控/决策类机制；纯线性算法概念可不产出（回退到定义文本）。 */
+export interface Step1Route {
+  entry: string                 // 入口节点（如：用户请求）
+  gate: string                  // 关键判断/分流节点（如：安全分类器）
+  branches: {                   // 2–3 条分支（判断后的不同走向）
+    tone: "ok" | "warn" | "danger"  // 放行/常规=ok，降级/谨慎=warn，拦截/高危=danger
+    label: string               // 分支条件（如：常规 · 直接放行）
+    target: string              // 目标/结果，code 样式（如：Mythos 5）
+    note: string                // 一句说明（如：完全能力模型）
+  }[]
+  note?: string                 // 底部补充说明（可选）
+}
+
 /** 步骤1 L1 类比理解｜它是什么？ */
 export interface Step1Answer {
   valueLead: string             // 生活化类比揭示旧问题
@@ -235,6 +249,7 @@ export interface Step1Answer {
     title: string               // 论文/文档标题
     url: string                 // arxiv 或公司官网 URL
   }
+  route?: Step1Route            // 机制路由图（可选；仅当概念有 输入→判断→多分支 的运行时机制时产出，否则省略）
   glossaryTerms: GlossaryTerm[] // 难懂术语拆解
 }
 

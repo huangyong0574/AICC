@@ -100,6 +100,7 @@ export function Step1View({
             <p className="text-sm text-foreground/90 leading-relaxed">
               <RichText text={d.officialDefinition} />
             </p>
+            {d.route && <RouteDiagram route={d.route} />}
             {d.source && (
               <div className="pt-2 border-t border-border/30 mt-3">
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">引用论文</div>
@@ -157,6 +158,43 @@ export function Step1View({
           </div>
         )}
       </StreamingSection>
+    </div>
+  )
+}
+
+/** 机制路由图：入口 → 关键判断节点 → 多分支（泛化渲染设计稿 route 图；tone 决定分支配色） */
+const ROUTE_TONE: Record<"ok" | "warn" | "danger", { text: string; dot: string }> = {
+  ok: { text: "text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500" },
+  warn: { text: "text-amber-600 dark:text-amber-400", dot: "bg-amber-500" },
+  danger: { text: "text-red-600 dark:text-red-400", dot: "bg-red-500" },
+}
+
+function RouteDiagram({ route }: { route: NonNullable<Step1Answer["route"]> }) {
+  return (
+    <div className="mt-3 rounded-lg border border-border bg-muted/20 p-4">
+      {/* 入口 → 判断节点 */}
+      <div className="flex flex-wrap items-center justify-center gap-2.5">
+        <span className="rounded-lg border border-border bg-card px-3 py-2 text-[12.5px] text-foreground/80">{route.entry}</span>
+        <span className="text-muted-foreground/50">→</span>
+        <span className="rounded-lg border border-primary bg-primary px-3 py-2 text-[12.5px] font-medium text-primary-foreground">{route.gate}</span>
+      </div>
+      {/* 分支 */}
+      <div className="mt-3.5 flex flex-wrap gap-3">
+        {route.branches.map((b, i) => {
+          const tone = ROUTE_TONE[b.tone] ?? ROUTE_TONE.ok
+          return (
+            <div key={i} className="min-w-[150px] flex-1 rounded-[10px] border border-border bg-card p-3">
+              <div className={`mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold ${tone.text}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
+                {b.label}
+              </div>
+              <code className="font-mono text-[13px] font-semibold text-foreground">{b.target}</code>
+              <div className="mt-0.5 text-[11.5px] text-muted-foreground">{b.note}</div>
+            </div>
+          )
+        })}
+      </div>
+      {route.note && <p className="mt-3 text-center text-[11.5px] leading-relaxed text-muted-foreground">{route.note}</p>}
     </div>
   )
 }
