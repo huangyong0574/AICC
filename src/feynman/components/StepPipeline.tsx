@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Sparkles, Target, Layers, Gem,
-  Loader2, CheckCircle2, ChevronDown, AlertCircle, Zap,
+  Loader2, CheckCircle2, ChevronDown, AlertCircle, Zap, X,
 } from "lucide-react"
 import { toast } from "sonner"
 import type {
@@ -204,6 +204,18 @@ export function StepPipeline({
     }
   }
 
+  // 关闭弹窗 = 取消本次「带走」：回退该步确认（不进下一步、不存 takeaway），用户可稍后重新点确认
+  function handleTakeawayClose() {
+    if (pendingStepRef.current) {
+      const idx = STEP_ORDER.indexOf(pendingStepRef.current)
+      if (idx >= 0) update(idx, { confirmed: false })
+    }
+    pendingStepRef.current = null
+    pendingNextRef.current = null
+    setTakeawayText("")
+    setShowTakeaway(false)
+  }
+
   // D1: 从 step1 answer 提取 glossaryTerms 供后续步骤使用
   const glossaryTerms: GlossaryTerm[] = (value[0]?.answer as Step1Answer)?.glossaryTerms || []
 
@@ -226,9 +238,18 @@ export function StepPipeline({
       {/* Takeaway 居中弹窗 */}
       {showTakeaway && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="mx-4 max-w-md w-full rounded-2xl bg-background shadow-2xl overflow-hidden animate-scale-in">
+          <div className="relative mx-4 max-w-md w-full rounded-2xl bg-background shadow-2xl overflow-hidden animate-scale-in">
             {/* 顶部渐变光条 */}
             <div className="h-1.5 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-400" />
+            {/* 关闭按钮：取消本次「带走」，不进下一步 */}
+            <button
+              type="button"
+              onClick={handleTakeawayClose}
+              aria-label="关闭"
+              className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
             <div className="p-6 space-y-5">
               {/* 图标 */}
               <div className="flex items-center justify-center">
@@ -295,7 +316,8 @@ function StepCard({
   const inPredict = active && !entry.answer && !entry.streaming && !entry.error && entry.prediction === undefined
 
   useEffect(() => {
-    if (entry.confirmed) setExpanded(false)
+    // 确认即折叠；被取消（如关闭「带走」弹窗回退确认）则重新展开，便于重新查看/确认
+    setExpanded(!entry.confirmed)
   }, [entry.confirmed])
 
   return (
