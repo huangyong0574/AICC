@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { Network, Radar, Search, Sun, Moon, ScrollText, BookmarkCheck, SquarePen } from "lucide-react"
 
-export type NavPage = "letter" | "graph" | "article" | "radar" | "plan" | "editor"
+export type NavPage = "letter" | "graph" | "article" | "radar" | "plan" | "editor" | "creation"
 
 interface SiteHeaderProps {
   activePage: NavPage
@@ -36,12 +36,14 @@ export function SiteHeader({ activePage, onNavigate }: SiteHeaderProps) {
     { id: "radar" as NavPage, icon: Radar, label: "认知雷达" },
     { id: "plan" as NavPage, icon: BookmarkCheck, label: "深度计划" },
     { id: "graph" as NavPage, icon: Network, label: "认知图谱" },
-    { id: "editor" as NavPage, icon: SquarePen, label: "编辑器" },
+    { id: "creation" as NavPage, icon: SquarePen, label: "创作" },
   ]
 
   const isActive = (id: NavPage) => {
     // 文章页归属于认知雷达体系（文章是某认知点的成稿产物）
     if (activePage === "article" && id === "radar") return true
+    // 编辑器/成稿是创作体系的一部分，归属「创作」tab
+    if (activePage === "editor" && id === "creation") return true
     return activePage === id
   }
 

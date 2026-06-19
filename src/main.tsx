@@ -7,12 +7,13 @@ import { RadarPage } from './pages/RadarPage'
 import { RadarArchivePage } from './pages/RadarArchivePage'
 import { PlanPage } from './pages/PlanPage'
 import { EditorPage } from './pages/EditorPage'
+import { CreationPage } from './pages/CreationPage'
 import { GraphPage } from './pages/GraphPage'
 import { CognitionProvider, useCognition } from './lib/cognition'
 import type { NavPage } from './pages/SiteHeader'
 import './index.css'
 
-type AppPage = 'letter' | 'graph' | 'article' | 'feynman' | 'radar-archive' | 'radar' | 'plan' | 'editor'
+type AppPage = 'letter' | 'graph' | 'article' | 'feynman' | 'radar-archive' | 'radar' | 'plan' | 'editor' | 'creation'
 
 /** 跨刷新保留"当前认知点"，使 learning → published 回写不因整页重载而断链 */
 const ACTIVE_CONCEPT_KEY = 'aicc-active-concept'
@@ -31,6 +32,7 @@ function pathToState(pathname: string): { page: AppPage; slug: string; week: str
   if (p.startsWith('/radar/')) return { page: 'radar', slug: '', week: p.slice('/radar/'.length) }
   if (p === '/plan') return { page: 'plan', ...none }
   if (p === '/editor') return { page: 'editor', ...none }
+  if (p === '/creation') return { page: 'creation', ...none }
   if (p.startsWith('/article/')) {
     const slug = p.slice('/article/'.length)
     return { page: 'article', slug: slug || 'flash-attention', week: '' }
@@ -46,6 +48,7 @@ function stateToPath(page: AppPage, slug: string, week: string): string {
   if (page === 'radar') return week ? '/radar/' + week : '/radar'
   if (page === 'plan') return '/plan'
   if (page === 'editor') return '/editor'
+  if (page === 'creation') return '/creation'
   if (page === 'article') return '/article/' + slug
   return '/'
 }
@@ -101,11 +104,11 @@ function App() {
     else if (nav === 'radar') navigateTo('radar-archive')
     else if (nav === 'plan') navigateTo('plan')
     else if (nav === 'editor') {
-      // 顶部导航的「编辑器」是通用入口（写任意文章），不绑定认知点：清空 conceptId，
-      // 避免误把无关文章发布回写到上一个学习中的认知点。
+      // 「编辑器」现为内部成稿入口（不在导航暴露）：清空 conceptId，避免误回写
       setActiveConcept('')
       navigateTo('editor')
     }
+    else if (nav === 'creation') navigateTo('creation')
   }, [navigateTo, setActiveConcept])
 
   const handleOpenArticle = useCallback((slug: string) => {
@@ -187,6 +190,9 @@ function App() {
         }}
       />
     )
+  }
+  if (page === 'creation') {
+    return <CreationPage onNavigate={handleNavigate} />
   }
   // 费曼学习工作台：携带认知点上下文，完成后可一键去成稿
   return (

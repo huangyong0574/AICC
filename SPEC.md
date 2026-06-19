@@ -149,7 +149,8 @@ User inputs natural language question (e.g. "GDN是什么意思？")  ← 计划
 | RadarPage | `/radar/:weekId` | 某一**周切片**的雷达卡片（缺省 weekId 时取最新周）；卡片底栏按认知状态显示状态机入口；顶部 filter 旁全局进度概览 | **discovered→in-plan→learning 入口** | `weekId` / `onNavigate` / `onOpenFeynman(id)`；`addToPlan()`；4 态 CTA（加入＋/开始学习→/继续学习 N/4→/复习↺）；learning 卡左 accent，其余中性；learning/published 删除需二次确认；含「← 归档」返回 |
 | PlanPage | `/plan` | 跨周深度计划看板 | in-plan/learning/published 看板 | `onOpenFeynman(id)` / `onOpenArticle(slug)` |
 | FeynmanApp | `/feynman` | 费曼四步穿透学习引擎；**套 AICC SiteHeader + 来源上下文条**；**实时持久化学习草稿（按 conceptId 防抖写回 `aicc-feynman-notes`），重进/刷新提示「继续 N/4 / 重新开始」** | **in-plan→learning**（含续学/复习入口） | `conceptId` / `initialQuestion` / `onGoToEditor(id)` / `onNavigate` / `onInternalized(id,delta)` / `onProgress(id,n)` |
-| EditorPage | `/editor` | Markdown 编辑 + 实时预览 + 发布 | **learning→published** | `conceptId` / `onBack` / `onPublished(slug)` |
+| EditorPage | `/editor` | Markdown 编辑 + 实时预览 + 发布（内部成稿入口，不在导航暴露） | **learning→published** | `conceptId` / `onBack` / `onPublished(slug)` |
+| CreationPage | `/creation` | **创作（认知闭环最后一环）**：选题约稿（已闭环知识点 × 雷达 `news` → 选题，门槛不足锁定）+ 写作台（钉选题 / 标题正文编辑 / 实时字数 / 素材引用 / AI 陪练 / 发布并闭环）；nav「创作」入口（取代旧「编辑器」位） | **published → 已成文（闭环回写）** | `onNavigate` / `topicId?`；已闭环 = 费曼内化笔记；阶段1=选题约稿+写作台基础，发布回写/LLM 选题/AI 陪练见阶段 2–4 |
 | GraphPage | `/graph` | 认知图谱（**全局累积**：跨周全部认知点按概念去重，按来源周聚类、按状态着色）+ 第二大脑成长总览（已成稿/学习中/累积概念/积累天数，真实数据） | 累积 + 成长仪表盘 | `onNavigate`（`useRadarArchive` 取全部周；节点 click→雷达归档） |
 | ArticlePage | `/article/:slug` | 文章阅读页 | published 产物 | 先读 `aicc-article-md:<slug>`，回退 `public/content/<slug>.md` |
 
