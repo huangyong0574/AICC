@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AICC · 深度计划 · 高能力模型的风险降级护栏</title>
+<style>
+  :root{
+    --background:#fafafa; --card:#ffffff;
+    --foreground:#18181b; --muted-foreground:#71717a; --subtle:#a1a1aa;
+    --secondary-fg:#52525b; --body:#3f3f46;
+    --border:#e4e4e7; --border-strong:#d4d4d8;
+    --muted:#f4f4f5;
+    --primary:#18181b; --primary-fg:#fafafa;
+    --radius:8px; --radius-lg:12px;
+    --emerald-fg:#047857; --emerald-bg:#ecfdf5; --emerald-bd:#d1fae5;
+    --amber-fg:#b45309; --amber-bg:#fffbeb; --amber-bd:#fde68a;
+    --red-fg:#b91c1c; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{-webkit-font-smoothing:antialiased;}
+  body{font-family:var(--font); background:var(--background); color:var(--foreground); line-height:1.6;}
+  .wrap{max-width:920px; margin:0 auto; padding:0 20px 80px;}
+
+  /* ---------- top nav ---------- */
+  .nav{position:sticky; top:0; z-index:20; background:rgba(250,250,250,.82); backdrop-filter:saturate(180%) blur(8px); border-bottom:1px solid var(--border);}
+  .nav-inner{max-width:920px; margin:0 auto; padding:0 20px; height:56px; display:flex; align-items:center; gap:18px;}
+  .logo{display:flex; align-items:center; gap:9px; font-weight:600; font-size:15px;}
+  .logo .mark{width:26px; height:26px; border-radius:7px; background:var(--primary); color:var(--primary-fg); display:grid; place-items:center; font-size:13px; font-weight:700;}
+  .logo .ver{font-size:11px; color:var(--subtle); font-weight:500; border:1px solid var(--border); padding:1px 6px; border-radius:5px;}
+  .tabs{display:flex; gap:2px; margin-left:8px;}
+  .tab{font-size:13px; color:var(--muted-foreground); padding:7px 12px; border-radius:7px; cursor:pointer; white-space:nowrap;}
+  .tab:hover{background:var(--muted); color:var(--foreground);}
+  .tab.active{background:var(--muted); color:var(--foreground); font-weight:500;}
+  .nav-right{margin-left:auto; display:flex; align-items:center; gap:8px;}
+  .icon-btn{width:34px; height:34px; border-radius:8px; border:1px solid var(--border); background:var(--card); display:grid; place-items:center; cursor:pointer; color:var(--secondary-fg);}
+  .icon-btn:hover{background:var(--muted);}
+
+  /* ---------- breadcrumb / stepper ---------- */
+  .crumb{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--subtle); padding:18px 0 14px;}
+  .crumb b{color:var(--secondary-fg); font-weight:500;}
+  .crumb .dot{width:6px; height:6px; border-radius:50%; background:#22c55e;}
+
+  .stepper{display:flex; align-items:center; gap:0; margin-bottom:18px; overflow-x:auto; padding-bottom:4px;}
+  .step{display:flex; align-items:center; gap:8px; flex-shrink:0;}
+  .step .bub{width:22px; height:22px; border-radius:50%; display:grid; place-items:center; font-size:11px; font-weight:600; border:1px solid var(--border-strong); background:var(--card); color:var(--subtle);}
+  .step.done .bub{background:var(--primary); border-color:var(--primary); color:var(--primary-fg);}
+  .step.current .bub{background:var(--primary); border-color:var(--primary); color:var(--primary-fg);}
+  .step .lbl{font-size:12px; color:var(--subtle); white-space:nowrap;}
+  .step.done .lbl,.step.current .lbl{color:var(--foreground); font-weight:500;}
+  .step .line{width:34px; height:1px; background:var(--border); margin:0 6px;}
+  .step.done .line{background:var(--primary);}
+
+  /* ---------- cards ---------- */
+  .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:14px;}
+  .card-pad{padding:18px 22px;}
+
+  /* header card */
+  .hd{display:flex; align-items:center; justify-content:space-between; gap:16px;}
+  .hd-l{display:flex; align-items:center; gap:16px;}
+  .ring{position:relative; width:48px; height:48px; flex-shrink:0;}
+  .ring svg{width:48px; height:48px; transform:rotate(-90deg);}
+  .ring span{position:absolute; inset:0; display:grid; place-items:center; font-size:12px; font-weight:600;}
+  .hd h1{font-size:16px; font-weight:600;}
+  .hd .sub{font-size:12px; color:var(--muted-foreground); margin-top:2px;}
+  .pill{font-size:11px; color:var(--subtle); border:1px solid var(--border); padding:4px 10px; border-radius:6px;}
+  .ghost-btn{font-size:13px; font-weight:500; padding:7px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--secondary-fg); cursor:pointer;}
+  .ghost-btn:hover{background:var(--muted);}
+
+  .seg{display:flex; gap:6px; margin:14px 0 0;}
+  .seg i{flex:1; height:5px; border-radius:99px; background:var(--border); transition:background .3s;}
+  .seg i.on{background:var(--primary);}
+  .seg i.half{background:var(--subtle);}
+
+  /* feynman */
+  .fey-head{display:flex; align-items:center; gap:10px; padding:14px 22px; border-bottom:1px solid var(--border);}
+  .fey-head .ico{width:30px; height:30px; border-radius:8px; background:var(--primary); color:var(--primary-fg); display:grid; place-items:center;}
+  .fey-head .t{font-size:14px; font-weight:600;}
+  .fey-head .d{font-size:12px; color:var(--muted-foreground);}
+  .q{padding:16px 22px; border-bottom:1px solid var(--border);}
+  .q:last-child{border-bottom:0;}
+  .q .meta{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--subtle); margin-bottom:8px;}
+  .q .num{margin-left:auto; font-size:11px; font-weight:600; color:var(--muted-foreground); background:var(--muted); padding:2px 8px; border-radius:6px;}
+  .q .txt{font-size:14px; color:var(--body); line-height:1.7;}
+
+  /* step section */
+  .sec-head{display:flex; align-items:center; gap:10px; padding:16px 22px; cursor:pointer;}
+  .sec-head .ico{font-size:18px; color:var(--secondary-fg);}
+  .sec-head h2{font-size:16px; font-weight:600;}
+  .sec-head .hint{font-size:12px; color:var(--subtle);}
+  .sec-head .right{margin-left:auto; display:flex; align-items:center; gap:10px;}
+  .tag{font-size:11px; padding:3px 10px; border-radius:6px; background:var(--muted); color:var(--secondary-fg); border:1px solid var(--border);}
+  .tag.ok{background:var(--emerald-bg); color:var(--emerald-fg); border-color:var(--emerald-bd);}
+  .chev{color:var(--subtle); transition:transform .25s;}
+  .sec.open .chev{transform:rotate(180deg);}
+
+  .sec-body{display:none; padding:0 22px 20px;}
+  .sec.open .sec-body{display:block;}
+  .preview{padding:0 22px 16px; font-size:12px; color:var(--subtle); line-height:1.6; display:flex; align-items:center; gap:8px;}
+  .sec.open .preview{display:none;}
+  .lock-row{padding:12px 22px 16px; display:flex; align-items:center; gap:8px; font-size:12px; color:var(--subtle);}
+  .sec.open .lock-row{display:none;}
+
+  .label{font-size:12px; color:var(--subtle); letter-spacing:.02em; margin:4px 0 10px;}
+
+  /* gap rows */
+  .gap{display:flex; flex-direction:column; gap:8px; margin-bottom:18px;}
+  .gap-row{display:flex; gap:10px; align-items:center; padding:11px 13px; border:1px solid var(--border); border-radius:var(--radius); background:var(--card);}
+  .badge{font-size:11px; font-weight:600; padding:2px 9px; border-radius:6px; white-space:nowrap;}
+  .badge.ok{color:var(--emerald-fg); background:var(--emerald-bg); border:1px solid var(--emerald-bd);}
+  .badge.miss{color:var(--amber-fg); background:var(--amber-bg); border:1px solid var(--amber-bd);}
+  .badge.dev{color:var(--red-fg); background:var(--red-bg); border:1px solid var(--red-bd);}
+  .gap-row .gt{font-size:13px; color:var(--body); line-height:1.6;}
+
+  .block{margin-bottom:18px;}
+  .block .bh{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+  .block .bh i{font-size:16px; color:var(--muted-foreground);}
+  .block .bh span{font-size:13px; font-weight:600; color:#27272a;}
+  .block p{font-size:14px; line-height:1.78; color:var(--secondary-fg);}
+  .formula{margin-top:12px; display:flex; justify-content:center; padding:14px; background:var(--muted); border:1px solid var(--border); border-radius:var(--radius); font-family:var(--mono); font-size:13px; color:#27272a;}
+
+  /* analogy mini cards */
+  .mini{border:1px solid var(--border); border-radius:var(--radius); padding:13px 15px; margin-bottom:10px;}
+  .mini .mt{display:flex; align-items:center; gap:8px; margin-bottom:6px;}
+  .mini .mt .k{font-size:11px; font-weight:600; color:var(--secondary-fg); background:var(--muted); border:1px solid var(--border); padding:2px 8px; border-radius:6px;}
+  .mini .mt .name{font-size:13px; font-weight:600;}
+  .mini .line{font-size:13px; line-height:1.7; color:var(--secondary-fg); padding-left:2px;}
+  .mini .line.tech{color:var(--muted-foreground); margin-top:6px; padding-top:8px; border-top:1px dashed var(--border);}
+  .mini .line.tech b{color:var(--secondary-fg); font-weight:500;}
+
+  /* ---------- premium editorial blocks (v2) ---------- */
+  .pblock{margin:6px 0 22px;}
+  .eyebrow{display:flex; align-items:center; gap:10px; margin-bottom:16px;}
+  .eyebrow .no{font-size:11px; font-weight:600; letter-spacing:.14em; color:var(--subtle);}
+  .eyebrow .ln{flex:1; height:1px; background:var(--border);}
+  .eyebrow .kk{font-size:12px; color:var(--muted-foreground);}
+  .plead{font-size:14px; line-height:1.85; color:var(--secondary-fg); margin-bottom:16px;}
+  .plead b{color:var(--foreground); font-weight:500;}
+  .dilemmas{display:flex; flex-direction:column; margin-bottom:16px;}
+  .di{display:flex; gap:16px; align-items:baseline; padding:12px 0; border-top:1px solid var(--border);}
+  .dilemmas .di:last-child{border-bottom:1px solid var(--border);}
+  .di .dk{font-size:12px; font-weight:600; color:var(--muted-foreground); min-width:54px;}
+  .di .dt{font-size:13.5px; line-height:1.7; color:var(--secondary-fg);}
+  .di .dt .mute{color:var(--subtle);}
+  .pivot{display:flex; align-items:center; gap:10px; margin:0 0 14px; font-size:12px;}
+  .pivot .ln{flex:1; height:1px; background:var(--border);}
+  .pivot .px{font-weight:500; color:var(--secondary-fg); letter-spacing:.04em;}
+  .resolve{display:flex; gap:14px; margin-bottom:22px;}
+  .resolve .bar{width:2px; background:#16a34a; border-radius:99px; flex-shrink:0;}
+  .resolve .rh{font-size:11px; font-weight:600; letter-spacing:.08em; color:#15803d; margin-bottom:8px;}
+  .resolve p{font-size:13.5px; line-height:1.85; color:var(--secondary-fg);}
+  .pquote{margin:0 0 6px; text-align:center;}
+  .pquote .deco{display:block; width:30px; height:1px; background:var(--border-strong); margin:0 auto;}
+  .pquote .qmain{margin:18px 0; font-family:Georgia,'Songti SC',serif; font-size:18px; line-height:1.6; color:var(--foreground); font-weight:500;}
+  .pquote .qcap{font-size:12px; color:var(--subtle); line-height:1.6;}
+
+  .pdef-lead{font-size:14px; line-height:1.85; color:var(--secondary-fg); margin-bottom:20px;}
+  .pdef-lead b{color:var(--foreground); font-weight:500; border-bottom:1.5px solid var(--border-strong);}
+  .route{border:1px solid var(--border); border-radius:var(--radius); padding:18px 16px; margin-bottom:12px; background:#fcfcfc;}
+  .route-top{display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;}
+  .route-top .nd{padding:8px 13px; background:var(--card); border:1px solid var(--border); border-radius:8px; font-size:12.5px; color:var(--secondary-fg);}
+  .route-top .gate{background:var(--primary); color:var(--primary-fg); border-color:var(--primary); font-weight:500;}
+  .route-top .ar{color:var(--border-strong);}
+  .branches{display:flex; gap:12px; margin-top:14px; flex-wrap:wrap;}
+  .branch{flex:1; min-width:150px; border:1px solid var(--border); border-radius:10px; padding:12px 14px; background:var(--card);}
+  .branch .bc{font-size:11px; font-weight:600; margin-bottom:7px; display:flex; align-items:center; gap:6px;}
+  .branch .bc .dot{width:6px; height:6px; border-radius:50%;}
+  .branch.ok .bc{color:#15803d;} .branch.ok .dot{background:#16a34a;}
+  .branch.warn .bc{color:#b45309;} .branch.warn .dot{background:#d97706;}
+  .branch code{font-size:13px; font-weight:600; color:var(--foreground);}
+  .branch .bd{font-size:11.5px; color:var(--subtle); margin-top:3px;}
+  .route-note{margin:13px 2px 0; font-size:11.5px; color:var(--subtle); line-height:1.6; text-align:center;}
+  .inl-code{font-size:12px; background:var(--muted); padding:1px 5px; border-radius:4px; font-family:var(--mono);}
+  .pess{margin:18px 0 12px; font-size:13px; color:var(--muted-foreground); line-height:1.8;}
+  .pess .soft{color:var(--secondary-fg);}
+  .dims{display:flex; flex-wrap:wrap; gap:0; margin-bottom:4px;}
+  .dims span{font-size:12px; color:var(--secondary-fg); padding:6px 16px 6px 0; margin-right:16px; border-right:1px solid var(--border);}
+  .dims span:last-child{border-right:0; margin-right:0; padding-right:0;}
+
+  /* ---------- blueprint module (scheme A) ---------- */
+  .callout{display:flex; gap:11px; padding:14px 16px; background:var(--muted); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:18px;}
+  .callout .ci{flex-shrink:0; color:#185fa5; margin-top:1px;}
+  .callout p{font-size:13.5px; line-height:1.8; color:var(--secondary-fg);}
+  .bp-wrap{border:1px solid var(--border); border-radius:var(--radius-lg); padding:14px 10px; background:#fcfcfc; margin-bottom:22px;}
+  .bp-steps{display:flex; flex-direction:column;}
+  .bp-step{display:flex; gap:14px; padding:14px 0; border-top:1px solid var(--border);}
+  .bp-step:first-child{border-top:0;}
+  .bp-num{flex-shrink:0; width:22px; height:22px; border-radius:50%; border:1px solid var(--border-strong); display:grid; place-items:center; font-family:var(--mono); font-size:11px; font-weight:600; color:var(--secondary-fg);}
+  .bp-step .bt{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:4px;}
+  .bp-step .bt b{font-size:13.5px; font-weight:600; color:var(--foreground);}
+  .bp-step .bt code{font-family:var(--mono); font-size:11px; color:#185fa5; background:#eaf2fb; border:1px solid #d3e3f5; padding:1px 7px; border-radius:5px;}
+  .bp-step .bx{font-size:12.5px; line-height:1.7; color:var(--muted-foreground);}
+  .keypoint{display:flex; gap:11px; padding:14px 16px; background:var(--background); border:1px solid var(--border); border-radius:var(--radius); margin-top:18px;}
+  .keypoint .kbar{width:2px; background:#185fa5; border-radius:99px; flex-shrink:0;}
+  .keypoint p{font-size:12.5px; line-height:1.75; color:var(--muted-foreground); font-style:italic;}
+  .keypoint p b{color:var(--secondary-fg); font-weight:500; font-style:normal;}
+
+  .actions{display:flex; gap:10px; align-items:center; padding:14px 22px; border-top:1px solid var(--border); background:var(--background); border-radius:0 0 var(--radius-lg) var(--radius-lg);}
+  .btn-primary{font-size:13px; font-weight:500; padding:8px 16px; border-radius:8px; border:1px solid var(--primary); background:var(--primary); color:var(--primary-fg); cursor:pointer; display:inline-flex; align-items:center; gap:6px;}
+  .btn-primary:hover{opacity:.9;}
+  .ref{font-size:12px; color:var(--subtle); display:flex; align-items:center; gap:6px; margin-top:14px;}
+
+  .foot{text-align:center; font-size:12px; color:var(--subtle); padding-top:30px;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="logo"><span class="mark">A</span>AICC<span class="ver">v1.0</span></div>
+    <div class="tabs">
+      <div class="tab">产品文化</div>
+      <div class="tab">认知传达</div>
+      <div class="tab active">深度计划</div>
+      <div class="tab">认知图谱</div>
+      <div class="tab">编辑器</div>
+    </div>
+    <div class="nav-right">
+      <div class="icon-btn" title="搜索"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>
+      <div class="icon-btn" title="主题"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></svg></div>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <div class="crumb">深度计划 <span>›</span> <span class="dot"></span> <b>学习中</b> <span>›</span> <b>高能力模型的风险降级护栏</b></div>
+
+  <div class="stepper" id="stepper">
+    <div class="step current" data-i="0"><span class="bub">1</span><span class="lbl">类比理解</span><span class="line"></span></div>
+    <div class="step" data-i="1"><span class="bub">2</span><span class="lbl">场景边界</span><span class="line"></span></div>
+    <div class="step" data-i="2"><span class="bub">3</span><span class="lbl">深入原理</span><span class="line"></span></div>
+    <div class="step" data-i="3"><span class="bub">4</span><span class="lbl">本质总结</span></div>
+  </div>
+
+  <!-- header card -->
+  <div class="card card-pad">
+    <div class="hd">
+      <div class="hd-l">
+        <div class="ring">
+          <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--muted)" stroke-width="3.2"/><circle id="ringfill" cx="18" cy="18" r="15.5" fill="none" stroke="var(--primary)" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="97.4" stroke-dashoffset="97.4"/></svg>
+          <span id="ringtxt">0/4</span>
+        </div>
+        <div>
+          <h1>高能力模型的风险降级护栏</h1>
+          <div class="sub">本次要透过学习的认知点 · 来自深度计划</div>
+        </div>
+      </div>
+      <button class="ghost-btn" onclick="resetAll()">重新开始</button>
+    </div>
+    <div class="seg" id="seg"><i></i><i></i><i></i><i></i></div>
+  </div>
+
+  <!-- feynman -->
+  <div class="card">
+    <div class="fey-head">
+      <div class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/></svg></div>
+      <div>
+        <div class="t">费曼精髓 · 输出倒逼输入</div>
+        <div class="d">看完你能给别人讲清这 3 个问题，就懂了</div>
+      </div>
+    </div>
+    <div class="q">
+      <div class="meta">讲给客户的业务小姐姐听<span class="num">Q1</span></div>
+      <div class="txt">"你如何用点外卖的比喻，让她秒懂这层护栏如何让聪明但爱乱说的模型变得安全可靠？"</div>
+    </div>
+    <div class="q">
+      <div class="meta">讲给客户的程序员小哥听<span class="num">Q2</span></div>
+      <div class="txt">"你如何用一次 API 调用流程，让他看清护栏在推理前、中、后精准拦截风险的机制？"</div>
+    </div>
+    <div class="q">
+      <div class="meta">让公司产研同学服气<span class="num">Q3</span></div>
+      <div class="txt">"你如何对比主流风控方案，让他信服这套降级护栏在成本与效果上的精妙设计？"</div>
+    </div>
+  </div>
+
+  <!-- L1 类比理解 -->
+  <div class="card sec open" id="sec0">
+    <div class="sec-head" onclick="toggle(0)">
+      <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8L4 12l6.1 3.2L12 21l1.9-5.8L20 12l-6.1-3.2Z"/></svg></span>
+      <h2>类比理解</h2><span class="hint">它是什么？</span>
+      <div class="right"><span class="tag" id="tag0">待确认</span><span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span></div>
+    </div>
+    <div class="sec-body">
+      <div class="label">认知差 · 对照你的猜想</div>
+      <div class="gap">
+        <div class="gap-row"><span class="badge ok">命中</span><span class="gt">涉及高风险时降级到备用模型 · 备用模型是 Opus 4.8</span></div>
+        <div class="gap-row"><span class="badge miss">遗漏</span><span class="gt">降级由外部安全分类器触发，非模型自律 · 用户几乎无感切换</span></div>
+        <div class="gap-row"><span class="badge dev">偏差</span><span class="gt">降级不是模型自身决定，而是外部系统路由</span></div>
+      </div>
+
+      <!-- premium: 类比 -->
+      <div class="pblock">
+        <div class="eyebrow"><span class="no">01 — 类比</span><span class="ln"></span><span class="kk">天才外科医生 · 分诊台</span></div>
+        <p class="plead">一家顶级医院有位天才外科医生，能做最复杂的手术，也能用同样的技艺造成巨大伤害。过去，安全与能力始终像是鱼与熊掌——</p>
+        <div class="dilemmas">
+          <div class="di"><span class="dk">旧路 A</span><span class="dt">把天才锁进办公室 —— <span class="mute">安全了，能力也废了。</span></span></div>
+          <div class="di"><span class="dk">旧路 B</span><span class="dt">塞一本厚厚的禁令手册 —— <span class="mute">他畏首畏尾，正常学术问题也拒答。</span></span></div>
+        </div>
+        <div class="pivot"><span class="ln"></span><span class="px">换一种思路</span><span class="ln"></span></div>
+        <div class="resolve">
+          <span class="bar"></span>
+          <div>
+            <div class="rh">门口加一位分诊护士</div>
+            <p>常规感冒发烧，护士直接放行，天才医生全力服务；可一旦听到"如何制造炸弹"，她不让天才出面、也不生硬拒绝，而是微笑引导到隔壁那位专攻常规、不具高危能力的资深医生。顶尖能力照常开放，高危风险悄然化解，病人也不觉得被冒犯。</p>
+          </div>
+        </div>
+        <figure class="pquote">
+          <span class="deco"></span>
+          <p class="qmain">给超级跑车装一个智能限速器，<br>而不是换掉它的发动机。</p>
+          <figcaption class="qcap">安全从模型内部的"道德自律"，变成外部可配置的"交通规则"。</figcaption>
+          <span class="deco"></span>
+        </figure>
+      </div>
+
+      <!-- premium: 技术定义 -->
+      <div class="pblock">
+        <div class="eyebrow"><span class="no">02 — 技术定义</span><span class="ln"></span><span class="kk">运行时安全架构</span></div>
+        <p class="pdef-lead">把安全策略从模型权重中<b>解耦</b>，做成一个独立的外部执行层。能力照常发挥，安全独立兜底。</p>
+        <div class="route">
+          <div class="route-top">
+            <span class="nd">用户请求</span>
+            <span class="ar">→</span>
+            <span class="nd gate">安全分类器</span>
+          </div>
+          <div class="branches">
+            <div class="branch ok">
+              <div class="bc"><span class="dot"></span>常规 · 直接放行</div>
+              <code>Mythos 5</code><div class="bd">完全能力模型</div>
+            </div>
+            <div class="branch warn">
+              <div class="bc"><span class="dot"></span>高危 · 静默路由</div>
+              <code>Opus 4.8</code><div class="bd">备用 · 风险更低</div>
+            </div>
+          </div>
+          <p class="route-note">Fable 5 与 Mythos 5 共享底层模型，前者外挂分类器面向公众 · 切换对用户透明，并告知"本次由备用模型生成"</p>
+        </div>
+        <p class="pess">本质，是把"能力边界"从静态训练阶段，移到动态运行时——大模型安全由此从<span class="soft">提示词工程</span>问题，升级为一项系统工程：</p>
+        <div class="dims"><span>能力分层</span><span>场景识别</span><span>身份权限</span><span>审计日志</span><span>合规策略</span></div>
+      </div>
+
+      <div class="block">
+        <div class="bh"><i><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M3 16v3a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3"/></svg></i><span>拆开来看 · 三个零件</span></div>
+        <div class="mini">
+          <div class="mt"><span class="k">通俗类比</span><span class="name">安全分类器</span></div>
+          <div class="line">像机场安检的 X 光机，不看你是谁，只看这件行李是否属于高风险类别，快速判别并放行或拦截。</div>
+          <div class="line tech"><b>技术视角：</b>一组独立训练的模型，专门对用户输入做实时风险判定，输出风险标签与置信度，作为路由决策依据，无需重训庞大基座模型。</div>
+        </div>
+        <div class="mini">
+          <div class="mt"><span class="k">通俗类比</span><span class="name">静默降级路由</span></div>
+          <div class="line">像网银里的风控：当系统判定有风险，会把你切到更严格的复核通道，你几乎无感，但安全级别已悄悄提上去。</div>
+          <div class="line tech"><b>技术视角：</b>在分类器触发时把请求交给备用模型，对用户透明、交互连贯，避免生硬拒绝，体验顺滑。</div>
+        </div>
+        <div class="mini">
+          <div class="mt"><span class="k">通俗类比</span><span class="name">模型蒸馏</span></div>
+          <div class="line">像偷师学艺：用顶尖大师的作品训练自己的学徒，让学徒快速逼近大师水平，而不用从头培养。</div>
+          <div class="line tech"><b>技术视角：</b>用高能力"教师模型"的输出训练更小、更高效的"学生模型"。护栏要防的，正是有人借此复制核心能力。</div>
+        </div>
+      </div>
+
+      <div class="ref"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg> 引用：Claude 模型系统卡 · Anthropic 官方技术文档</div>
+    </div>
+
+    <div class="preview"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg> 已展开</div>
+
+    <div class="actions">
+      <button class="ghost-btn" onclick="sendAsk(0)">换个比方</button>
+      <button class="btn-primary" onclick="confirmStep(0)">我收下了 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+  </div>
+
+  <!-- L2 场景边界 -->
+  <div class="card sec" id="sec1">
+    <div class="sec-head" onclick="toggle(1)">
+      <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>
+      <h2>场景边界</h2><span class="hint">哪里能用？</span>
+      <div class="right"><span class="tag">未开始</span><span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span></div>
+    </div>
+    <div class="preview"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg> 预览：适用于网络安全、生化武器等高危领域；不适用于日常创作类请求 · 适用 / 不适用 / 选型标准</div>
+    <div class="sec-body">
+      <div class="label">适用场景 · 不适用场景 · 选型标准</div>
+      <div class="block"><div class="bh"><span>适用</span></div><p>触及网络攻击、生化武器、核相关、模型蒸馏等高风险知识领域的请求，由安全分类器识别后路由到备用模型，宁可保守也不冒险。</p></div>
+      <div class="block"><div class="bh"><span>不适用</span></div><p>日常创作、问答、编码等常规安全请求，仍由高能力模型直接响应，不触发降级，保证体验与性能。</p></div>
+      <div class="block"><div class="bh"><span>选型标准</span></div><p>关键在于"风险域命中"而非"难度高低"。判定维度是请求是否落入预定义的高危领域，而不是问题本身是否复杂。</p></div>
+    </div>
+    <div class="lock-row"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 确认上一步后，进入本步</div>
+    <div class="actions" style="display:none"><button class="ghost-btn" onclick="sendAsk(1)">再举个例子</button><button class="btn-primary" onclick="confirmStep(1)">我收下了 →</button></div>
+  </div>
+
+  <!-- L3 深入原理 -->
+  <div class="card sec" id="sec2">
+    <div class="sec-head" onclick="toggle(2)">
+      <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>
+      <h2>深入原理</h2><span class="hint">怎么做到的？</span>
+      <div class="right"><span class="tag">未开始</span><span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span></div>
+    </div>
+    <div class="preview"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg> 预览：截图 → 视觉编码 → 策略决策 → 动作执行的观察-行动闭环 · 分步静态帧 · 当前技术实现原理</div>
+    <div class="sec-body">
+      <div class="label">分步静态帧 · 当前技术实现原理</div>
+
+      <div class="callout">
+        <span class="ci"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg></span>
+        <p>桌面计算机使用本质上是一个基于视觉的马尔可夫决策过程：模型在每一步截取屏幕图像作为状态，通过多模态编码器理解界面，再经策略网络生成鼠标键盘动作，执行后进入下一个状态，循环直至任务完成。</p>
+      </div>
+
+      <div class="bp-wrap">
+        <svg viewBox="0 0 600 248" style="width:100%; height:auto;">
+          <defs><marker id="bpA" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L6,3.5 L0,7 z" fill="#c4c0b8"/></marker></defs>
+          <line x1="300" y1="50" x2="300" y2="74" stroke="#d4d4d8" stroke-width="1.4" marker-end="url(#bpA)"/>
+          <line x1="300" y1="120" x2="300" y2="144" stroke="#d4d4d8" stroke-width="1.4" marker-end="url(#bpA)"/>
+          <line x1="300" y1="190" x2="300" y2="214" stroke="#d4d4d8" stroke-width="1.4" marker-end="url(#bpA)"/>
+          <line x1="196" y1="92" x2="234" y2="92" stroke="#d4d4d8" stroke-width="1.4" marker-end="url(#bpA)"/>
+          <path d="M430 240 H520 V16 H372" stroke="#d4d4d8" stroke-width="1.4" stroke-dasharray="5 4" fill="none" marker-end="url(#bpA)"/>
+          <text x="528" y="130" font-size="11" fill="#a1a1aa" transform="rotate(90 528 130)" text-anchor="middle">循环至任务完成</text>
+          <rect x="232" y="16" width="136" height="38" rx="8" fill="#fff" stroke="#d4d4d8"/>
+          <text x="300" y="33" font-size="13" fill="#27272a" text-anchor="middle" font-weight="500">屏幕截图捕获</text>
+          <text x="300" y="47" font-size="10" fill="#a1a1aa" font-family="ui-monospace,monospace" text-anchor="middle">ScreenCapture()</text>
+          <rect x="60" y="74" width="136" height="36" rx="8" fill="#fafafa" stroke="#e4e4e7"/>
+          <text x="128" y="90" font-size="12.5" fill="#52525b" text-anchor="middle">任务指令</text>
+          <text x="128" y="103" font-size="9.5" fill="#a1a1aa" text-anchor="middle">用户自然语言输入</text>
+          <rect x="232" y="74" width="136" height="46" rx="9" fill="#185fa5"/>
+          <text x="300" y="95" font-size="13" fill="#fff" text-anchor="middle" font-weight="500">多模态视觉编码器</text>
+          <text x="300" y="110" font-size="10" fill="#bcd6f0" font-family="ui-monospace,monospace" text-anchor="middle">VisionEncoder(s_t)</text>
+          <rect x="232" y="144" width="136" height="46" rx="9" fill="#fff" stroke="#d4d4d8"/>
+          <text x="300" y="165" font-size="13" fill="#27272a" text-anchor="middle" font-weight="500">策略网络决策</text>
+          <text x="300" y="180" font-size="10" fill="#a1a1aa" font-family="ui-monospace,monospace" text-anchor="middle">PolicyNetwork(z_t)</text>
+          <rect x="232" y="214" width="136" height="34" rx="8" fill="#fff" stroke="#d4d4d8"/>
+          <text x="300" y="235" font-size="12.5" fill="#27272a" text-anchor="middle">动作执行与反馈</text>
+        </svg>
+      </div>
+
+      <div class="bp-steps">
+        <div class="bp-step">
+          <span class="bp-num">1</span>
+          <div><div class="bt"><b>屏幕状态捕获与视觉编码</b><code>s_t → h_t = VisionEncoder(s_t)</code></div><div class="bx">操作系统 API 截取当前窗口截图转为像素矩阵，送入多模态编码器，识别按钮、文本框、图标等 UI 元素及其空间关系——相当于给 AI 注入视觉感知，从"盲人"变"明眼人"。</div></div>
+        </div>
+        <div class="bp-step">
+          <span class="bp-num">2</span>
+          <div><div class="bt"><b>任务状态理解与上下文融合</b><code>z_t = CrossAttention(h_t, task)</code></div><div class="bx">视觉特征与任务指令跨模态融合，把"复制第三列到邮件"与屏幕 UI 对齐，理解哪个按钮是"复制"、哪块区域是"第三列"，建立意图与像素位置的映射。</div></div>
+        </div>
+        <div class="bp-step">
+          <span class="bp-num">3</span>
+          <div><div class="bt"><b>动作空间生成与策略推理</b><code>a_t = PolicyNetwork(z_t)</code></div><div class="bx">基于融合状态，策略网络同时生成动作类型（移动 / 单击 / 双击 / 输入 / 滚动 / 拖拽 / 等待）与动作参数（目标坐标、输入字符串、滚动距离）——核心决策环节。</div></div>
+        </div>
+        <div class="bp-step">
+          <span class="bp-num">4</span>
+          <div><div class="bt"><b>动作执行与环境反馈</b><code>Execute(a_t) → s_t+1</code></div><div class="bx">通过系统级输入接口执行（Windows SendInput / macOS CGEvent），等待界面响应后进入下一轮，重新截屏观察新状态。</div></div>
+        </div>
+        <div class="bp-step">
+          <span class="bp-num">5</span>
+          <div><div class="bt"><b>循环终止与任务完成判定</b><code>ifDone(z_t) → Report</code></div><div class="bx">每轮额外输出终止信号，判断屏幕状态是否匹配目标终态、是否出现错误弹窗、子步骤是否完成。未完成则回到第 1 步，完成则向用户返回结果摘要。</div></div>
+        </div>
+      </div>
+
+      <div class="keypoint">
+        <span class="kbar"></span>
+        <p><b>关键点：</b>这张图的核心是右侧那条虚线回路，它揭示了桌面控制最本质的机制——观察 · 行动 · 再观察的闭环。AI 不是一次性输出所有操作，而是每做一步就重看一眼屏幕，根据最新状态调整下一步。</p>
+      </div>
+    </div>
+    <div class="lock-row"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 确认上一步后，进入本步</div>
+    <div class="actions" style="display:none"><button class="ghost-btn" onclick="sendAsk(2)">展开数学</button><button class="btn-primary" onclick="confirmStep(2)">我收下了 →</button></div>
+  </div>
+
+  <!-- L4 本质总结 -->
+  <div class="card sec" id="sec3">
+    <div class="sec-head" onclick="toggle(3)">
+      <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M2 9h20M12 3 8 9l4 12 4-12-4-6Z"/></svg></span>
+      <h2>本质总结</h2><span class="hint">一句话说清</span>
+      <div class="right"><span class="tag">未开始</span><span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span></div>
+    </div>
+    <div class="preview"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg> 预览：用外部裁判替模型踩刹车，能力与安全解耦 · 一句本质 / 链点类比 / 对比要点</div>
+    <div class="sec-body">
+      <div class="label">一句本质 · 链点类比 · 对比要点</div>
+      <div class="block"><p style="font-size:15px; color:var(--foreground);">一句话：给高能力模型外挂一个独立裁判，命中高风险就静默换上保守的备用模型——让能力放手跑，安全独立兜底。</p></div>
+    </div>
+    <div class="lock-row"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 确认上一步后，进入本步</div>
+    <div class="actions" style="display:none"><button class="btn-primary" onclick="confirmStep(3)">完成学习 ✓</button></div>
+  </div>
+
+  <div class="foot">AICC · 费曼学习（learning 教程）· 笔记保存浏览器 localStorage</div>
+</div>
+
+<script>
+  var TOTAL = 4, C = 97.4;
+  var confirmed = [false,false,false,false];
+  var unlocked = [true,false,false,false];
+
+  function done(){ return confirmed.filter(Boolean).length; }
+
+  function render(){
+    var d = done();
+    document.getElementById('ringtxt').textContent = d + '/' + TOTAL;
+    document.getElementById('ringfill').setAttribute('stroke-dashoffset', (C - C * d / TOTAL).toFixed(1));
+    var segs = document.querySelectorAll('#seg i');
+    segs.forEach(function(s,i){ s.className = confirmed[i] ? 'on' : (unlocked[i] ? 'half' : ''); });
+    document.querySelectorAll('#stepper .step').forEach(function(s,i){
+      s.className = 'step' + (confirmed[i] ? ' done' : (unlocked[i] ? ' current' : ''));
+    });
+    for(var i=0;i<TOTAL;i++){
+      var sec = document.getElementById('sec'+i);
+      var tag = sec.querySelector('.tag');
+      var act = sec.querySelector('.actions');
+      var lock = sec.querySelector('.lock-row');
+      if(confirmed[i]){ tag.className='tag ok'; tag.textContent='已确认'; }
+      else if(unlocked[i]){ tag.className='tag'; tag.textContent='待确认'; }
+      else { tag.className='tag'; tag.textContent='未开始'; }
+      if(act) act.style.display = unlocked[i] ? 'flex' : 'none';
+      if(lock) lock.style.display = unlocked[i] ? 'none' : 'flex';
+    }
+  }
+
+  function toggle(i){
+    if(!unlocked[i]) return;
+    document.getElementById('sec'+i).classList.toggle('open');
+  }
+
+  function confirmStep(i){
+    confirmed[i] = true;
+    if(i+1 < TOTAL){
+      unlocked[i+1] = true;
+      document.getElementById('sec'+i).classList.remove('open');
+      var nx = document.getElementById('sec'+(i+1));
+      nx.classList.add('open');
+      setTimeout(function(){ nx.scrollIntoView({behavior:'smooth', block:'center'}); }, 120);
+    }
+    render();
+  }
+
+  function resetAll(){
+    confirmed=[false,false,false,false]; unlocked=[true,false,false,false];
+    document.querySelectorAll('.sec').forEach(function(s,i){ s.classList.toggle('open', i===0); });
+    render();
+  }
+
+  function sendAsk(i){
+    var q=['换一个更贴近我工作的类比来解释风险降级护栏','再给我举一个场景边界的例子','把深入原理里的数学推导展开讲','给我一句更精炼的本质总结'];
+    if(window.parent && window.parent.sendPrompt){ window.parent.sendPrompt(q[i]); }
+    else if(window.sendPrompt){ window.sendPrompt(q[i]); }
+    else { console.log('ask:', q[i]); }
+  }
+
+  render();
+</script>
+</body>
+</html>

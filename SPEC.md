@@ -714,13 +714,20 @@ interface Step3Answer {
   math: MathAnswer;             // Real token formula calculation
   loop: LoopCheck;              // Loop question (UI placeholder)
 }
+
+// step3 机制图（结构化 blueprint，取代 LLM 自由生成 SVG；前端 BlueprintDiagram 固定「蓝色闭环」模板渲染，跨概念统一）
+interface Step3Blueprint {            // = PrincipleAnswer.blueprint?（优先于 svg/animationKey）
+  nodes: { label: string; code?: string; highlight?: boolean }[]; // 主链 3–5 节点（中文 label + mono code 代号 + 1 个蓝高亮）
+  sideInput?: { label: string; sub?: string };  // 左侧侧输入（可选，如「任务指令 / 用户自然语言输入」）
+  loop?: { label: string };                      // 循环回路标记（可选，如「循环至任务完成」）
+}
 ```
 
 (See Section 7.5 for full sub-interface definitions: TimelineNodeV2, PrincipleAnswer, MathAnswer)
 
 **Content Structure**:
 1. **Tech Evolution Timeline**: Evolution nodes from Transformer (TimelineV2 component)
-2. **Principle Steps + Animation**: Step-by-step with symbols (PrincipleView component)
+2. **Principle Steps + 机制 blueprint**: Step-by-step with symbols；机制图由 `PrincipleAnswer.blueprint`（`Step3Blueprint`）渲染为固定「蓝色垂直闭环」模板（`BlueprintDiagram`：节点 + mono code + 蓝高亮 + 循环回路 + 侧输入），**取代 LLM 自由生成 SVG**，跨概念风格统一；缺 blueprint 时回退 svg/animationKey（PrincipleView component）
 3. **Math & Token Calculation**: Real token substitution into formulas (MathView + Formula/KaTeX)
 4. **Loop Question**: User explains difference between current and previous tech (LoopBlock placeholder)
 
