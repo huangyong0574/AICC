@@ -17,9 +17,11 @@ export function PrincipleView({ data }: { data: PrincipleAnswer }) {
         <div className="text-sm text-foreground/90"><RichText text={data.coreIdea} /></div>
       </div>
 
-      {/* 机制图：优先 LLM 动态 SVG，fallback 到预制动画 */}
+      {/* 机制图：优先结构化 blueprint（固定蓝色闭环模板）→ LLM SVG → 预制动画 */}
       <div className="rounded-lg border border-border/60 bg-card/40 p-4 overflow-hidden">
-        {data.svg ? (
+        {data.blueprint ? (
+          <BlueprintDiagram bp={data.blueprint} />
+        ) : data.svg ? (
           <div
             className="w-full [&>svg]:w-full [&>svg]:h-auto [&>svg]:max-h-[320px]"
             dangerouslySetInnerHTML={{ __html: data.svg }}
@@ -66,4 +68,49 @@ function renderAnim(key?: PrincipleAnswer["animationKey"]) {
     case "moe-route":     return <MoeRouteAnim />
     default:              return <GenericFlowAnim />
   }
+}
+
+/** 机制 blueprint 固定模板：垂直主链（节点 + mono code，核心节点蓝高亮）+ 可选侧输入 + 可选循环回路。
+ *  取代 LLM 自由生成 SVG，所有概念统一「蓝色闭环」风格（对齐设计稿）。 */
+function BlueprintDiagram({ bp }: { bp: NonNullable<PrincipleAnswer["blueprint"]> }) {
+  return (
+    <div className="flex items-stretch gap-3 py-1">
+      {bp.sideInput && (
+        <div className="flex shrink-0 items-center">
+          <div className="max-w-[120px] rounded-lg border border-border bg-background px-3 py-2 text-center">
+            <div className="text-[12px] text-foreground/70">{bp.sideInput.label}</div>
+            {bp.sideInput.sub && <div className="mt-0.5 text-[9.5px] text-muted-foreground">{bp.sideInput.sub}</div>}
+          </div>
+          <span className="mx-1.5 text-lg text-muted-foreground/40">→</span>
+        </div>
+      )}
+      <div className="flex min-w-0 flex-1 flex-col items-center">
+        {bp.nodes.map((n, i) => (
+          <div key={i} className="flex w-full flex-col items-center">
+            <div
+              className={`w-full max-w-[280px] rounded-lg border px-4 py-2.5 text-center ${
+                n.highlight ? "border-[#185fa5] bg-[#185fa5] text-white" : "border-border bg-card text-foreground"
+              }`}
+            >
+              <div className="text-[13px] font-medium leading-tight">{n.label}</div>
+              {n.code && (
+                <div className={`mt-0.5 font-mono text-[10px] ${n.highlight ? "text-blue-100" : "text-muted-foreground"}`}>
+                  {n.code}
+                </div>
+              )}
+            </div>
+            {i < bp.nodes.length - 1 && <span className="my-1 text-base leading-none text-muted-foreground/40">↓</span>}
+          </div>
+        ))}
+      </div>
+      {bp.loop && (
+        <div className="flex shrink-0 items-center">
+          <div className="mx-1 h-full border-l border-dashed border-border" />
+          <span className="text-[10.5px] tracking-wide text-muted-foreground" style={{ writingMode: "vertical-rl" }}>
+            ↻ {bp.loop.label}
+          </span>
+        </div>
+      )}
+    </div>
+  )
 }

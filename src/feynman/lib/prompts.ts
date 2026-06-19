@@ -167,19 +167,16 @@ export function buildPrinciplePrompt(question?: string): QaPrompt {
   "steps": [
     {"label":"第1步名称","desc":"动作描述，末尾必须用括号注明：①参数来源（训练固定值 or 推理上游传入）②对应步骤1类比中的哪个场景（≤100 字）","symbol":"可选的符号如 g_t"}
   ],
-  "svg": "<svg viewBox='0 0 600 320'>...核心机制示意图...</svg>",
+  "blueprint": {"nodes":[{"label":"节点名（如 屏幕截图捕获）","code":"可选 mono 代号（如 ScreenCapture()）","highlight":false},{"label":"核心节点（如 多模态视觉编码器）","code":"VisionEncoder(s_t)","highlight":true},{"label":"策略网络决策","code":"PolicyNetwork(z_t)"},{"label":"动作执行与反馈"}],"sideInput":{"label":"任务指令","sub":"用户自然语言输入"},"loop":{"label":"循环至任务完成"}},
   "note": "看图时要抓住的关键点（<80 字），末尾需用括号引用步骤1的类比场景"
 }
 
-【svg 字段规范 - 必须严格遵守】：
-1. 必须是合法的 SVG 字符串，viewBox="0 0 600 320"
-2. 用简笔画/流程图风格表达该算法的【核心数据流/机制原理】，不能是通用的"输入→输出"
-3. 用圆角矩形(rx=8)表示节点，箭头(marker-end)表示数据流向，虚线表示可选路径
-4. 每个节点内必须有 <text> 标注中文名称（font-size 14）
-5. 颜色限制：节点填充 #f5f5f5，边框 #333，箭头 #666，重点节点可用 #ff9800 高亮
-6. 总字符数 ≤ 2000，不要内联 style 标签，用属性设置样式
-7. 示例：Ring Attention 应画出多个GPU节点环形排列+KV块传递箭头；MoE应画出Router→多Expert选择路径；LoRA应画出原始权重冻结+低秩分支旁路
-8. 核心要求：图的结构必须反映该算法区别于其他算法的独特机制，让人看图就能理解核心原理`,
+【blueprint 字段规范 - 机制流程图（前端用固定蓝色模板渲染，必须产出）】：
+1. nodes：3–5 个主链节点，按数据流从上到下顺序；label 是中文节点名，code 是可选 mono 代号（如 ScreenCapture() / VisionEncoder(s_t) / PolicyNetwork(z_t)），highlight=true 只标 1 个最核心节点
+2. sideInput（可选）：从旁侧汇入主链的输入（如「任务指令 / 用户自然语言输入」）；无侧输入则整个省略该字段
+3. loop（可选）：仅当该机制是「观察→行动→再观察」式的闭环/迭代过程时给出回路文案（如「循环至任务完成」）；纯单向流程则省略
+4. 结构必须反映该算法区别于其他算法的独特机制，不能是通用的"输入→输出"，让人看图就懂核心原理
+5. 不要输出 svg、不要输出 animationKey——机制图已由 blueprint 表达`,
   }
 }
 
@@ -310,7 +307,7 @@ export function buildStep3Prompt(question?: string): QaPrompt {
     "steps": [
       {"label":"第1步名称","desc":"动作描述，详细展开讲清楚，末尾用括号注明：①参数来源（训练固定值 or 推理上游传入）②对应步骤1 类比中的哪个场景（不限字数）","symbol":"可选符号如 g_t"}
     ],
-    "svg": "<svg viewBox='0 0 600 320'>...核心机制示意图...</svg>",
+    "blueprint": {"nodes":[{"label":"节点名（如 屏幕截图捕获）","code":"可选 mono 代号（如 ScreenCapture()）","highlight":false},{"label":"核心节点（如 多模态视觉编码器）","code":"VisionEncoder(s_t)","highlight":true},{"label":"策略网络决策","code":"PolicyNetwork(z_t)"},{"label":"动作执行与反馈"}],"sideInput":{"label":"任务指令","sub":"用户自然语言输入"},"loop":{"label":"循环至任务完成"}},
     "note": "看图时要抓住的关键点，末尾用括号引用步骤1 的类比场景（自然表达，把点说透）"
   },
   "math": {
@@ -326,15 +323,12 @@ export function buildStep3Prompt(question?: string): QaPrompt {
   "takeaway": "用1句口语化的话，把核心原理机制讲清楚，让懂技术的人听了觉得你真懂了。句式参考：'GDN的核心就是用一个门控信号动态决定每步该记多少新内容、忘多少旧内容，所以根本不需要回看所有历史token'。要求：像给产研同事做技术分享时的总结金句。"
 }
 
-【principle.svg 字段规范 - 必须严格遵守】：
-1. 必须是合法的 SVG 字符串，viewBox="0 0 600 320"
-2. 用简笔画/流程图风格表达该算法的【核心数据流/机制原理】，不能是通用的"输入→输出"
-3. 用圆角矩形(rx=8)表示节点，箭头(marker-end)表示数据流向，虚线表示可选路径
-4. 每个节点内必须有 <text> 标注中文名称（font-size 14）
-5. 颜色限制：节点填充 #f5f5f5，边框 #333，箭头 #666，重点节点可用 #ff9800 高亮
-6. 总字符数 ≤ 2000，不要内联 style 标签，用属性设置样式
-7. 示例：Ring Attention 应画出多个GPU节点环形排列+KV块传递箭头；MoE应画出Router→多Expert选择路径；LoRA应画出原始权重冻结+低秩分支旁路
-8. 核心要求：图的结构必须反映该算法区别于其他算法的独特机制，让人看图就能理解核心原理`,
+【principle.blueprint 字段规范 - 机制流程图（前端用固定蓝色闭环模板渲染，必须产出）】：
+1. nodes：3–5 个主链节点，按数据流从上到下顺序；label 是中文节点名，code 是可选 mono 代号（如 ScreenCapture() / VisionEncoder(s_t) / PolicyNetwork(z_t)），highlight=true 只标 1 个最核心节点
+2. sideInput（可选）：从旁侧汇入主链的输入（如「任务指令 / 用户自然语言输入」）；无侧输入则整个省略该字段
+3. loop（可选）：仅当该机制是「观察→行动→再观察」式闭环/迭代过程时给出回路文案（如「循环至任务完成」）；纯单向流程则省略
+4. 结构必须反映该算法区别于其他算法的独特机制，不能是通用的"输入→输出"，让人看图就懂核心原理
+5. 不要输出 principle.svg（已被 blueprint 取代）`,
   }
 }
 

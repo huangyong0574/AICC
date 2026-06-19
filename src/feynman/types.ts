@@ -42,11 +42,27 @@ export interface PrincipleStep {
   desc: string
   symbol?: string
 }
+/** step3 机制 blueprint（结构化，替代 LLM 自由 SVG）：垂直主链 + 可选侧输入 + 可选循环回路。
+ *  前端用固定模板渲染成统一的「蓝色闭环」风格（节点 + mono code 标签），风格可控、跨概念一致。 */
+export interface Step3Blueprint {
+  nodes: {                  // 主链节点（从上到下顺序，3–5 个）
+    label: string           // 节点名（如：屏幕截图捕获）
+    code?: string           // mono code 标签（如：ScreenCapture()）
+    highlight?: boolean     // 核心节点蓝色高亮
+  }[]
+  sideInput?: {             // 左侧侧输入（可选，如：任务指令）
+    label: string
+    sub?: string            // 副述（如：用户自然语言输入）
+  }
+  loop?: { label: string }  // 循环回路标记（可选，如：循环至任务完成）
+}
+
 export interface PrincipleAnswer {
   coreIdea: string
   steps: PrincipleStep[]
+  blueprint?: Step3Blueprint  // 机制 blueprint（结构化，优先渲染；缺则回退 svg/动画）
   animationKey?: "gdn-gate" | "attention-on2" | "mamba-ssm" | "moe-route" | "generic-flow"
-  svg?: string              // LLM 动态生成的机制示意 SVG（优先渲染）
+  svg?: string              // LLM 动态生成的机制示意 SVG（blueprint 缺失时回退）
   note: string
 }
 
