@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Toaster, toast } from "sonner"
 import {
-  Settings, Play, MessageCircle, Brain, SquarePen, ArrowLeft,
+  Settings, Play, MessageCircle, Brain, SquarePen, ArrowLeft, ExternalLink,
 } from "lucide-react"
 import { SiteHeader, type NavPage } from "../pages/SiteHeader"
 
@@ -56,9 +56,13 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
   // 作为四步讲解与「认知差」评测的事实依据（需求2：评测依赖雷达原文，而非纯 LLM 现场重编）
   const conceptWeekId = conceptId?.match(/^\d{4}-W\d{2}/)?.[0]
   const { week: conceptRadarWeek } = useRadarWeekById(conceptWeekId)
+  // 该认知点对应的雷达 insight（含原文链接/机构/日期）：用于 grounding + 来源文章回查
+  const conceptInsight = useMemo(
+    () => (conceptId ? conceptRadarWeek.insights.find(i => i.id === conceptId) : undefined),
+    [conceptId, conceptRadarWeek],
+  )
   const grounding = useMemo(() => {
-    if (!conceptId) return undefined
-    const it = conceptRadarWeek.insights.find(i => i.id === conceptId)
+    const it = conceptInsight
     if (!it) return undefined
     return [
       `概念：${it.title}（${it.eyebrow}）`,
@@ -68,7 +72,7 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
       it.org ? `来源机构：${it.org}` : "",
       it.sourceUrl ? `原文链接：${it.sourceUrl}` : "",
     ].filter(Boolean).join("\n")
-  }, [conceptId, conceptRadarWeek])
+  }, [conceptInsight])
 
   const [started, setStarted] = useState(false)
   const [noteId, setNoteId] = useState<string>("")
@@ -259,11 +263,22 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {conceptId && /^\d{4}-W\d{2}/.test(conceptId) && (
+            {conceptInsight?.sourceUrl ? (
+              <a
+                href={conceptInsight.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 font-mono text-[11px] text-muted-foreground hover:text-primary transition-colors"
+                title={`查看原文：${conceptInsight.title}`}
+              >
+                <ExternalLink className="h-3 w-3 shrink-0" />
+                来源原文{conceptWeekId ? ` · ${conceptWeekId} 雷达` : ""}
+              </a>
+            ) : conceptId && /^\d{4}-W\d{2}/.test(conceptId) ? (
               <span className="font-mono text-[11px] text-muted-foreground">
                 来源 · {conceptId.match(/^\d{4}-W\d{2}/)?.[0]} 雷达
               </span>
-            )}
+            ) : null}
             <Button variant="outline" size="sm" onClick={() => setShowSettings(true)}>
               <Settings className="mr-1.5 h-4 w-4" />
               设置
@@ -313,6 +328,18 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
                     </button>
                   )}
                 </div>
+                {conceptInsight?.sourceUrl && (
+                  <a
+                    href={conceptInsight.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-primary transition-colors"
+                    title={conceptInsight.sourceUrl}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                    来源文章：{conceptInsight.org}{conceptInsight.dateRange ? ` · ${conceptInsight.dateRange}` : ""}（点击回查原文）
+                  </a>
+                )}
               </div>
             ) : (
               /* 自由模式：未带概念时才提供输入 + 示例 */
