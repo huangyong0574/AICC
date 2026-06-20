@@ -24,8 +24,8 @@
 
 ## 工程纪律（务必遵守）
 1. **`SPEC.md` = 唯一事实来源**：任何影响契约/状态机/路由/页面职责的改动，先同步 SPEC 再写码。
-2. 验收通过 → `commit/push`，保持 local == GitHub。
-3. `design/` 与 `src/` 对照；UI 改动后用 `node scripts/export-pages.mjs`（或 `... feynman` 单独重跑）刷新 `design/live/` 基线——**需先 `export DASHSCOPE_API_KEY=<key>`，脚本不再硬编码 key**。
+2. **验收通过 → 刷新基线 → commit/push**，保持 local == GitHub。**凡涉及页面渲染的改动，commit 前必须先刷新 `design/live/` 基线**并与代码一并提交——这是纪律固定环节，不可遗漏（纯后端 / 文档 / 配置改动可免）。刷新命令：`export DASHSCOPE_API_KEY=<新key>` 后 `node scripts/export-pages.mjs`（或 `... feynman` 单独重跑）。部署同理：build + `deploy-dist.sh` 前基线应已刷新。
+3. `design/` 双源 + `src/` 三方对照：`design/aicc-html-bundle/`=mockup 设计稿、`design/live/`=真实渲染基线（由 export-pages.mjs 生成，脚本不再硬编码 key），二者均随相应改动同步。
 4. **不提交凭证**：API key（仅存 localStorage「设置」/ 环境变量）、SSH 私钥（`~/.ssh/aicc_deploy`）等**绝不入库**——脚本只引用其路径。其余工程文件（含运维脚本 `deploy-dist.sh` / `radar-publish.sh` / `run-*.command` / `deploy/`）均已入库，**GitHub == 完整工程（除 API key）**。
 
 ## 关键设计模式（避免重蹈覆辙）
