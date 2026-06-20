@@ -9,7 +9,7 @@ import { join } from 'path';
 const SCREENSHOTS_DIR = '/Users/huangyong/Desktop/AICC/test-screenshots/step3-e2e';
 const TEST_URL = 'http://localhost:5180';
 const API_CONFIG = {
-  apiKey: "***DASHSCOPE_KEY_REVOKED***",
+  apiKey: process.env.DASHSCOPE_API_KEY || "",
   baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
   model: "deepseek-v4-flash",
   offlineMock: false
