@@ -26,7 +26,7 @@
 1. **`SPEC.md` = 唯一事实来源**：任何影响契约/状态机/路由/页面职责的改动，先同步 SPEC 再写码。
 2. 验收通过 → `commit/push`，保持 local == GitHub。
 3. `design/` 与 `src/` 对照；UI 改动后用 `node scripts/export-pages.mjs`（或 `... feynman` 单独重跑）刷新 `design/live/` 基线——**需先 `export DASHSCOPE_API_KEY=<key>`，脚本不再硬编码 key**。
-4. **precise-add**：只提交本工程文件，**不要 commit** 用户并行文件：`scripts/deploy-dist.sh`(本地改动) / `deploy/` / `run-*.command` / `scripts/radar-publish.sh`。
+4. **不提交凭证**：API key（仅存 localStorage「设置」/ 环境变量）、SSH 私钥（`~/.ssh/aicc_deploy`）等**绝不入库**——脚本只引用其路径。其余工程文件（含运维脚本 `deploy-dist.sh` / `radar-publish.sh` / `run-*.command` / `deploy/`）均已入库，**GitHub == 完整工程（除 API key）**。
 
 ## 关键设计模式（避免重蹈覆辙）
 - 「**结构化数据 + 固定前端模板**」取代「LLM 自由生成 SVG/HTML」：见 `Step1Route`（路由图）、`Step3Blueprint`（机制图）。风格可控、跨概念泛化。step3 机制图**不要**回退到 LLM 自由画 SVG。
@@ -35,7 +35,7 @@
 
 ## 部署
 ECS `101.37.128.102` path-based `/aicc/`：`npm run build -- --base=/aicc/` → `bash scripts/deploy-dist.sh`（SSH key 免密；不 rsync --delete、保留 `dist/weekly`）。用户已**持久授权**部署。
-注意：`deploy-dist.sh` 的本地改动未入库，新 clone 会是旧版——部署脚本以用户本地为准。
+部署脚本（`deploy-dist.sh` / `radar-publish.sh` / `run-*.command` / `deploy/*.plist`）均已入库；唯 SSH 私钥 `~/.ssh/aicc_deploy` 不入库，**新机器需自备该密钥**（`ssh-copy-id` 到 ECS）。
 
 ## ⚠️ 安全（待办）
 百炼 API key 曾被硬编码进 `scripts/export-pages.mjs` 并提交（commit `5858ccf`），已进入 git 历史；`63f927d` 已从当前文件移除。**该 key 需轮换作废**；轮换后可选用 `git filter-repo` 清理历史。
