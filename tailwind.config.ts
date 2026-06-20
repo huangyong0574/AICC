@@ -16,6 +16,19 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        // 方案 B：Plus Jakarta Sans（拉丁/数字）优先，中文回退 Noto Sans SC 思源黑体；其余系统兜底
+        sans: [
+          '"Plus Jakarta Sans"',
+          '"Noto Sans SC"',
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          '"PingFang SC"',
+          '"Microsoft YaHei"',
+          "sans-serif",
+        ],
+      },
       colors: {
         border: {
           DEFAULT: "hsl(var(--border))",

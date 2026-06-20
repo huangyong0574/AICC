@@ -396,12 +396,12 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
                   </Button>
                 )}
                 {!started && resumable && (
+                  /* 方案 A · 等宽对称：同尺寸同高度，一描边一填充（不对称的尺寸 → 有意的主次层级） */
                   <>
-                    <Button variant="outline" size="sm" onClick={handleDiscardResume}>
+                    <Button variant="outline" size="lg" className="min-w-[6.5rem]" onClick={handleDiscardResume}>
                       重新开始
                     </Button>
-                    <Button variant="glow" size="lg" onClick={() => { const n = resumable; setResumable(null); loadFromNote(n) }}>
-                      <Play className="mr-2 h-4 w-4" />
+                    <Button variant="glow" size="lg" className="min-w-[6.5rem]" onClick={() => { const n = resumable; setResumable(null); loadFromNote(n) }}>
                       继续学习
                     </Button>
                   </>
