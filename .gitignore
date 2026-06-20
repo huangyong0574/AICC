@@ -10,5 +10,6 @@ dist-ssr
 .vercel-tmp/
 .claude/*
 !.claude/skills/
+!.claude/commands/
 *.tsbuildinfo
 test-screenshots/
