@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.aicc.radar-publish —— 每周六 10:30 在 Mac（有外网）自动跑发布后半程。
+  与 Claude 定时任务（Sat 10:00 采集→落 {weekId}.json）配合，构成全自动链路。
+
+  安装：
+    cp deploy/com.aicc.radar-publish.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.aicc.radar-publish.plist
+  卸载：
+    launchctl unload ~/Library/LaunchAgents/com.aicc.radar-publish.plist
+  立即测试一次：
+    launchctl start com.aicc.radar-publish ; tail -f /tmp/aicc-radar-publish.log
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.aicc.radar-publish</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/huangyong/Desktop/AICC项目/AICC/scripts/radar-publish.sh</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/huangyong/Desktop/AICC项目/AICC</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>DEPLOY_SSH_KEY</key><string>/Users/huangyong/.ssh/aicc_deploy</string>
+    <key>AICC_RADAR_SRC</key><string>/Users/huangyong/Documents/Obsidian Vault/AICC项目/AICC-Input</string>
+    <key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key><integer>6</integer>
+    <key>Hour</key><integer>10</integer>
+    <key>Minute</key><integer>30</integer>
+  </dict>
+
+  <key>StandardOutPath</key><string>/tmp/aicc-radar-publish.log</string>
+  <key>StandardErrorPath</key><string>/tmp/aicc-radar-publish.err</string>
+  <key>RunAtLoad</key><false/>
+</dict>
+</plist>
