@@ -1,3 +1,4 @@
+import { useId } from "react"
 import type { PrincipleAnswer } from "../../types"
 import { Badge } from "@/components/ui/badge"
 import { Zap } from "lucide-react"
@@ -70,47 +71,107 @@ function renderAnim(key?: PrincipleAnswer["animationKey"]) {
   }
 }
 
-/** 机制 blueprint 固定模板：垂直主链（节点 + mono code，核心节点蓝高亮）+ 可选侧输入 + 可选循环回路。
- *  取代 LLM 自由生成 SVG，所有概念统一「蓝色闭环」风格（对齐设计稿）。 */
+/** 机制 blueprint 固定模板（手绘风 SVG，对齐设计稿）：垂直主链（方框 + mono code，核心节点蓝高亮）
+ *  + SVG 连线箭头 + 可选侧输入（横向汇入）+ 可选虚线循环回路。取代 LLM 自由生成 SVG，跨概念统一风格。 */
 function BlueprintDiagram({ bp }: { bp: NonNullable<PrincipleAnswer["blueprint"]> }) {
+  const rawId = useId()
+  const arrowId = `bp-arrow-${rawId.replace(/:/g, "")}`
+  const nodes = bp.nodes || []
+  const n = nodes.length
+  if (n === 0) return null
+
+  const W = 600
+  const boxW = 212
+  const boxH = 50
+  const gap = 26
+  const top = 14
+  const hasSide = !!bp.sideInput
+  const cx = hasSide ? 324 : 300
+  const boxX = cx - boxW / 2
+  const nodeY = (i: number) => top + i * (boxH + gap)
+  const chainBottom = nodeY(n - 1) + boxH
+  const H = chainBottom + 14
+  const cy0 = nodeY(0) + boxH / 2
+  const cyN = nodeY(n - 1) + boxH / 2
+  const channelX = boxX + boxW + 40
+  const stroke = "hsl(var(--muted-foreground) / 0.4)"
+
   return (
-    <div className="flex items-stretch gap-3 py-1">
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="机制流程图">
+      <defs>
+        <marker id={arrowId} viewBox="0 0 8 8" refX="6" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0 0 L7 4 L0 8 z" fill="hsl(var(--muted-foreground) / 0.55)" />
+        </marker>
+      </defs>
+
+      {/* 主链竖直连接箭头 */}
+      {nodes.slice(0, -1).map((_, i) => (
+        <line
+          key={`ln${i}`}
+          x1={cx} y1={nodeY(i) + boxH} x2={cx} y2={nodeY(i + 1)}
+          stroke={stroke} strokeWidth="1.4" markerEnd={`url(#${arrowId})`}
+        />
+      ))}
+
+      {/* 侧输入：横向汇入主链顶节点 */}
       {bp.sideInput && (
-        <div className="flex shrink-0 items-center">
-          <div className="max-w-[120px] rounded-lg border border-border bg-background px-3 py-2 text-center">
-            <div className="text-[12px] text-foreground/70">{bp.sideInput.label}</div>
-            {bp.sideInput.sub && <div className="mt-0.5 text-[9.5px] text-muted-foreground">{bp.sideInput.sub}</div>}
-          </div>
-          <span className="mx-1.5 text-lg text-muted-foreground/40">→</span>
-        </div>
+        <g>
+          <rect x="18" y={cy0 - 20} width="130" height="40" rx="8" fill="hsl(var(--background))" stroke="hsl(var(--border))" />
+          <text x="83" y={cy0 - 2} textAnchor="middle" fontSize="12" fill="hsl(var(--foreground))">{bp.sideInput.label}</text>
+          {bp.sideInput.sub && (
+            <text x="83" y={cy0 + 12} textAnchor="middle" fontSize="9.5" fill="hsl(var(--muted-foreground))">{bp.sideInput.sub}</text>
+          )}
+          <line x1="148" y1={cy0} x2={boxX} y2={cy0} stroke={stroke} strokeWidth="1.4" markerEnd={`url(#${arrowId})`} />
+        </g>
       )}
-      <div className="flex min-w-0 flex-1 flex-col items-center">
-        {bp.nodes.map((n, i) => (
-          <div key={i} className="flex w-full flex-col items-center">
-            <div
-              className={`w-full max-w-[280px] rounded-lg border px-4 py-2.5 text-center ${
-                n.highlight ? "border-[#185fa5] bg-[#185fa5] text-white" : "border-border bg-card text-foreground"
-              }`}
-            >
-              <div className="text-[13px] font-medium leading-tight">{n.label}</div>
-              {n.code && (
-                <div className={`mt-0.5 font-mono text-[10px] ${n.highlight ? "text-blue-100" : "text-muted-foreground"}`}>
-                  {n.code}
-                </div>
-              )}
-            </div>
-            {i < bp.nodes.length - 1 && <span className="my-1 text-base leading-none text-muted-foreground/40">↓</span>}
-          </div>
-        ))}
-      </div>
+
+      {/* 循环回路：从末节点绕右侧虚线回到首节点 */}
       {bp.loop && (
-        <div className="flex shrink-0 items-center">
-          <div className="mx-1 h-full border-l border-dashed border-border" />
-          <span className="text-[10.5px] tracking-wide text-muted-foreground" style={{ writingMode: "vertical-rl" }}>
+        <g>
+          <path
+            d={`M${boxX + boxW} ${cyN} H${channelX} V${cy0} H${boxX + boxW}`}
+            fill="none" stroke={stroke} strokeWidth="1.4" strokeDasharray="5 4" markerEnd={`url(#${arrowId})`}
+          />
+          <text
+            x={channelX + 12} y={(cy0 + cyN) / 2}
+            textAnchor="middle" fontSize="11" fill="hsl(var(--muted-foreground))"
+            transform={`rotate(90 ${channelX + 12} ${(cy0 + cyN) / 2})`}
+          >
             ↻ {bp.loop.label}
-          </span>
-        </div>
+          </text>
+        </g>
       )}
-    </div>
+
+      {/* 节点方框 */}
+      {nodes.map((node, i) => {
+        const y = nodeY(i)
+        const hi = !!node.highlight
+        return (
+          <g key={`nd${i}`}>
+            <rect
+              x={boxX} y={y} width={boxW} height={boxH} rx="9"
+              fill={hi ? "#185fa5" : "hsl(var(--card))"}
+              stroke={hi ? "#185fa5" : "hsl(var(--border))"}
+            />
+            <text
+              x={cx} y={node.code ? y + 21 : y + 30}
+              textAnchor="middle" fontSize="13" fontWeight="500"
+              fill={hi ? "#ffffff" : "hsl(var(--foreground))"}
+            >
+              {node.label}
+            </text>
+            {node.code && (
+              <text
+                x={cx} y={y + 37}
+                textAnchor="middle" fontSize="10" fontFamily="ui-monospace, monospace"
+                fill={hi ? "#bcd6f0" : "hsl(var(--muted-foreground))"}
+              >
+                {node.code}
+              </text>
+            )}
+          </g>
+        )
+      })}
+    </svg>
   )
 }

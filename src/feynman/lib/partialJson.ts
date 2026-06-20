@@ -119,6 +119,8 @@ export const STEP1_KEYS = [
   "valueLead",
   "officialDefinition",
   "source",
+  "essence",
+  "dims",
   "glossaryTerms",
 ] as const
 
@@ -128,6 +130,7 @@ export const STEP2_KEYS = [
   "applicable",
   "inapplicable",
   "selectionCriteria",
+  "selectionConditions",
 ] as const
 
 /** 便捷：step3 字段顺序 — 深入原理（与 schema 一致） */

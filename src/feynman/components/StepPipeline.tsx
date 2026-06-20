@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Sparkles, Target, Layers, Gem,
-  Loader2, CheckCircle2, ChevronDown, AlertCircle, Zap, X,
+  Loader2, ChevronDown, AlertCircle, Zap, X,
 } from "lucide-react"
 import { toast } from "sonner"
 import type {
@@ -26,13 +26,6 @@ const META: Record<StepKey, { num: number; title: string; subtitle: string; icon
   step2: { num: 2, title: "L2 场景边界", subtitle: "适用场景 · 不适用场景 · 选型标准", icon: Target, tone: "layer2", level: "L2", levelTitle: "场景边界", levelQ: "哪里能用？" },
   step3: { num: 3, title: "L3 深入原理", subtitle: "分步原理 · 动画示意 · 数学演算", icon: Layers, tone: "layer3", level: "L3", levelTitle: "深入原理", levelQ: "怎么做到的？" },
   step4: { num: 4, title: "L4 本质总结", subtitle: "一句本质 · 锚点类比 · 对比 · 要点", icon: Gem, tone: "layer4", level: "L4", levelTitle: "本质总结", levelQ: "一句话说清" },
-}
-
-const TONE_WRAP: Record<string, string> = {
-  layer1: "bg-layer1/15 text-layer1",
-  layer2: "bg-layer2/15 text-layer2",
-  layer3: "bg-layer3/15 text-layer3",
-  layer4: "bg-layer4/15 text-layer4",
 }
 
 export function emptySteps(): StepEntry[] {
@@ -318,37 +311,65 @@ function StepCard({
   const [predictDraft, setPredictDraft] = useState("")
   // 先猜后揭：本步处于「预测」阶段——当前激活、未生成、未揭晓、尚未提交猜想
   const inPredict = active && !entry.answer && !entry.streaming && !entry.error && entry.prediction === undefined
+  // 锁定：尚未轮到的未来步骤（未激活、无内容、未确认）——折叠并显示锁定行（对齐设计稿 lock-row）
+  const locked = !active && !entry.answer && !entry.streaming && !entry.confirmed
 
   useEffect(() => {
-    // 确认即折叠；被取消（如关闭「带走」弹窗回退确认）则重新展开，便于重新查看/确认
-    setExpanded(!entry.confirmed)
-  }, [entry.confirmed])
+    // 对齐设计稿：仅「当前步骤」或「刚揭晓待确认」的步骤展开；已确认 / 未轮到的折叠，显示一行预览/锁定
+    setExpanded(active || (!!entry.answer && !entry.confirmed))
+  }, [active, entry.answer, entry.confirmed])
 
   return (
     <Card className={`animate-fade-in-up ${active && entry.streaming ? "ring-2 ring-primary/40" : ""}`}>
       <CardHeader className="border-b border-border/60">
-        <CardTitle className="flex items-center gap-3 text-base">
-          <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${TONE_WRAP[meta.tone]}`}>
-            <Icon className="h-4 w-4" />
+        <CardTitle className="flex items-center gap-2.5 text-base">
+          {/* 朴素图标 + 标题 + 提问（对齐设计稿 sec-head，去掉 L 级别徽章/副标题/彩色图标框） */}
+          <Icon className="h-[18px] w-[18px] shrink-0 text-foreground/70" />
+          <span className="font-semibold">{meta.levelTitle}</span>
+          <span className="text-sm font-normal text-muted-foreground">{meta.levelQ}</span>
+          <div className="ml-auto flex items-center gap-2">
+            {entry.streaming ? (
+              <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-[10px]">
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                {(entry.key === "step1" || entry.key === "step2") ? "联网检索中…" : "生成中"}
+              </Badge>
+            ) : entry.confirmed ? (
+              <span className="rounded-md border border-success/30 bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">已确认</span>
+            ) : entry.answer ? (
+              <span className="rounded-md border border-border bg-muted px-2 py-0.5 text-[11px] text-foreground/70">待确认</span>
+            ) : (
+              <span className="rounded-md border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">未开始</span>
+            )}
+            <Button variant="ghost" size="icon" onClick={() => setExpanded(v => !v)} className="h-7 w-7">
+              <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "" : "-rotate-90"}`} />
+            </Button>
           </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wide ${TONE_WRAP[meta.tone]}`}>
-                {meta.level}
-              </span>
-              <span className="font-semibold">{meta.levelTitle}</span>
-              <span className="text-sm text-muted-foreground font-normal">{meta.levelQ}</span>
-              {entry.streaming && <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-[10px]"><Loader2 className="h-3 w-3 mr-1 animate-spin" />{(entry.key === "step1" || entry.key === "step2") ? "联网检索中…" : "生成中"}</Badge>}
-              {entry.answer && !entry.streaming && !entry.confirmed && <Badge variant="outline" className="border-warning/40 text-warning bg-warning/5 text-[10px]">待确认</Badge>}
-              {entry.confirmed && <Badge variant="outline" className="border-success/40 text-success bg-success/5 text-[10px]"><CheckCircle2 className="h-3 w-3 mr-1" />已确认</Badge>}
-            </div>
-            {meta.subtitle && <div className="text-xs font-normal text-muted-foreground mt-0.5">{meta.subtitle}</div>}
-          </div>
-          <Button variant="ghost" size="icon" onClick={() => setExpanded(v => !v)} className="h-7 w-7">
-            <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "" : "-rotate-90"}`} />
-          </Button>
         </CardTitle>
       </CardHeader>
+
+      {/* 折叠态：未轮到显示锁定行，已确认/可展开显示一行预览摘要（对齐设计稿 preview / lock-row） */}
+      {!expanded && (
+        <div className="flex items-center gap-2 px-6 py-3 text-[12px] text-muted-foreground">
+          {locked ? (
+            <>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <span>确认上一步后，进入本步</span>
+            </>
+          ) : (
+            <>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+                <circle cx="5" cy="12" r="1" />
+                <circle cx="12" cy="12" r="1" />
+                <circle cx="19" cy="12" r="1" />
+              </svg>
+              <span className="truncate">预览：{meta.subtitle}</span>
+            </>
+          )}
+        </div>
+      )}
 
       {expanded && (
         <CardContent className="pt-5 space-y-4">
@@ -447,7 +468,7 @@ function StepCard({
 function renderView(entry: StepEntry, glossaryTerms: GlossaryTerm[]) {
   switch (entry.key) {
     case "step1": return <Step1View data={entry.answer as Step1Answer} streaming={false} />
-    case "step2": return <Step2View data={entry.answer as Step2Answer} streaming={false} glossaryTerms={glossaryTerms} />
+    case "step2": return <Step2View data={entry.answer as Step2Answer} streaming={false} />
     case "step3": return <Step3View data={entry.answer as Step3Answer} streaming={false} glossaryTerms={glossaryTerms} />
     case "step4": return <Step4View data={entry.answer as Step4Answer} streaming={false} glossaryTerms={glossaryTerms} />
     default: return null

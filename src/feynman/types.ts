@@ -266,6 +266,8 @@ export interface Step1Answer {
     url: string                 // arxiv 或公司官网 URL
   }
   route?: Step1Route            // 机制路由图（可选；仅当概念有 输入→判断→多分支 的运行时机制时产出，否则省略）
+  essence?: string              // 本质升华：把该机制提到系统/范式层面的一句话（可选；技术定义末尾渲染）
+  dims?: string[]               // 关联工程维度 chips（可选；如 能力分层/场景识别/身份权限/审计日志/合规策略，2–6 个）
   glossaryTerms: GlossaryTerm[] // 难懂术语拆解
 }
 
@@ -278,10 +280,11 @@ export interface ScenarioCard {
   example?: string       // 具体业务举例
 }
 export interface Step2Answer {
-  intro: string                 // 场景选择总述
+  intro: string                 // 场景选择总述（关键边界句用 **加粗** 高亮）
   applicable: ScenarioCard[]    // 适用场景列表
   inapplicable: ScenarioCard[]  // 不适用场景列表
-  selectionCriteria: string     // 判断标准总结
+  selectionCriteria: string     // 判断标准总结（引导句）
+  selectionConditions?: string[] // 选型条件 chips（可选；2–4 个同时满足的判据，如 对外服务/风险高低混杂/有多档位模型）
 }
 
 /** 步骤3 L3 深入原理｜怎么实现？ */

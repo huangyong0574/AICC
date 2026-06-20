@@ -628,6 +628,8 @@ interface Step1Answer {
   analogy?: Step1Analogy;     // 精致类比叙事（可选；存在时优先于 valueLead 渲染）
   officialDefinition: string; // Authoritative definition (no word limit)
   route?: Step1Route;         // 机制路由图（可选；技术定义文本后渲染分支图，缺则只显示定义）
+  essence?: string;           // 本质升华：把机制提到系统/范式层面的一句话（可选；技术定义末尾渲染，对齐设计稿 pess）
+  dims?: string[];            // 关联工程维度 chips（可选；2–6 个，如 能力分层/场景识别/身份权限/审计日志/合规策略）
   glossaryTerms: {            // GlossaryTerm[]
     term: string;             // Technical term name
     plainHint: string;        // Plain language / life analogy
@@ -666,6 +668,7 @@ interface LoopCheck {
    - **Analogy（可选精致叙事，`Step1Analogy`）**: 痛点 lead → 旧路 A/B 两难（label + text）→「换个思路」分隔 → 绿条新解（resolveTitle + resolve）→ 衬线金句（quote + quoteCaption）；存在时优先于 Value Lead 渲染
 2. **Official Definition**: Precise definition from authoritative sources
    - **Route 机制路由图（可选，`Step1Route`）**: 定义文本后渲染「入口 → 判断节点 → 多分支」分支图（ok/warn/danger 配色）；仅路由/分类/门控/决策类机制产出，纯线性算法省略 → 回退纯定义文本
+   - **本质升华 + 维度 chips（可选，`essence` + `dims`）**: 技术定义末尾渲染一句范式升华（如「能力边界从静态训练移到动态运行时」）+ 3–5 个关联工程维度横排 chip；仅有「局部技巧→系统工程/新范式」跃迁时产出，常规改进省略
 3. **Glossary Terms**: Based on Transformer baseline, pick unfamiliar terms (dual explanation: analogy + technical)
 4. **SVG Diagram**: LLM returns structured nodes/edges/templateType, `svgRenderer.ts` renders locally
 5. **Loop Question**: User describes concept's principle & value in own words (UI placeholder, not sent to LLM)
@@ -683,7 +686,8 @@ interface Step2Answer {
   intro: string;              // Overview of applicable domain
   applicable: ScenarioCard[]; // Scenarios where this tech fits well
   inapplicable: ScenarioCard[]; // Scenarios where this tech is not suitable
-  selectionCriteria: string;  // Criteria for choosing this tech
+  selectionCriteria: string;  // 选型引导句（lead）
+  selectionConditions?: string[]; // 选型条件 chips（可选；2–4 个「同时满足才适用」判据，每条≤8字）
   loop: LoopCheck;            // Loop question (UI placeholder)
 }
 
@@ -698,8 +702,10 @@ interface ScenarioCard {
 1. **Intro**: Brief overview of applicable domain and key strengths
 2. **Applicable Scenarios**: 3-5 scenarios where this tech excels (with fit level)
 3. **Inapplicable Scenarios**: 2-4 scenarios where this tech is not suitable (with reason)
-4. **Selection Criteria**: Key factors for deciding whether to adopt this tech
+4. **Selection Criteria**: 引导句 `selectionCriteria` + 条件 chips `selectionConditions`（带衬线序号，对齐 premium 设计稿）
 5. **Loop Question**: User describes when they would/wouldn't recommend this tech (LoopBlock placeholder)
+
+> **Premium 渲染（`Step2View`，对齐 `aicc_scenario_boundary_premium.html`）**：导读/选型用 eyebrow 表头（`00 —`/`04 —`），适用/不适用用圆圈 ✓/✗ 图标 + 英文副标；场景卡为中性白底卡，右上角 `fit` → **信号格评级**（极佳=3 绿 / 适合=2 绿 / 一般=2 灰 / 较差=1 琥珀 / 不宜=1 红），Why/Why-not 文字色随 `fit`。`intro` 关键边界句用 `**加粗**`。
 
 ---
 

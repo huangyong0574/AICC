@@ -418,9 +418,14 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
         </Card>
         )}
 
-        {/* 已开始：预热 → 六问 → 内化 → 导出 */}
+        {/* 已开始：进度（stepper+进度环）→ 费曼精髓 → 四步 → 内化（对齐设计稿模块顺序） */}
         {started && (
           <>
+            {/* 进度模块置顶：对齐设计稿（stepper + 进度环在费曼精髓之前），全程可见 */}
+            {warmupConfirmed && (
+              <FeynmanProgress steps={steps} topic={rawQuestion || initialQuestion} onReset={onReset} sourceWeek={conceptWeekId} />
+            )}
+
             <div id="prime-anchor" />
             <FeynmanPrime questions={warmupQuestions} loading={warmupLoading} />
 
@@ -435,17 +440,14 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
             )}
 
             {warmupConfirmed && (
-              <>
-                <FeynmanProgress steps={steps} topic={rawQuestion || initialQuestion} onReset={onReset} sourceWeek={conceptWeekId} />
-                <StepPipeline
-                  rawQuestion={rawQuestion}
-                  grounding={grounding}
-                  cfg={cfg}
-                  value={steps}
-                  onChange={setSteps}
-                  onTakeaway={handleTakeaway}
-                />
-              </>
+              <StepPipeline
+                rawQuestion={rawQuestion}
+                grounding={grounding}
+                cfg={cfg}
+                value={steps}
+                onChange={setSteps}
+                onTakeaway={handleTakeaway}
+              />
             )}
 
             {allConfirmed && (

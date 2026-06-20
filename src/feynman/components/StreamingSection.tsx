@@ -15,6 +15,8 @@ export function StreamingSection({
   loadingText,
   skeletonLines,
   hideHeader,
+  header,
+  variant = "card",
   children,
 }: {
   icon: ReactNode
@@ -26,53 +28,68 @@ export function StreamingSection({
   skeletonLines: number
   /** 已就绪时是否隐藏外壳（如 LoopBlock 自带外壳） */
   hideHeader?: boolean
+  /** 自定义表头（如 eyebrow 编号样式）；提供时取代默认 icon+title 表头 */
+  header?: ReactNode
+  /** card=带边框卡片（默认）；plain=无边框开放编辑体（对齐设计稿 L1 排版） */
+  variant?: "card" | "plain"
   children: ReactNode
 }) {
-  if (ready) {
-    if (hideHeader) return <>{children}</>
-    return (
-      <div className={wrapperCls(tone)}>
-        <div className="flex items-center gap-2 mb-2">
-          {icon}
-          <span className={`text-xs font-semibold ${toneTextCls(tone)} uppercase tracking-wider`}>
-            {title}
-          </span>
-        </div>
-        {children}
-      </div>
-    )
-  }
+  if (ready && hideHeader) return <>{children}</>
+  if (!ready && !streaming) return null
 
-  if (!streaming) return null
+  const plain = variant === "plain"
+  const wrapCls = plain
+    ? "animate-fade-in-up"
+    : `${wrapperCls(tone)}${ready ? "" : " relative overflow-hidden animate-fade-in-up"}`
 
-  return (
-    <div
-      className={`${wrapperCls(tone)} relative overflow-hidden animate-fade-in-up`}
-      aria-busy="true"
-      data-loading-section={title}
-    >
+  const renderHeader = () =>
+    header ? (
+      <div className={plain ? "mb-3.5" : "mb-2"}>{header}</div>
+    ) : (
       <div className="flex items-center gap-2 mb-2">
         {icon}
         <span className={`text-xs font-semibold ${toneTextCls(tone)} uppercase tracking-wider`}>
           {title}
         </span>
-        <span className="ml-auto text-[11px] text-muted-foreground flex items-center gap-1.5">
-          <BouncingDots />
-          <span>{loadingText}</span>
-        </span>
+        {!ready && (
+          <span className="ml-auto text-[11px] text-muted-foreground flex items-center gap-1.5">
+            <BouncingDots />
+            <span>{loadingText}</span>
+          </span>
+        )}
       </div>
-      <div className="space-y-2">
-        {Array.from({ length: skeletonLines }).map((_, i) => (
-          <div
-            key={i}
-            className="h-3 rounded bg-muted/60 animate-pulse"
-            style={{
-              width: `${95 - i * 8}%`,
-              animationDelay: `${i * 120}ms`,
-            }}
-          />
-        ))}
-      </div>
+    )
+
+  return (
+    <div
+      className={wrapCls}
+      {...(!ready ? { "aria-busy": "true", "data-loading-section": title } : {})}
+    >
+      {renderHeader()}
+      {ready ? (
+        children
+      ) : (
+        <>
+          {header && (
+            <div className="mb-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <BouncingDots />
+              <span>{loadingText}</span>
+            </div>
+          )}
+          <div className="space-y-2">
+            {Array.from({ length: skeletonLines }).map((_, i) => (
+              <div
+                key={i}
+                className="h-3 rounded bg-muted/60 animate-pulse"
+                style={{
+                  width: `${95 - i * 8}%`,
+                  animationDelay: `${i * 120}ms`,
+                }}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }

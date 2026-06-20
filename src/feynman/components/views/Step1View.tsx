@@ -1,7 +1,8 @@
 import type { Step1Answer } from "../../types"
-import { AlertCircle, Lightbulb, MessageCircle, ExternalLink } from "lucide-react"
+import { ExternalLink } from "lucide-react"
 import { StreamingSection } from "../StreamingSection"
 import { RichText } from "../RichText"
+import { Eyebrow, BlockHead } from "./SectionHeader"
 
 /**
  * Step1View 支持渐进式渲染：
@@ -22,9 +23,11 @@ export function Step1View({
     <div className="space-y-5">
       {/* ① 价值铺垫：优先精致类比叙事（痛点两难 → 换个思路 → 金句），缺则回退 valueLead */}
       <StreamingSection
-        icon={<AlertCircle className="h-4 w-4 text-warning" />}
-        title="1. 我们先打个比方"
+        icon={null}
+        title="01 — 类比"
         tone="warning"
+        variant="plain"
+        header={<Eyebrow no="01" label="类比" keyword={d.analogy?.title} />}
         ready={!!(d.analogy || d.valueLead)}
         streaming={streaming}
         loadingText="正在从生活化案例入手，组织通俗类比…"
@@ -32,9 +35,6 @@ export function Step1View({
       >
         {d.analogy ? (
           <div className="space-y-3.5">
-            {d.analogy.title && (
-              <div className="text-[12px] font-medium tracking-wide text-muted-foreground">{d.analogy.title}</div>
-            )}
             {d.analogy.lead && (
               <p className="text-sm leading-relaxed text-foreground/90">
                 <RichText text={d.analogy.lead} />
@@ -87,9 +87,11 @@ export function Step1View({
 
       {/* ② 专业定义 */}
       <StreamingSection
-        icon={<Lightbulb className="h-4 w-4 text-primary" />}
-        title="2. 技术视角的定义："
+        icon={null}
+        title="02 — 技术定义"
         tone="primary"
+        variant="plain"
+        header={<Eyebrow no="02" label="技术定义" />}
         ready={!!d.officialDefinition}
         streaming={streaming}
         loadingText="正在查阅论文与权威定义…"
@@ -101,6 +103,24 @@ export function Step1View({
               <RichText text={d.officialDefinition} />
             </p>
             {d.route && <RouteDiagram route={d.route} />}
+            {/* 本质升华 + 关联工程维度（设计稿 pess + dims） */}
+            {d.essence && (
+              <p className="mt-4 text-[13px] leading-[1.8] text-muted-foreground">
+                <RichText text={d.essence} />
+              </p>
+            )}
+            {!!d.dims?.length && (
+              <div className="mt-2 flex flex-wrap">
+                {d.dims.map((dim, i) => (
+                  <span
+                    key={i}
+                    className="mr-4 border-r border-border pr-4 py-1 text-[12px] text-foreground/80 last:mr-0 last:border-r-0 last:pr-0"
+                  >
+                    {dim}
+                  </span>
+                ))}
+              </div>
+            )}
             {d.source && (
               <div className="pt-2 border-t border-border/30 mt-3">
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">引用论文</div>
@@ -122,11 +142,13 @@ export function Step1View({
         )}
       </StreamingSection>
 
-      {/* ③ 术语拆解 */}
+      {/* ③ 术语拆解 · 拆开来看 · 三个零件 */}
       <StreamingSection
-        icon={<MessageCircle className="h-4 w-4 text-muted-foreground" />}
-        title="3. 猜到你这些词可能不太熟悉，先帮你弥合认知断裂点^_^"
+        icon={null}
+        title="拆开来看 · 三个零件"
         tone="muted"
+        variant="plain"
+        header={<BlockHead>拆开来看 · 三个零件</BlockHead>}
         ready={!!d.glossaryTerms && d.glossaryTerms.length > 0}
         streaming={streaming}
         loadingText="正在拆解陌生术语，弥合认知断裂点…"
