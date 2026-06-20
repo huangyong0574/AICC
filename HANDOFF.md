@@ -28,6 +28,12 @@
 3. `design/` 双源 + `src/` 三方对照：`design/aicc-html-bundle/`=mockup 设计稿、`design/live/`=真实渲染基线（由 export-pages.mjs 生成，脚本不再硬编码 key），二者均随相应改动同步。
 4. **不提交凭证**：API key（仅存 localStorage「设置」/ 环境变量）、SSH 私钥（`~/.ssh/aicc_deploy`）等**绝不入库**——脚本只引用其路径。其余工程文件（含运维脚本 `deploy-dist.sh` / `radar-publish.sh` / `run-*.command` / `deploy/`）均已入库，**GitHub == 完整工程（除 API key）**。
 
+## OpenSpec 工作流（编码主流程）
+实质编码走 **OpenSpec spec-driven**（CLI 已装、仓库已 init，`/opsx:*` 命令 + `openspec-*` skills）。约定详见 **`openspec/project.md`**，要点：
+- **事实来源分层**：`SPEC.md`=产品总纲/叙事真相；`openspec/specs/<capability>/`=可测行为契约（随变更逐能力长出，不一次性迁移）。
+- **何时用**：改「系统该做什么」/ 契约 / 数据 / 多文件 / 后端 → 完整 `propose → apply → archive`；纯视觉/文案/小 bugfix → 走轻量纪律直接做。
+- **纪律 gate 焊进每个 change 的 `tasks.md` 末尾**：tsc/build · 浏览器验收截图 · (LLM 契约)真机冒烟 · (UI)刷 design/live 基线 · (影响总纲)同步 SPEC · commit/push。
+
 ## 关键设计模式（避免重蹈覆辙）
 - 「**结构化数据 + 固定前端模板**」取代「LLM 自由生成 SVG/HTML」：见 `Step1Route`（路由图）、`Step3Blueprint`（机制图）。风格可控、跨概念泛化。step3 机制图**不要**回退到 LLM 自由画 SVG。
 - 费曼评测「认知差」依赖**雷达原文 grounding**（conceptId → 该周 insight），不是纯 LLM 现编。
