@@ -16,6 +16,7 @@ import {
 import { useDarkModeShared } from "./SiteHeader"
 import { parseFrontmatter, countWords, renderArticleBody, fmtDate, type Frontmatter } from "../lib/markdown"
 import { useCognition } from "../lib/cognition"
+import { slugify, publishArticleToStorage } from "../lib/publishArticle"
 
 interface EditorPageProps {
   onBack: () => void
@@ -23,17 +24,6 @@ interface EditorPageProps {
   conceptId?: string
   /** 发布成功后跳到文章页预览（可选） */
   onPublished?: (slug: string) => void
-}
-
-const DRAFT_PREFIX = "aicc-article-md:"
-const PUBLISHED_INDEX = "aicc-published-articles"
-
-function slugify(text: string): string {
-  return text
-    .replace(/[^\w一-鿿]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .toLowerCase()
-    .slice(0, 50)
 }
 
 export function EditorPage({ onBack, conceptId, onPublished }: EditorPageProps) {
@@ -108,41 +98,22 @@ export function EditorPage({ onBack, conceptId, onPublished }: EditorPageProps) 
       showToast("请填写文件名 (slug)")
       return
     }
-    // SPA 无写盘后端：发布 = 存入 localStorage（文章页可回读）+ 下载 .md 兜底
-    try {
-      const idxRaw = localStorage.getItem(PUBLISHED_INDEX)
-      const idx: Array<Record<string, unknown>> = idxRaw ? JSON.parse(idxRaw) : []
-      // 同名 slug 覆盖前给出提示，避免静默冲掉别的认知点已发布的文章
-      const clash = idx.find((e) => e.slug === slug)
-      if (
-        clash &&
-        typeof window !== "undefined" &&
-        !window.confirm(`已存在 slug 为「${slug}」的文章（${(clash.title as string) || ""}），继续发布将覆盖它。确定？`)
-      ) {
-        return
-      }
-      localStorage.setItem(DRAFT_PREFIX + slug, raw)
-      const entry = {
-        slug,
-        title: pubTitle || title,
-        subtitle,
-        category: pubCategory || category,
-        date: date || new Date().toISOString().slice(0, 10),
-        status,
-        tags,
-      }
-      const next = [entry, ...idx.filter((e) => e.slug !== slug)]
-      localStorage.setItem(PUBLISHED_INDEX, JSON.stringify(next))
-    } catch {
-      /* localStorage 不可用时忽略，仍走下载 */
-    }
+    // 共享落库（含同名 slug 覆盖二次确认）；返回 false = 用户取消
+    const ok = publishArticleToStorage({
+      slug,
+      markdown: raw,
+      title: pubTitle || title,
+      subtitle,
+      category: pubCategory || category,
+      date: date || undefined,
+      status,
+      tags,
+      conceptIds: conceptId ? [conceptId] : [],
+    })
+    if (!ok) return
     // learning → published：回写认知状态机，计划页/图谱即时联动
     if (conceptId) {
-      upsert(conceptId, {
-        title: pubTitle || title,
-        slug,
-        state: "published",
-      })
+      upsert(conceptId, { title: pubTitle || title, slug, state: "published" })
     }
     downloadMd(slug)
     setDialogOpen(false)

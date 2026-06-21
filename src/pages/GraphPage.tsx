@@ -2,6 +2,7 @@ import { useMemo } from "react"
 import { SiteHeader, type NavPage } from "./SiteHeader"
 import { useCognition, type CognitionStateValue } from "../lib/cognition"
 import { useRadarArchive } from "../data/radarData"
+import { loadArticleEdges } from "../lib/publishArticle"
 
 interface GraphPageProps {
   onNavigate: (page: NavPage) => void
@@ -152,6 +153,22 @@ export function GraphPage({ onNavigate }: GraphPageProps) {
     return { relEdges: edges, parentNodes: parents.map((p) => ({ name: p, ...pPos[p] })) }
   }, [NODES, map, positions])
 
+  // 文章连边：发布一篇融合多概念的成稿 → 在这些概念间画「成文连接」（学=节点，写=连边）
+  const articleEdges = useMemo(() => {
+    const posOf = (cid: string) => {
+      const node = NODES.find((n) => n.ids.includes(cid) || conceptSlug(n.id) === conceptSlug(cid))
+      return node ? positions[node.id] : undefined
+    }
+    const segs: Array<{ key: string; from: { x: number; y: number }; to: { x: number; y: number }; title: string }> = []
+    for (const e of loadArticleEdges()) {
+      const pts = e.conceptIds.map(posOf).filter((p): p is { x: number; y: number } => !!p)
+      for (let i = 0; i < pts.length; i++)
+        for (let j = i + 1; j < pts.length; j++)
+          segs.push({ key: `art-${e.slug}-${i}-${j}`, from: pts[i], to: pts[j], title: e.title })
+    }
+    return segs
+  }, [NODES, positions])
+
   const activatedCount = NODES.filter((n) => stateOf(n) !== "discovered").length
 
   return (
@@ -202,7 +219,7 @@ export function GraphPage({ onNavigate }: GraphPageProps) {
               <span className="legend-item"><span className="legend-dot learning" />学习中</span>
               <span className="legend-item"><span className="legend-dot published" />已成稿</span>
             </div>
-            <div className="toolbar-meta">{NODES.length} 节点 · {activatedCount} 已激活</div>
+            <div className="toolbar-meta">{NODES.length} 节点 · {activatedCount} 已激活{articleEdges.length > 0 ? ` · ${articleEdges.length} 成文连接` : ''}</div>
           </div>
 
           <div className="graph-frame">
@@ -269,6 +286,13 @@ export function GraphPage({ onNavigate }: GraphPageProps) {
                   )
                 }),
               )}
+
+              {/* 文章连边：成文把多个概念连起来（实线，区别于费曼关系虚线） */}
+              {articleEdges.map((e) => (
+                <line key={e.key} x1={e.from.x} y1={e.from.y} x2={e.to.x} y2={e.to.y} stroke="hsl(var(--frontier))" strokeWidth={1.8} opacity={0.55}>
+                  <title>{`成文连接 · ${e.title}`}</title>
+                </line>
+              ))}
 
               {/* nodes */}
               {NODES.map((n) => {

@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, Bookmark, Check, FileText, Lightbulb, Loader2, RefreshCw, Settings, Sparkles } from 'lucide-react'
 import { SiteHeader, type NavPage } from './SiteHeader'
 import { useLatestRadarWeek } from '../data/radarData'
 import { loadNotes, loadCfg } from '../feynman/lib/storage'
-import { callTopics, type GenTopic, type TopicAngle } from '../feynman/lib/llm'
+import { callTopics, callSparring, type GenTopic, type TopicAngle, type SparringMode } from '../feynman/lib/llm'
 import { SettingsDialog } from '../feynman/components/SettingsDialog'
+import { useCognition } from '../lib/cognition'
+import { renderArticleBody } from '../lib/markdown'
+import { publishArticleToStorage, slugify, loadPublishedMarkdown, findPublishedByConceptId } from '../lib/publishArticle'
 import type { Note, LlmConfig } from '../feynman/types'
 import { Button } from '@/components/ui/button'
 
@@ -51,6 +54,28 @@ function conceptEssence(note: Note): { id: string; topic: string; essence: strin
   const s1 = ans('step1')
   const essence = s4?.oneLiner || s1?.analogy?.quote || (s1?.valueLead ? String(s1.valueLead) : note.topic)
   return { id: note.conceptId || note.id, topic: note.topic, essence: String(essence).slice(0, 120) }
+}
+
+// 「我的素材」：从已闭环 Note 派生 原理/类比/本质（点击引用进正文，不替用户成句）
+interface Material { kind: '原理' | '类比' | '本质'; text: string; source: string }
+function extractMaterials(note: Note): Material[] {
+  const steps = note.steps || []
+  const ans = (k: string) => steps.find(s => s.key === k)?.answer as any
+  const s1 = ans('step1'), s3 = ans('step3'), s4 = ans('step4')
+  const out: Material[] = []
+  const principle = s3?.principle?.coreIdea
+    || (s3?.principle?.blueprint?.nodes ? s3.principle.blueprint.nodes.map((n: any) => n.label).filter(Boolean).join(' → ') : '')
+  if (principle) out.push({ kind: '原理', text: String(principle).slice(0, 140), source: note.topic })
+  const analogy = s1?.analogy?.quote || (s1?.valueLead ? String(s1.valueLead).split(/[。！？\n]/)[0] : '')
+  if (analogy) out.push({ kind: '类比', text: String(analogy).slice(0, 140), source: note.topic })
+  if (s4?.oneLiner) out.push({ kind: '本质', text: String(s4.oneLiner).slice(0, 140), source: note.topic })
+  return out
+}
+
+// 组装成稿 Markdown（含 frontmatter，与文章页/发布同格式）
+function buildArticleMd(title: string, body: string): string {
+  const today = new Date().toISOString().slice(0, 10)
+  return `---\ntitle: ${title}\ndate: ${today}\nstatus: 已发布\ncategory: 创作\n---\n\n${body}`
 }
 
 function loadTopicCache(sig: string): Topic[] | null {
@@ -131,7 +156,7 @@ export function CreationPage({ onNavigate, topicId }: CreationPageProps) {
       <SiteHeader activePage="creation" onNavigate={onNavigate} />
       <main className="mx-auto max-w-3xl px-6 py-10">
         {view === 'desk' && pinned ? (
-          <DeskView pinned={pinned} onBack={() => setView('topics')} />
+          <DeskView pinned={pinned} onBack={() => setView('topics')} notes={closed} cfg={cfg} />
         ) : (
           <TopicsView
             topics={topics}
@@ -280,18 +305,97 @@ function TopicCard({ topic, onOpen }: { topic: Topic; onOpen: (t: Topic) => void
   )
 }
 
-/* ───────── 写作台视图（阶段1：钉选题 + 基础编辑 + 字数；素材引用/陪练/发布见 creation-writing-desk） ───────── */
-function DeskView({ pinned, onBack }: { pinned: Topic; onBack: () => void }) {
+/* ───────── 写作台视图：富文本编辑 + 素材引用 + AI陪练 + 草稿 + 发布/再改（闭环图谱） ───────── */
+const SPAR_MODES: SparringMode[] = ['反方', '缺论据', '事实核查', '读者之问']
+const SPAR_LABEL: Record<SparringMode, string> = { 反方: '找反方观点', 缺论据: '哪里缺论据', 事实核查: '事实核查', 读者之问: '读者之问' }
+
+function DeskView({ pinned, onBack, notes, cfg }: { pinned: Topic; onBack: () => void; notes: Note[]; cfg: LlmConfig }) {
+  const { upsert } = useCognition()
+  const taRef = useRef<HTMLTextAreaElement>(null)
+  const draftKey = `aicc-creation-draft:${pinned.id}`
+  const publishedEntry = useMemo(() => {
+    for (const id of pinned.conceptIds) { const e = findPublishedByConceptId(id); if (e) return e }
+    return null
+  }, [pinned])
+
   const [title, setTitle] = useState(pinned.title)
   const [body, setBody] = useState('')
+  const [tab, setTab] = useState<'write' | 'preview'>('write')
+  const [restore, setRestore] = useState<{ title: string; body: string } | null>(null)
+  const [spar, setSpar] = useState<{ mode: SparringMode; text: string } | null>(null)
+  const [sparLoading, setSparLoading] = useState<SparringMode | null>(null)
+  const [sparErr, setSparErr] = useState<string | null>(null)
+  const [published, setPublished] = useState(!!publishedEntry)
+  const saveTimer = useRef<number | undefined>(undefined)
+
+  // 进入：有草稿 → 提示「继续/重新开始」；否则若已发布 → 预填已发布正文（再修改）
+  useEffect(() => {
+    try {
+      const d = localStorage.getItem(draftKey)
+      if (d) { const p = JSON.parse(d); setRestore({ title: p.title || pinned.title, body: p.body || '' }); return }
+    } catch { /* ignore */ }
+    if (publishedEntry) {
+      const md = loadPublishedMarkdown(publishedEntry.slug) || ''
+      const m = md.match(/^---[\s\S]*?---\s*([\s\S]*)$/)
+      setBody((m ? m[1] : md).trim())
+      setTitle(publishedEntry.title || pinned.title)
+    }
+  }, []) // 仅挂载
+
+  // 草稿防抖自动存（选择继续/重开前不存，避免覆盖待恢复草稿）
+  useEffect(() => {
+    if (restore) return
+    window.clearTimeout(saveTimer.current)
+    saveTimer.current = window.setTimeout(() => {
+      try { localStorage.setItem(draftKey, JSON.stringify({ title, body, updatedAt: Date.now() })) } catch { /* quota */ }
+    }, 400)
+    return () => window.clearTimeout(saveTimer.current)
+  }, [title, body, restore, draftKey])
+
   const wordCount = (title + body).replace(/\s/g, '').length
+  const materials = useMemo(
+    () => pinned.conceptIds.flatMap(id => { const n = notes.find(x => (x.conceptId || x.id) === id); return n ? extractMaterials(n) : [] }),
+    [pinned, notes],
+  )
+
+  function applyFormat(prefix: string, suffix = prefix, placeholder = '文字') {
+    const ta = taRef.current; if (!ta) return
+    const s = ta.selectionStart, e = ta.selectionEnd
+    const sel = body.slice(s, e) || placeholder
+    setBody(body.slice(0, s) + prefix + sel + suffix + body.slice(e))
+    requestAnimationFrame(() => { ta.focus(); ta.selectionStart = s + prefix.length; ta.selectionEnd = s + prefix.length + sel.length })
+  }
+  function insertBlock(text: string) {
+    const ta = taRef.current
+    const at = ta ? ta.selectionStart : body.length
+    const pre = body.slice(0, at)
+    const lead = at === 0 || pre.endsWith('\n') ? '' : '\n'
+    setBody(pre + lead + text + '\n' + body.slice(at))
+  }
+
+  async function runSpar(mode: SparringMode) {
+    if (!body.trim()) { setSparErr('先写点正文，再让我挑刺'); return }
+    if (!cfg.apiKey) { setSparErr('未配置 API Key（到选题页「设置」填入）'); return }
+    setSparLoading(mode); setSparErr(null)
+    try { setSpar({ mode, text: await callSparring(mode, body, cfg) }) }
+    catch (e: any) { setSparErr(e?.message || 'AI 陪练失败') }
+    finally { setSparLoading(null) }
+  }
+
+  function publish() {
+    if (!title.trim() || !body.trim()) return
+    const slug = publishedEntry?.slug || slugify(title)
+    const ok = publishArticleToStorage({ slug, markdown: buildArticleMd(title, body), title, category: '创作', status: '已发布', conceptIds: pinned.conceptIds })
+    if (!ok) return
+    pinned.conceptIds.forEach(id => upsert(id, { title, slug, state: 'published' }))
+    try { localStorage.removeItem(draftKey) } catch { /* ignore */ }
+    setPublished(true)
+  }
 
   return (
     <>
-      <button
-        onClick={onBack}
-        className="mb-4 inline-flex items-center gap-1.5 font-mono text-[12px] text-muted-foreground transition-colors hover:text-foreground"
-      >
+      <style>{DESK_CSS}</style>
+      <button onClick={onBack} className="mb-4 inline-flex items-center gap-1.5 font-mono text-[12px] text-muted-foreground transition-colors hover:text-foreground">
         <ArrowLeft style={{ width: 14, height: 14 }} /> 选题约稿
       </button>
 
@@ -302,34 +406,102 @@ function DeskView({ pinned, onBack }: { pinned: Topic; onBack: () => void }) {
           <div className="text-[13.5px] font-semibold leading-snug">{pinned.title}</div>
           {pinned.hook?.text && <div className="mt-1 text-[11.5px] text-muted-foreground">钩子 · {pinned.hook.text}</div>}
         </div>
-        <span className="shrink-0 text-[11px] text-muted-foreground">已钉选题</span>
+        <span className="shrink-0 text-[11px] text-muted-foreground">{published ? '已成文 · 可再改' : '已钉选题'}</span>
       </div>
+
+      {/* 草稿恢复提示 */}
+      {restore && (
+        <div className="mt-3 flex items-center gap-2.5 rounded-lg border border-dashed border-border bg-muted/40 px-4 py-2.5 text-[12.5px]">
+          <span className="text-muted-foreground">发现上次草稿（{restore.body.replace(/\s/g, '').length} 字）</span>
+          <button className="ml-auto rounded-md border border-border px-2.5 py-1 hover:bg-accent" onClick={() => { setTitle(restore.title); setBody(restore.body); setRestore(null) }}>继续</button>
+          <button className="rounded-md px-2.5 py-1 text-muted-foreground hover:text-foreground" onClick={() => { try { localStorage.removeItem(draftKey) } catch { /* */ } setRestore(null) }}>重新开始</button>
+        </div>
+      )}
 
       {/* 编辑器 */}
       <div className="mt-3.5 overflow-hidden rounded-xl border border-border bg-card">
-        <div className="flex items-center gap-2 border-b border-border/60 px-4 py-2.5 text-[12px] text-muted-foreground">
-          <FileText className="h-3.5 w-3.5" /> 正文 · 你的表达
-          <span className="ml-auto font-mono">{wordCount} 字</span>
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-border/60 px-3 py-2 text-[12px] text-muted-foreground">
+          <button className={`rounded px-2 py-1 ${tab === 'write' ? 'bg-secondary text-foreground' : ''}`} onClick={() => setTab('write')}>编辑</button>
+          <button className={`rounded px-2 py-1 ${tab === 'preview' ? 'bg-secondary text-foreground' : ''}`} onClick={() => setTab('preview')}>预览</button>
+          {tab === 'write' && <span className="mx-1 h-4 w-px bg-border" />}
+          {tab === 'write' && (
+            <span className="flex items-center gap-1">
+              <button className="desk-tb" title="加粗" onClick={() => applyFormat('**')}><b>B</b></button>
+              <button className="desk-tb" title="二级标题" onClick={() => insertBlock('## 小标题')}>H2</button>
+              <button className="desk-tb" title="引用" onClick={() => insertBlock('> 引用')}>❝</button>
+              <button className="desk-tb" title="列表" onClick={() => insertBlock('- 列表项')}>•</button>
+              <button className="desk-tb" title="链接" onClick={() => applyFormat('[', '](https://)', '链接文字')}>🔗</button>
+            </span>
+          )}
+          <span className="ml-auto inline-flex items-center gap-1.5 font-mono"><FileText className="h-3.5 w-3.5" />{wordCount} 字</span>
         </div>
         <div className="px-5 py-4">
-          <input
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder="给文章起个标题…"
-            className="w-full bg-transparent text-[1.15rem] font-semibold outline-none placeholder:text-muted-foreground/50"
-          />
-          <textarea
-            value={body}
-            onChange={e => setBody(e.target.value)}
-            placeholder="用你自己的话写下去——AI 不替你成句。"
-            className="mt-3 min-h-[260px] w-full resize-y bg-transparent text-[14px] leading-[1.9] text-foreground/90 outline-none placeholder:text-muted-foreground/50"
-          />
+          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="给文章起个标题…" className="w-full bg-transparent text-[1.15rem] font-semibold outline-none placeholder:text-muted-foreground/50" />
+          {tab === 'write' ? (
+            <textarea ref={taRef} value={body} onChange={e => setBody(e.target.value)} placeholder="用你自己的话写下去——AI 不替你成句。支持 Markdown。" className="mt-3 min-h-[300px] w-full resize-y bg-transparent font-mono text-[13.5px] leading-[1.9] text-foreground/90 outline-none placeholder:text-muted-foreground/50" />
+          ) : (
+            <div className="cre-prose mt-3 min-h-[300px]" dangerouslySetInnerHTML={{ __html: renderArticleBody(body) || '<p style="color:var(--muted-foreground)">（空）</p>' }} />
+          )}
         </div>
       </div>
 
-      <p className="mt-3 text-center text-[12px] text-muted-foreground">
-        写作台基础版已就位 · 我的素材引用 / AI 陪练 / 发布并闭环见 creation-writing-desk
-      </p>
+      {/* 我的素材 */}
+      {materials.length > 0 && (
+        <div className="mt-3.5 rounded-xl border border-border bg-card px-4 py-3.5">
+          <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground"><Bookmark className="h-3.5 w-3.5" />我的素材 · 来自已闭环笔记<span className="ml-auto text-[11px]">点击引用，不替你成句</span></div>
+          <div className="mt-2.5 space-y-2">
+            {materials.map((m, i) => (
+              <div key={i} className="flex items-start gap-2.5 rounded-lg border border-border/70 bg-background px-3 py-2 text-[12.5px]">
+                <span className="shrink-0 rounded border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground">{m.kind}</span>
+                <span className="min-w-0 flex-1 leading-relaxed text-foreground/80">{m.text}</span>
+                <button className="shrink-0 rounded-md border border-border px-2 py-0.5 text-[11px] hover:bg-accent" onClick={() => insertBlock(`> ${m.text}\n> \n> — 引自 · ${m.kind} · ${m.source}`)}>引用</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* AI 陪练 */}
+      <div className="mt-3.5 rounded-xl border border-border bg-card px-4 py-3.5">
+        <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground"><Sparkles className="h-3.5 w-3.5" />AI 陪练 · 只挑刺，不代笔</div>
+        <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {SPAR_MODES.map(mode => (
+            <button key={mode} disabled={!!sparLoading} onClick={() => runSpar(mode)} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-2.5 py-2 text-[12.5px] transition-colors hover:bg-accent disabled:opacity-50">
+              {sparLoading === mode ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}{SPAR_LABEL[mode]}
+            </button>
+          ))}
+        </div>
+        {sparErr && <p className="mt-2.5 text-[12px] text-[hsl(var(--destructive))]">{sparErr}</p>}
+        {spar && (
+          <div className="mt-2.5 rounded-lg border border-border/70 bg-background px-3.5 py-3">
+            <div className="text-[11px] text-muted-foreground">陪练 · {SPAR_LABEL[spar.mode]}（仅供你参考，不会写进正文）</div>
+            <div className="mt-1.5 whitespace-pre-wrap text-[13px] leading-relaxed text-foreground/85">{spar.text}</div>
+          </div>
+        )}
+      </div>
+
+      {/* 底栏：发布 / 再改 */}
+      <div className="mt-3.5 flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+        <span className="text-[12px] text-muted-foreground">草稿自动存于本地 · {wordCount} 字{published ? ' · 已成文（再发为覆盖更新）' : ''}</span>
+        <Button variant="default" size="sm" className="ml-auto" disabled={!title.trim() || !body.trim()} onClick={publish}>
+          <Check className="mr-1.5 h-4 w-4" />{published ? '更新并重新成文' : '发布并闭环'}
+        </Button>
+      </div>
     </>
   )
 }
+
+const DESK_CSS = `
+.desk-tb{min-width:26px;height:26px;padding:0 6px;border:1px solid hsl(var(--border));border-radius:5px;font-size:12px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+.desk-tb:hover{background:hsl(var(--accent))}
+.cre-prose h2{font-size:1.15rem;font-weight:600;margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid hsl(var(--border))}
+.cre-prose h3{font-size:1rem;font-weight:600;margin:14px 0 8px}
+.cre-prose p{font-size:14px;line-height:1.85;color:hsl(var(--foreground)/0.88);margin:0 0 12px}
+.cre-prose strong{font-weight:600}
+.cre-prose ul,.cre-prose ol{margin:10px 0;padding-left:20px}
+.cre-prose li{font-size:14px;line-height:1.8;margin-bottom:5px}
+.cre-prose blockquote{margin:14px 0;padding:12px 16px;background:hsl(var(--secondary));border-left:3px solid hsl(var(--foreground));border-radius:6px}
+.cre-prose blockquote p{font-family:var(--font-serif);margin:0}
+.cre-prose code{font-family:var(--font-mono);font-size:12.5px;padding:1px 5px;background:hsl(var(--secondary));border-radius:3px}
+.cre-prose a{color:hsl(var(--primary));text-decoration:underline}
+`

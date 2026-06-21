@@ -524,3 +524,39 @@ export async function callTopics(
     })
     .filter((t): t is GenTopic => t !== null)
 }
+
+// ============================================================
+// 创作 AI 陪练：针对当前草稿「只挑刺、不代笔」（找反方/缺论据/事实核查/读者之问）
+// ============================================================
+export type SparringMode = "反方" | "缺论据" | "事实核查" | "读者之问"
+
+const SPARRING_INSTR: Record<SparringMode, string> = {
+  反方: "找出这篇草稿最强的反方观点 / 漏洞，逼作者把论证补严。",
+  缺论据: "指出草稿里哪些论点还缺论据 / 数据支撑，分别该补什么。",
+  事实核查: "核查草稿涉及的事实、数字、模型 / 产品名是否准确，存疑处点出来。",
+  读者之问: "以一个正在做 AI Native 组织转型的客户读者身份，提出读到这里最想追问的问题。",
+}
+
+export async function callSparring(mode: SparringMode, draft: string, cfg: LlmConfig): Promise<string> {
+  if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
+  const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
+  const sys = `你是作者的 AI 陪练，只挑刺、不代笔。本次任务：${SPARRING_INSTR[mode]}
+硬性要求：只做点评 / 提问 / 给方向，**严禁代写或改写任何成段正文**；简体中文，给 3–5 条要点，每条 ≤40 字，对着作者说「你」。直接给要点（可用「- 」开头），不加前后缀说明。`
+  const res = await fetch(`${base}/chat/completions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` },
+    body: JSON.stringify({
+      model: cfg.model || "deepseek-v4-flash",
+      messages: [{ role: "system", content: sys }, { role: "user", content: `【草稿】\n${draft.slice(0, 4000)}` }],
+      temperature: 0.5,
+      enable_thinking: false,
+      stream: false,
+    }),
+  })
+  if (!res.ok) {
+    const t = await res.text().catch(() => "")
+    throw new Error(`AI 陪练失败 HTTP ${res.status}: ${t.slice(0, 160)}`)
+  }
+  const data = await res.json()
+  return String(data?.choices?.[0]?.message?.content || "").trim()
+}

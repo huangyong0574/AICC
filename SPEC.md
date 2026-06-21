@@ -150,7 +150,7 @@ User inputs natural language question (e.g. "GDN是什么意思？")  ← 计划
 | PlanPage | `/plan` | 跨周深度计划看板 | in-plan/learning/published 看板 | `onOpenFeynman(id)` / `onOpenArticle(slug)` |
 | FeynmanApp | `/feynman` | 费曼四步穿透学习引擎；**套 AICC SiteHeader + 来源上下文条**；**实时持久化学习草稿（按 conceptId 防抖写回 `aicc-feynman-notes`），重进/刷新提示「继续 N/4 / 重新开始」** | **in-plan→learning**（含续学/复习入口） | `conceptId` / `initialQuestion` / `onGoToEditor(id)` / `onNavigate` / `onInternalized(id,delta)` / `onProgress(id,n)` |
 | EditorPage | `/editor` | Markdown 编辑 + 实时预览 + 发布（内部成稿入口，不在导航暴露） | **learning→published** | `conceptId` / `onBack` / `onPublished(slug)` |
-| CreationPage | `/creation` | **创作（认知闭环最后一环）**：选题约稿（**全部历史已闭环知识点（跨周）× 行业趋势 → `callTopics` LLM 融合生成面向 AI Native 转型客户的选题**：角度/客户共鸣度/行业钩子/可调用知识点 chips/换一批，门槛不足锁定，结果缓存 `aicc-creation-topics`）+ 写作台（钉选题 / 标题正文编辑 / 实时字数 / 素材引用 / AI 陪练 / 发布并闭环）；nav「创作」入口（取代旧「编辑器」位） | **published → 已成文（闭环回写）** | `onNavigate` / `topicId?`；已闭环 = 费曼内化笔记；**选题生成已实现（creation-topic-curation）**；写作台素材/AI 陪练/发布回写见 creation-writing-desk |
+| CreationPage | `/creation` | **创作（认知闭环最后一环）**：选题约稿（**全部历史已闭环知识点（跨周）× 行业趋势 → `callTopics` LLM 融合生成面向 AI Native 转型客户的选题**：角度/客户共鸣度/行业钩子/可调用知识点 chips/换一批，门槛不足锁定，结果缓存 `aicc-creation-topics`）+ 写作台（**富文本**：Markdown+工具栏+预览 / 素材引用 / AI 陪练 `callSparring` 只挑刺不代笔 / 草稿继续重开 / **发布·再修改(覆盖)·闭环连边图谱**）；nav「创作」入口（取代旧「编辑器」位） | **published → 已成文（多概念全标 published + 文章连边）** | `onNavigate` / `topicId?`；已闭环 = 费曼内化笔记；**选题生成 + 写作台均已实现（creation-topic-curation / creation-writing-desk）**；发布走共享 `lib/publishArticle.ts`，连边 `aicc-creation-edges` → GraphPage |
 | GraphPage | `/graph` | 认知图谱（**全局累积**：跨周全部认知点按概念去重，按来源周聚类、按状态着色）+ 第二大脑成长总览（已成稿/学习中/累积概念/积累天数，真实数据） | 累积 + 成长仪表盘 | `onNavigate`（`useRadarArchive` 取全部周；节点 click→雷达归档） |
 | ArticlePage | `/article/:slug` | 文章阅读页 | published 产物 | 先读 `aicc-article-md:<slug>`，回退 `public/content/<slug>.md` |
 
@@ -481,6 +481,7 @@ User input -> FeynmanApp.tsx (learning 阶段内部状态管理)
 | 认知差 Gap | `callGap` | deepseek-v4-flash | No | **No** | No | json_object | 0.3 | 揭晓后，若用户写过非空猜想（对比猜想 vs 答案） |
 | Feynman Review | `callFeynmanReview` | deepseek-v4-flash | No | **Yes** (forced) | **Yes** | json_object | 0.5 | User manual submit |
 | 创作选题 | `callTopics` | deepseek-v4-flash | No | **No** | No | json_object | 0.7 | 进创作页（无缓存）/「换一批」；全部历史已闭环知识点（跨周）× 趋势 → 面向 AI Native 转型客户的融合选题（角度/客户共鸣度 rubric 自评，conceptIds 前端过滤防幻觉） |
+| 创作陪练 | `callSparring` | deepseek-v4-flash | No | **No** | No | 文本（非 JSON） | 0.5 | 写作台 4 按钮（找反方/缺论据/事实核查/读者之问）对当前草稿「只挑刺、不代笔」，返回点评要点 |
 
 **Design Rationale for Call Matrix**:
 - **Warmup no search**: Avoid LLM being misled by homonymous business concepts (e.g. PolarDB GDN = Global Database Network)
@@ -502,7 +503,10 @@ User input -> FeynmanApp.tsx (learning 阶段内部状态管理)
 | `aicc-cognition-state` | localStorage | `cognition.tsx` | `Record<id, CognitionItem>`（状态机核心） |
 | `aicc-deep-plan` | localStorage | `cognition.tsx` | `string[]`（非 discovered 的 id，派生） |
 | `aicc-active-concept` | **sessionStorage** | `main.tsx` | `string`（当前认知点 id，跨刷新保活） |
-| `aicc-published-articles` | localStorage | `EditorPage.tsx` | 已发布文章索引 `{slug,title,subtitle,category,date,status,tags}[]` |
+| `aicc-published-articles` | localStorage | `lib/publishArticle.ts`（EditorPage/CreationPage 共用） | 已发布文章索引 `{slug,title,subtitle,category,date,status,tags,conceptIds}[]` |
+| `aicc-creation-topics` | localStorage | `CreationPage.tsx` | 选题缓存 `{sig,generatedAt,topics}`；闭环集合变化即失效，「换一批」重算 |
+| `aicc-creation-draft:<topicId>` | localStorage | `CreationPage.tsx` | 写作台草稿 `{title,body,updatedAt}`；防抖写回，重进「继续/重新开始」 |
+| `aicc-creation-edges` | localStorage | `lib/publishArticle.ts` | 文章连边 `{slug,title,conceptIds,at}[]`；发布融合多概念文章时写，GraphPage 渲染「成文连接」 |
 | `aicc-article-md:<slug>` | localStorage | `EditorPage` → `ArticlePage` | 已发布文章 Markdown 原文（文章页优先回读） |
 | `aicc-theme` | localStorage | `SiteHeader.tsx` | `"dark" \| "light"` |
 

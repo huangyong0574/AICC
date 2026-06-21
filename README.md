@@ -139,7 +139,7 @@ main.tsx (App Router · 手写 History 路由 + CognitionProvider)
 **4.4 创作（Creation）— `published → 已成文`（认知闭环最后一环）**
 - 选题约稿：从已闭环知识点（费曼内化完成）× 本周行业动态生成可写选题；底料不足时锁定（宁缺毋滥）
 - 写作台：钉选题 + 标题/正文 + 实时字数；「我的素材」引用闭环笔记、「AI 陪练」只挑刺不代笔、「发布并闭环」回写认知点为已成文
-- 阶段 1（选题约稿 + 写作台基础）已上线；写作台完整能力（素材 / 陪练 / 发布闭环）见 OpenSpec 变更 `creation-writing-desk`
+- 选题约稿（LLM 融合选题，面向转型客户）+ 写作台（富文本 / 素材引用 / AI 陪练 / 发布·再修改·闭环连边图谱）**均已上线**（OpenSpec: `creation-topic-curation` / `creation-writing-desk`）
 
 ### 5. 费曼四步穿透学习引擎
 
@@ -423,7 +423,7 @@ AICC 采用「认知递进」的分层设计，对齐产品链路：
 | 费曼数据归一 `gdn_*→aicc-*` + 内化成果回流认知图谱（关系边） | Done | P1 |
 | **创作模块阶段 1**（选题约稿 + 写作台基础） | Done | P1 |
 | **创作 · LLM 选题生成**（跨周已闭环知识点 × 趋势 → 面向 AI Native 转型客户的融合选题 · `creation-topic-curation`） | Done | P1 |
-| **创作 · 写作台 2–4**（富文本编辑 / 素材引用 / AI 陪练 / 发布并修改闭环回写图谱 · `creation-writing-desk`） | Planned | P1 |
+| **创作 · 写作台**（富文本编辑 / 素材引用 / AI 陪练 / 发布·再修改·闭环连边图谱 · `creation-writing-desk`） | Done | P1 |
 | **OpenSpec spec-driven 工作流接入**（propose → apply → archive） | Done | P1 |
 | **后端落库**（Flask + SQLite：权威源 + localStorage 缓存 + 单用户 token） | Planned | P1 |
 | 费曼学习页 UI 对齐设计稿（步骤卡 / L1 eyebrow / L3 blueprint / 场景边界 premium） | Done | P1 |
