@@ -4,7 +4,7 @@
 - [ ] 扩展 `Topic` 类型：`angle` / `potential` / `hook{text,sourceUrl?}` / `conceptIds[]`
 - [ ] `feynman/lib/llm.ts` 加 `callTopics(concepts, trends, cfg)`（非流式，固定输出 schema）
 - [ ] system/user prompt：强约束「融合 ≥1（优先 2）个给定知识点 + 1 趋势钩子、**命中 AI Native 转型客户关切**、给有张力角度、不得编造知识点」+ **按 rubric 自评 `potential`（防全 5★）**；每批 3–5 条
-- [ ] 输入装配：从已闭环 `Note` 取精髓（topic + Step4 一句话 + Step1 类比）+ 雷达 `news`/`insights` 趋势
+- [ ] 输入装配：**全部历史已闭环 `Note`（跨周）**取精髓（topic + Step4 一句话 + Step1 类比）+ 近期雷达 `news`/`insights` 趋势；闭环集大时按「最近 + 多样性」采样 ~10–15 个控 token
 - [ ] 输出校验：`conceptIds` 过滤到已闭环集合内（防幻觉）；`angle` 落在固定 5 类（转型角度）
 
 ## 2. 缓存与门槛

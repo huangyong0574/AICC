@@ -4,14 +4,14 @@
 
 ## Goals / Non-Goals
 
-- **Goals**：选题在**融合 / 对比多个已闭环知识点 × 行业趋势**的基础上，**对准「AI Native 组织转型客户」的决策关切**（战略/组织/能力/落地/治理），有张力、引人深思；门槛宁缺毋滥。
+- **Goals**：选题在**融合 / 对比用户全部历史已闭环知识点（跨周累积）× 近期行业趋势**的基础上，**对准「AI Native 组织转型客户」的决策关切**（战略/组织/能力/落地/治理），有张力、引人深思；门槛宁缺毋滥。
 - **Non-Goals**：写作台（→ `creation-writing-desk`）；AI **不替用户写文**（仍只给角度 / 时机 / 素材）；不做无限滚动 / 个性化推荐算法。
 
 ## Decisions
 
 ### 1. LLM 生成选题：`callTopics(concepts, trends)` → 结构化选题[]
 复用 `feynman/lib/llm.ts` 非流式通道 + `aicc-llm-cfg`。
-- **输入**：已闭环知识点精髓（topic + Step4 一句话本质 + Step1 类比，复用 `extractMaterials` 思路，控 token）+ 雷达趋势（`news` 标题 + `insights` 的 title/tagline）。
+- **输入**：**用户全部历史已闭环知识点**（跨周，不限最近一周；每个取 topic + Step4 一句话本质 + Step1 类比，复用 `extractMaterials` 思路控 token；闭环集很大时按「最近 + 多样性」挑 ~10–15 个喂入，防 token 膨胀）+ 近期雷达趋势（`news` 标题 + `insights` 的 title/tagline）。
 - **输出 schema（固定）**：`{ angle, title, dek, potential: 1–5, hook: { text, sourceUrl? }, conceptIds: string[] }[]`。
 - system prompt 约束：**必须融合/对比 ≥1（优先 ≥2）个给定知识点**、绑定 1 条趋势钩子、**每条须命中「AI Native 组织转型客户」的关切（让转型决策者想读）**、给出有张力的角度；**不得编造用户没闭环的知识点**。
 - `potential`（客户共鸣度 1–5）由 **LLM 按 rubric 自评**：融合 ≥2 知识点 + 趋势够热 + 张力够 → 4–5；单点 / 弱关联 → 1–3（rubric 写进 prompt，防全 5★ 膨胀）。每批生成 **3–5 条**。
