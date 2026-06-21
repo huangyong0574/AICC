@@ -35,7 +35,7 @@ discovered ──► in-plan ──► learning ──► published
 | `discovered` | 已发现 | 在认知雷达里被扫描到 | RadarPage | 「加入深入计划」 |
 | `in-plan` | 待启动 | 已加入跨周深度计划 | PlanPage | 「开始费曼学习」 |
 | `learning` | 学习中 | 正在费曼工作台穿透 | FeynmanApp | 「去成稿」 |
-| `published` | 已成稿 | 已输出为自己的文章 | EditorPage | 发布 → 文章页 |
+| `published` | 已成稿 | 已输出为自己的文章 | EditorPage / **创作** | 发布 → 文章页；创作模块据此「闭环回写 · 已成文」 |
 
 ### 页面模块
 
@@ -46,7 +46,8 @@ discovered ──► in-plan ──► learning ──► published
 | **认知雷达·周切片** (Radar) | `/radar/:weekId` | 某周的认知点卡片，标「研究前沿 / 成熟可用」 | `discovered → in-plan` |
 | **深度计划** (Plan) | `/plan` | 跨周累积的深度学习计划，按状态筛选/计数 | `in-plan / learning / published` 看板 |
 | **费曼工作台** (Feynman) | `/feynman` | 单概念费曼四步穿透学习引擎 | `in-plan → learning` |
-| **文章编辑器** (Editor) | `/editor` | Markdown 实时预览 + 发布，把理解写成文章 | `learning → published` |
+| **文章编辑器** (Editor) | `/editor` | Markdown 实时预览 + 发布，把理解写成文章（内部入口，不在导航暴露） | `learning → published` |
+| **创作** (Creation) | `/creation` | 选题约稿（已闭环知识点 × 行业动态）+ 写作台（素材引用 / AI 陪练 / 发布并闭环） | `published → 已成文`（认知闭环最后一环） |
 | **认知图谱** (Graph) | `/graph` | 全局累积的概念网络（跨周去重、按来源周聚类、按状态着色）+ 第二大脑成长总览 | 累积 + 成长仪表盘 |
 | **文章详情** (Article) | `/article/:slug` | 文章阅读页（先读本地草稿，回退 `public/content`） | `published` 产物 |
 
@@ -56,7 +57,7 @@ discovered ──► in-plan ──► learning ──► published
 Feynman Warm-up（3 角色提问）→ Step 1 直觉 → Step 2 场景 → Step 3 机制 → Step 4 本质
 ```
 
-内置 **30 个热门 AI/LLM 算法概念**知识库 + 一批深度 AI 概念文章。设计稿源码归档于 [`design/aicc-html-bundle/`](design/aicc-html-bundle/)，与 `src/` 实现同仓，仓库即唯一事实来源。
+费曼学习的概念示例改取**认知雷达**的实时概念（旧 30 概念静态库已弃用，仅保留作老笔记兼容）。设计稿源码归档于 [`design/aicc-html-bundle/`](design/aicc-html-bundle/)（mockup）+ `design/live/`（真实渲染基线），与 `src/` 实现同仓，仓库即唯一事实来源。
 
 ---
 
@@ -69,7 +70,8 @@ main.tsx (App Router · 手写 History 路由 + CognitionProvider)
 ├── /radar/:weekId → RadarPage          # 某周雷达切片（discovered → in-plan）
 ├── /plan          → PlanPage           # 深度计划看板（in-plan / learning / published）
 ├── /feynman       → FeynmanApp         # 费曼四步穿透学习引擎（in-plan → learning）
-├── /editor        → EditorPage         # 文章编辑器（learning → published）
+├── /editor        → EditorPage         # 文章编辑器（learning → published，内部入口）
+├── /creation      → CreationPage       # 创作：选题约稿 + 写作台（published → 已成文）
 ├── /graph         → GraphPage          # 认知图谱（全局累积 + 成长总览）
 └── /article/:slug → ArticlePage        # 文章详情页（本地草稿优先，回退 public/content）
 （/dashboard 旧链接 → 重定向到 /radar 归档；认知工作台已下线）
@@ -79,7 +81,7 @@ main.tsx (App Router · 手写 History 路由 + CognitionProvider)
 
 ### 导航系统
 
-`SiteHeader` 全局导航条包含五个 Tab：**产品文化** / **认知雷达** / **深度计划** / **认知图谱** / **编辑器**，支持深色模式切换。顶部「编辑器」为通用入口（写任意文章，不绑定认知点）；「去成稿」按钮才携带认知点 id 完成 `published` 回写。（认知工作台已下线，其「第二大脑成长」总览并入认知图谱页。）
+`SiteHeader` 全局导航条包含五个 Tab：**产品文化** / **认知雷达** / **深度计划** / **认知图谱** / **创作**，支持深色模式切换。文章编辑器（`/editor`）为内部入口、不在导航暴露——「去成稿」按钮才携带认知点 id 完成 `published` 回写。（认知工作台已下线，其「第二大脑成长」总览并入认知图谱页。）
 
 ---
 
@@ -113,9 +115,9 @@ main.tsx (App Router · 手写 History 路由 + CognitionProvider)
 
 文章存储在 `public/content/`，支持 HTML 和 Markdown 双格式。
 
-### 4. 认知流水线（Radar → Plan → Feynman → Editor）
+### 4. 认知流水线（Radar → Plan → Feynman → Editor → Creation）
 
-围绕认知状态机的四段流转，由四个页面接力驱动：
+围绕认知状态机的流转，由多个页面接力驱动：
 
 **4.1 认知雷达（Radar）— `discovered → in-plan`**
 - 技术成熟度评估：每项标记「研究前沿」(amber) 或「成熟可用」(green)
@@ -134,6 +136,11 @@ main.tsx (App Router · 手写 History 路由 + CognitionProvider)
 - 发布 = 写入 `localStorage`（文章页可回读）+ 下载 `.md` 兜底；若携带认知点 id，则回写该概念为 `published` 并记录 slug
 - slug 必填，同名覆盖前二次确认
 
+**4.4 创作（Creation）— `published → 已成文`（认知闭环最后一环）**
+- 选题约稿：从已闭环知识点（费曼内化完成）× 本周行业动态生成可写选题；底料不足时锁定（宁缺毋滥）
+- 写作台：钉选题 + 标题/正文 + 实时字数；「我的素材」引用闭环笔记、「AI 陪练」只挑刺不代笔、「发布并闭环」回写认知点为已成文
+- 阶段 1（选题约稿 + 写作台基础）已上线；写作台完整能力（素材 / 陪练 / 发布闭环）见 OpenSpec 变更 `creation-writing-desk`
+
 ### 5. 费曼四步穿透学习引擎
 
 #### 3 Warm-up Questions（费曼预热）
@@ -148,7 +155,7 @@ main.tsx (App Router · 手写 History 路由 + CognitionProvider)
 |------|------|------|
 | **Step 1: 直觉** | "是什么？" | 类比 + 定义 + 术语表 + Takeaway（你手写，AI 仅供参考） |
 | **Step 2: 场景** | "用在哪？" | 适用/不适用场景 + 选择标准 |
-| **Step 3: 机制** | "怎么工作？" | 分步帧 + **动态 SVG** + Token 级数学 (LaTeX) |
+| **Step 3: 机制** | "怎么工作？" | 分步帧 + **结构化机制图**（`Step3Blueprint` 固定模板）+ Token 级数学 (LaTeX) |
 | **Step 4: 本质** | "一句话？" | 一句话 + 锚点隐喻 + 前后对比 + 3 个要点 |
 
 #### = 1 概念掌握
@@ -156,11 +163,13 @@ main.tsx (App Router · 手写 History 路由 + CognitionProvider)
 - 「去成稿」前必须先完成费曼内化三问（内化前置门槛）
 - 内化成果回流平台认知图谱：写入 `CognitionItem.relation`（父节点 + 关系 + 标签），在图谱上渲染真实关系边
 
-### 6. 动态 SVG 机制图
+### 6. 结构化机制图（取代 LLM 自由生成 SVG）
 
-- Step 3 中 **LLM 生成 SVG**：每个算法获得反映其核心机制的独特图表
-- SVG 规范：`viewBox="0 0 600 320"`，标记节点、方向箭头、高亮关键组件
-- 示例：LoRA 展示冻结 W + 低秩旁路；Ring Attention 展示 GPU 环拓扑；MoE 展示路由 → 专家选择
+> **核心设计原则**：用「结构化数据 + 固定前端模板」取代「LLM 自由生成 SVG/HTML」——风格可控、跨概念泛化、稳定可维护。
+
+- **Step 1 路由图**（`Step1Route`）：入口 → 关键判断节点 → 多分支（放行 / 降级 / 拦截）；仅路由/分类/门控/决策类机制产出，纯线性算法省略
+- **Step 3 机制图**（`Step3Blueprint` → `BlueprintDiagram`）：主链节点 + mono 代号 + 蓝色高亮 + 循环回路 + 侧输入，前端固定「蓝色闭环」模板渲染，跨概念风格统一
+- LLM 只产出结构化 nodes/edges 数据；SVG 由前端 `svgRenderer.ts` / `BlueprintDiagram` 本地渲染（无外部图像 API）
 
 ### 7. 渐进式渲染与骨架屏
 
@@ -189,6 +198,8 @@ main.tsx (App Router · 手写 History 路由 + CognitionProvider)
 | **Storage** | localStorage（状态机、计划、文章、笔记、图谱、配置）+ sessionStorage（当前认知点） |
 | **LLM** | DashScope compatible-mode API（deepseek-v4-flash） |
 | **Streaming** | SSE (Server-Sent Events) with AbortController |
+| **Typography** | Plus Jakarta Sans（拉丁/数字）+ Noto Sans SC 思源黑体（中文）· Google Fonts |
+| **Spec Workflow** | OpenSpec（`@fission-ai/openspec`）· propose → apply → archive |
 | **Testing** | Playwright (E2E) |
 
 ### 本地存储键（Storage Keys · 数据契约）
@@ -223,7 +234,8 @@ src/
 │   ├── RadarArchivePage.tsx        # 认知雷达归档/全集合（周时间轴）
 │   ├── RadarPage.tsx               # 某周雷达切片（discovered → in-plan）
 │   ├── PlanPage.tsx                # 深度计划看板（跨周累积）
-│   ├── EditorPage.tsx              # 文章编辑器（learning → published）
+│   ├── EditorPage.tsx              # 文章编辑器（learning → published，内部入口）
+│   ├── CreationPage.tsx            # 创作：选题约稿 + 写作台（published → 已成文）
 │   ├── GraphPage.tsx               # 认知图谱（全局累积 + 第二大脑成长总览）
 │   ├── ArticlePage.tsx             # 文章详情页
 │   └── SiteHeader.tsx              # 全局导航条（5 Tab）
@@ -253,7 +265,7 @@ src/
 │   │   ├── StreamingSection.tsx    # 共享骨架屏
 │   │   └── ...
 │   ├── data/
-│   │   ├── algorithm-concepts.ts   # 30 个概念 + arXiv 链接
+│   │   ├── algorithm-concepts.ts   # 旧 30 概念静态库（已弃用，保留作笔记兼容；示例改取雷达概念）
 │   │   └── algorithm-concepts.md   # 知识库 Markdown
 │   ├── lib/
 │   │   ├── prompts.ts              # 全部 LLM 提示词 + JSON Schema
@@ -287,8 +299,15 @@ scripts/
 └── deploy-dist.sh                  # 增量部署 dist/ → ECS /aicc/（build 须 --base=/aicc/；sshpass -e 读 SSHPASS；保留 dist/weekly/）
 
 .claude/
+├── commands/opsx/                 # OpenSpec 斜杠命令（/opsx:propose|apply|archive|explore|sync）
 └── skills/
-    └── aicc-radar/                 # 「AI 认知雷达周报」例程 skill（/aicc-radar：采集→认知点→ingest→部署）
+    ├── aicc-radar/                 # 「AI 认知雷达周报」例程 skill（采集→认知点→ingest→部署）
+    └── openspec-*/                 # OpenSpec 工作流 skills
+
+openspec/                          # ★ OpenSpec spec-driven（编码主流程，见 openspec/project.md）
+├── project.md                     #   AICC OpenSpec 约定（事实来源分层 / 何时用 / 纪律 gate）
+├── specs/                         #   能力规格库（随变更逐能力长出）
+└── changes/                       #   变更提案（proposal/design/specs/tasks）+ archive/
 ```
 
 ---
@@ -361,7 +380,7 @@ AICC 采用「认知递进」的分层设计，对齐产品链路：
 1. **产品文化**（Letter）— 价值观传递，看全局
 2. **认知雷达**（Radar）— 归档全集合 → 选周切面 → 选 1 个认知点（discovered → in-plan）
 3. **费曼引擎**（Feynman）— 单概念的深度穿透学习（in-plan → learning）
-4. **成稿发布**（Editor）— 把理解写成文章（learning → published）
+4. **成稿与创作**（Editor / Creation）— 把理解写成文章并闭环回写（learning → published → 已成文）
 5. **认知图谱**（Graph）— 全局累积 + 成长总览，未来支持每周回顾
 
 每个模块独立但相互关联，通过全局导航无缝切换。
@@ -388,7 +407,7 @@ AICC 采用「认知递进」的分层设计，对齐产品链路：
 | 文章编辑器（Markdown 预览 + 发布回写状态） | Done | P0 |
 | 认知图谱（按状态机着色） | Done | P0 |
 | 费曼四步穿透学习引擎 | Done | P0 |
-| 动态 SVG 机制图 + 30 算法概念知识库 | Done | P0 |
+| 结构化机制图 Step1Route / Step3Blueprint（取代 LLM 自由生成 SVG） | Done | P0 |
 | 设计稿归档 design/（唯一来源） | Done | P0 |
 | **雷达数据动态化**（skill 输出 JSON → 工程 `useLatestRadarWeek()` 加载） | Done | P0 |
 | 雷达摄取脚本 `ingest-radar` + `RadarWeek.generatedAt` 对齐（AICC 侧集成就绪，见 SPEC §3.6） | Done | P1 |
@@ -402,6 +421,12 @@ AICC 采用「认知递进」的分层设计，对齐产品链路：
 | 费曼概念模式锁定 + 示例归一（弃用旧 30 库，改取雷达概念） | Done | P1 |
 | Takeaway 改用户手写 + 内化前置成稿门槛 | Done | P1 |
 | 费曼数据归一 `gdn_*→aicc-*` + 内化成果回流认知图谱（关系边） | Done | P1 |
+| **创作模块阶段 1**（选题约稿 + 写作台基础） | Done | P1 |
+| **创作模块阶段 2–4**（写作台素材 / AI 陪练 / 发布并闭环 + LLM 选题） | Planned | P1 |
+| **OpenSpec spec-driven 工作流接入**（propose → apply → archive） | Done | P1 |
+| **后端落库**（Flask + SQLite：权威源 + localStorage 缓存 + 单用户 token） | Planned | P1 |
+| 费曼学习页 UI 对齐设计稿（步骤卡 / L1 eyebrow / L3 blueprint / 场景边界 premium） | Done | P1 |
+| 全局字体方案 B（Plus Jakarta Sans + Noto Sans SC） | Done | P2 |
 | 已发布文章并入独立文章库视图（统一来源） | Planned | P1 |
 | 防腐机制系统化（24h 未成稿提醒 / 周度审计看板） | Planned | P1 |
 | 多概念并发学习 · Error boundary · i18n | Planned | P2 |
