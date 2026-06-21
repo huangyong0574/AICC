@@ -447,3 +447,80 @@ export async function callGap(
   const arr = (v: unknown) => (Array.isArray(v) ? v.filter(x => typeof x === "string").slice(0, 4) : [])
   return { hit: arr(parsed.hit), miss: arr(parsed.miss), wrong: arr(parsed.wrong) }
 }
+
+// ============================================================
+// 创作选题生成：用户「全部历史已闭环知识点（跨周）× 近期趋势」→ 面向 AI Native 转型客户的融合选题
+// ============================================================
+export type TopicAngle = "战略抉择" | "组织变革" | "能力跃迁" | "落地治理" | "趋势预判"
+const TOPIC_ANGLES: TopicAngle[] = ["战略抉择", "组织变革", "能力跃迁", "落地治理", "趋势预判"]
+
+export interface GenTopic {
+  angle: TopicAngle
+  title: string
+  dek: string
+  potential: number                       // 客户共鸣度 1–5
+  hook: { text: string; sourceUrl?: string }
+  conceptIds: string[]                     // 融合引用的已闭环知识点 id（已过滤幻觉）
+}
+
+export async function callTopics(
+  concepts: { id: string; topic: string; essence: string }[],
+  trends: string[],
+  cfg: LlmConfig,
+): Promise<GenTopic[]> {
+  if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
+  const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
+  const validIds = new Set(concepts.map(c => c.id))
+
+  const sys = `你是面向「AI Native 组织转型客户」的深度内容选题策划。读者是正在做 AI Native 组织转型的决策者（CIO/CTO/转型负责人），兼顾落地一线。
+基于"用户已真正吃透（已闭环）的知识点（可跨不同时间学的，自由融合/对比）"与"近期行业趋势"，生成 3–5 条**有张力、引人深思**的选题。
+硬性要求：
+1. 每条必须**融合/对比 ≥1（强烈优先 ≥2）个给定知识点** + 绑定 1 条给定趋势作为「为什么现在」钩子；conceptIds 只能取给定知识点的 id，**严禁编造用户没学过的概念**。
+2. 每条必须命中 AI Native 组织转型客户的**决策关切**（战略/组织/能力/落地/治理），不要纯学术科普。
+3. angle 只能取其一：战略抉择 | 组织变革 | 能力跃迁 | 落地治理 | 趋势预判。
+4. potential（客户共鸣度 1–5）按 rubric 自评：融合≥2知识点+趋势够热+张力强→5；融合2个或1知识点×热趋势且角度清晰→4；单点+一般趋势→3；关联弱/角度平淡→2；勉强沾边→1。**不要给所有选题都打 5**。
+5. title 提一个真实的两难/抉择/反共识问题、有张力（≤40字）；dek 一句点出立意（≤50字）；hook.text 用给定趋势原文。
+只返回单一合法 JSON：{"topics":[{"angle":"战略抉择","title":"","dek":"","potential":4,"hook":{"text":"","sourceUrl":""},"conceptIds":["..."]}]}，不加 Markdown 围栏或前后缀。`
+
+  const user = `【用户已闭环知识点（跨周累积，可自由融合/对比）】\n${concepts.map(c => `- [${c.id}] ${c.topic}：${c.essence}`).join("\n")}\n\n【近期行业趋势（每条选题选 1 条做钩子）】\n${trends.map(t => `- ${t}`).join("\n")}\n\n请据此生成 3–5 条选题。`
+
+  const res = await fetch(`${base}/chat/completions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` },
+    body: JSON.stringify({
+      model: cfg.model || "deepseek-v4-flash",
+      messages: [{ role: "system", content: sys }, { role: "user", content: user }],
+      temperature: 0.7,
+      enable_thinking: false,
+      response_format: { type: "json_object" },
+      stream: false,
+    }),
+  })
+  if (!res.ok) {
+    const t = await res.text().catch(() => "")
+    throw new Error(`选题生成失败 HTTP ${res.status}: ${t.slice(0, 200)}`)
+  }
+  const data = await res.json()
+  const content: string = data?.choices?.[0]?.message?.content || "{}"
+  let parsed: any = {}
+  try { parsed = JSON.parse(content) } catch { const m = content.match(/\{[\s\S]*\}/); parsed = m ? JSON.parse(m[0]) : {} }
+  const list: any[] = Array.isArray(parsed?.topics) ? parsed.topics : Array.isArray(parsed) ? parsed : []
+
+  return list
+    .map((t: any): GenTopic | null => {
+      const conceptIds = (Array.isArray(t?.conceptIds) ? t.conceptIds : []).filter((id: any) => validIds.has(id))
+      if (!t?.title || conceptIds.length === 0) return null // 必须绑定真实知识点，否则丢弃（防幻觉/空挂）
+      const angle: TopicAngle = TOPIC_ANGLES.includes(t.angle) ? t.angle : "趋势预判"
+      const potential = Math.max(1, Math.min(5, Math.round(Number(t.potential) || 3)))
+      const hookText = typeof t.hook === "string" ? t.hook : (t.hook?.text || "")
+      return {
+        angle,
+        title: String(t.title),
+        dek: String(t.dek || ""),
+        potential,
+        hook: { text: hookText, sourceUrl: t.hook?.sourceUrl },
+        conceptIds,
+      }
+    })
+    .filter((t): t is GenTopic => t !== null)
+}

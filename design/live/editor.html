@@ -1168,9 +1168,6 @@ video {
 .h-9 {
   height: 2.25rem;
 }
-.h-\[15px\] {
-  height: 15px;
-}
 .h-\[18px\] {
   height: 18px;
 }
@@ -1188,6 +1185,9 @@ video {
 }
 .h-\[600px\] {
   height: 600px;
+}
+.h-\[6px\] {
+  height: 6px;
 }
 .h-\[9px\] {
   height: 9px;
@@ -1308,9 +1308,6 @@ video {
 }
 .w-9 {
   width: 2.25rem;
-}
-.w-\[15px\] {
-  width: 15px;
 }
 .w-\[18px\] {
   width: 18px;
@@ -1590,6 +1587,9 @@ video {
 .gap-\[1\.5px\] {
   gap: 1.5px;
 }
+.gap-\[2px\] {
+  gap: 2px;
+}
 .gap-\[72px\] {
   gap: 72px;
 }
@@ -1785,14 +1785,26 @@ video {
 .border-\[hsl\(var\(--\$\{cssVar\}\)\)\]\/30 {
   border-color: hsl(var(--${cssVar}) / 0.3);
 }
-.border-\[hsl\(var\(--border\)\)\] {
-  border-color: hsl(var(--border));
+.border-\[hsl\(var\(--destructive\)\/0\.3\)\] {
+  border-color: hsl(var(--destructive)/0.3);
+}
+.border-\[hsl\(var\(--destructive\)\/0\.4\)\] {
+  border-color: hsl(var(--destructive)/0.4);
+}
+.border-\[hsl\(var\(--layer-3\)\/0\.35\)\] {
+  border-color: hsl(var(--layer-3)/0.35);
+}
+.border-\[hsl\(var\(--layer-4\)\/0\.35\)\] {
+  border-color: hsl(var(--layer-4)/0.35);
 }
 .border-\[hsl\(var\(--mature\)\/0\.3\)\] {
   border-color: hsl(var(--mature)/0.3);
 }
 .border-\[hsl\(var\(--mature\)\/0\.5\)\] {
   border-color: hsl(var(--mature)/0.5);
+}
+.border-\[hsl\(var\(--warning\)\/0\.3\)\] {
+  border-color: hsl(var(--warning)/0.3);
 }
 .border-amber-200 {
   --tw-border-opacity: 1;
@@ -1923,8 +1935,17 @@ video {
 .bg-\[hsl\(var\(--\$\{cssVar\}\)\)\] {
   background-color: hsl(var(--${cssVar}));
 }
+.bg-\[hsl\(var\(--destructive\)\/0\.08\)\] {
+  background-color: hsl(var(--destructive)/0.08);
+}
 .bg-\[hsl\(var\(--frontier\)\)\] {
   background-color: hsl(var(--frontier));
+}
+.bg-\[hsl\(var\(--layer-3\)\/0\.1\)\] {
+  background-color: hsl(var(--layer-3)/0.1);
+}
+.bg-\[hsl\(var\(--layer-4\)\/0\.1\)\] {
+  background-color: hsl(var(--layer-4)/0.1);
 }
 .bg-\[hsl\(var\(--mature\)\)\] {
   background-color: hsl(var(--mature));
@@ -1934,6 +1955,9 @@ video {
 }
 .bg-\[hsl\(var\(--mature\)\/0\.08\)\] {
   background-color: hsl(var(--mature)/0.08);
+}
+.bg-\[hsl\(var\(--warning\)\/0\.08\)\] {
+  background-color: hsl(var(--warning)/0.08);
 }
 .bg-accent {
   background-color: hsl(var(--accent));
@@ -2028,6 +2052,9 @@ video {
 }
 .bg-foreground\/50 {
   background-color: hsl(var(--foreground) / 0.5);
+}
+.bg-foreground\/70 {
+  background-color: hsl(var(--foreground) / 0.7);
 }
 .bg-layer1 {
   background-color: hsl(var(--layer-1));
@@ -2738,8 +2765,20 @@ video {
 .tracking-wider {
   letter-spacing: 0.05em;
 }
+.text-\[hsl\(var\(--destructive\)\)\] {
+  color: hsl(var(--destructive));
+}
+.text-\[hsl\(var\(--layer-3\)\)\] {
+  color: hsl(var(--layer-3));
+}
+.text-\[hsl\(var\(--layer-4\)\)\] {
+  color: hsl(var(--layer-4));
+}
 .text-\[hsl\(var\(--mature\)\)\] {
   color: hsl(var(--mature));
+}
+.text-\[hsl\(var\(--warning\)\)\] {
+  color: hsl(var(--warning));
 }
 .text-accent {
   color: hsl(var(--accent));
@@ -3919,7 +3958,7 @@ status: 已定稿
 ## 第一节
 
 正文内容…"></textarea></div><div class="preview-pane"><div class="preview-toolbar"><span class="toolbar-label">文章页预览</span><span class="toolbar-meta"></span></div><div class="preview-scroll"><div class="preview-empty"><div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path><circle cx="12" cy="12" r="3"></circle></svg></div><p>在左侧粘贴 Markdown 内容<br>这里实时预览 AICC 文章页效果</p></div></div></div></div><div class="toast "><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check-big"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg><span></span></div></div></div>
-    <script type="module" src="/src/main.tsx?t=1782052100874"></script>
+    <script type="module" src="/src/main.tsx"></script>
   
 
 </body></html>

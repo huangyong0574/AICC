@@ -150,7 +150,7 @@ User inputs natural language question (e.g. "GDN是什么意思？")  ← 计划
 | PlanPage | `/plan` | 跨周深度计划看板 | in-plan/learning/published 看板 | `onOpenFeynman(id)` / `onOpenArticle(slug)` |
 | FeynmanApp | `/feynman` | 费曼四步穿透学习引擎；**套 AICC SiteHeader + 来源上下文条**；**实时持久化学习草稿（按 conceptId 防抖写回 `aicc-feynman-notes`），重进/刷新提示「继续 N/4 / 重新开始」** | **in-plan→learning**（含续学/复习入口） | `conceptId` / `initialQuestion` / `onGoToEditor(id)` / `onNavigate` / `onInternalized(id,delta)` / `onProgress(id,n)` |
 | EditorPage | `/editor` | Markdown 编辑 + 实时预览 + 发布（内部成稿入口，不在导航暴露） | **learning→published** | `conceptId` / `onBack` / `onPublished(slug)` |
-| CreationPage | `/creation` | **创作（认知闭环最后一环）**：选题约稿（已闭环知识点 × 雷达 `news` → 选题，门槛不足锁定）+ 写作台（钉选题 / 标题正文编辑 / 实时字数 / 素材引用 / AI 陪练 / 发布并闭环）；nav「创作」入口（取代旧「编辑器」位） | **published → 已成文（闭环回写）** | `onNavigate` / `topicId?`；已闭环 = 费曼内化笔记；阶段1=选题约稿+写作台基础，发布回写/LLM 选题/AI 陪练见阶段 2–4 |
+| CreationPage | `/creation` | **创作（认知闭环最后一环）**：选题约稿（**全部历史已闭环知识点（跨周）× 行业趋势 → `callTopics` LLM 融合生成面向 AI Native 转型客户的选题**：角度/客户共鸣度/行业钩子/可调用知识点 chips/换一批，门槛不足锁定，结果缓存 `aicc-creation-topics`）+ 写作台（钉选题 / 标题正文编辑 / 实时字数 / 素材引用 / AI 陪练 / 发布并闭环）；nav「创作」入口（取代旧「编辑器」位） | **published → 已成文（闭环回写）** | `onNavigate` / `topicId?`；已闭环 = 费曼内化笔记；**选题生成已实现（creation-topic-curation）**；写作台素材/AI 陪练/发布回写见 creation-writing-desk |
 | GraphPage | `/graph` | 认知图谱（**全局累积**：跨周全部认知点按概念去重，按来源周聚类、按状态着色）+ 第二大脑成长总览（已成稿/学习中/累积概念/积累天数，真实数据） | 累积 + 成长仪表盘 | `onNavigate`（`useRadarArchive` 取全部周；节点 click→雷达归档） |
 | ArticlePage | `/article/:slug` | 文章阅读页 | published 产物 | 先读 `aicc-article-md:<slug>`，回退 `public/content/<slug>.md` |
 
@@ -480,6 +480,7 @@ User input -> FeynmanApp.tsx (learning 阶段内部状态管理)
 | Step 4 | `callStep("step4")` | deepseek-v4-flash | Yes | **No** | **No** | json_object | 0.3 | 同上 |
 | 认知差 Gap | `callGap` | deepseek-v4-flash | No | **No** | No | json_object | 0.3 | 揭晓后，若用户写过非空猜想（对比猜想 vs 答案） |
 | Feynman Review | `callFeynmanReview` | deepseek-v4-flash | No | **Yes** (forced) | **Yes** | json_object | 0.5 | User manual submit |
+| 创作选题 | `callTopics` | deepseek-v4-flash | No | **No** | No | json_object | 0.7 | 进创作页（无缓存）/「换一批」；全部历史已闭环知识点（跨周）× 趋势 → 面向 AI Native 转型客户的融合选题（角度/客户共鸣度 rubric 自评，conceptIds 前端过滤防幻觉） |
 
 **Design Rationale for Call Matrix**:
 - **Warmup no search**: Avoid LLM being misled by homonymous business concepts (e.g. PolarDB GDN = Global Database Network)

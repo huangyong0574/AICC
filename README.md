@@ -422,7 +422,8 @@ AICC 采用「认知递进」的分层设计，对齐产品链路：
 | Takeaway 改用户手写 + 内化前置成稿门槛 | Done | P1 |
 | 费曼数据归一 `gdn_*→aicc-*` + 内化成果回流认知图谱（关系边） | Done | P1 |
 | **创作模块阶段 1**（选题约稿 + 写作台基础） | Done | P1 |
-| **创作模块阶段 2–4**（写作台素材 / AI 陪练 / 发布并闭环 + LLM 选题） | Planned | P1 |
+| **创作 · LLM 选题生成**（跨周已闭环知识点 × 趋势 → 面向 AI Native 转型客户的融合选题 · `creation-topic-curation`） | Done | P1 |
+| **创作 · 写作台 2–4**（富文本编辑 / 素材引用 / AI 陪练 / 发布并修改闭环回写图谱 · `creation-writing-desk`） | Planned | P1 |
 | **OpenSpec spec-driven 工作流接入**（propose → apply → archive） | Done | P1 |
 | **后端落库**（Flask + SQLite：权威源 + localStorage 缓存 + 单用户 token） | Planned | P1 |
 | 费曼学习页 UI 对齐设计稿（步骤卡 / L1 eyebrow / L3 blueprint / 场景边界 premium） | Done | P1 |
