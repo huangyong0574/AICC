@@ -37,6 +37,7 @@ explore  想清楚（不写码；模糊问题先聊）
 - [ ] 动 UI → 刷新 `design/live` 基线（需 `DASHSCOPE_API_KEY`）
 - [ ] 影响总纲 → 同步 `SPEC.md`
 - [ ] commit/push（local == GitHub）
+- [ ] push 后检查 `README.md` 是否需同步（产品 / 功能 / 页面 / 架构 / 契约有变 → 更新 README 再补提交）
 
 ## 4. 能力地图（按需长出，别一次建全）
 
