@@ -1,4 +1,10 @@
-## ADDED Requirements
+# app-shell
+
+## Purpose
+
+应用外壳契约：手写 History 路由（`pathToState` / `stateToPath` 双向映射）、`CognitionProvider` 挂载、以及页面级浏览器表现（如 `document.title`）。这是承载各页面的最外层壳，随相关变更逐步补全。
+
+## Requirements
 
 ### Requirement: 描述性页面标题
 应用 SHALL 在每个路由设置描述性的 `document.title`，使浏览器标签 / 书签 / 历史可区分当前页面。
@@ -18,3 +24,7 @@
 #### Scenario: 带参数路由附带参数
 - **WHEN** 用户打开某周雷达 `/radar/2026-W25`
 - **THEN** `document.title` 含该周标识（如 `认知雷达 · 2026-W25 · AICC`）
+
+#### Scenario: 文章页用真实标题
+- **WHEN** 用户打开某篇文章
+- **THEN** `document.title` 为该文章真实标题 + ` — AICC`（由 `ArticlePage` 提供；应用外壳对 article 不覆盖）

@@ -53,6 +53,20 @@ function stateToPath(page: AppPage, slug: string, week: string): string {
   return '/'
 }
 
+const BRAND = 'AICC'
+// 路由 → 浏览器标签标题（letter 用品牌全称，其余拼 "<页名> · AICC"）
+const PAGE_TITLES: Record<AppPage, string> = {
+  letter: 'AICC · AI Cognition Connector',
+  'radar-archive': '认知雷达',
+  radar: '认知雷达',
+  plan: '深度计划',
+  feynman: '费曼工作台',
+  editor: '成稿编辑器',
+  creation: '创作',
+  graph: '认知图谱',
+  article: '文章',
+}
+
 function App() {
   const { setState, setProgress, map, upsert } = useCognition()
   const [page, setPage] = useState<AppPage>(() => pathToState(location.pathname).page)
@@ -82,6 +96,16 @@ function App() {
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
+
+  // 按路由设置浏览器标签标题（书签 / 多标签页可辨识；深链与前进后退同样生效）
+  // 注：article 标题由 ArticlePage 用真实文章标题设置，这里对其早退、让其接管（避免双写/闪烁）
+  useEffect(() => {
+    if (page === 'article') return
+    const base = PAGE_TITLES[page]
+    let title = page === 'letter' ? base : `${base} · ${BRAND}`
+    if (page === 'radar' && radarWeek) title = `${base} · ${radarWeek} · ${BRAND}`
+    document.title = title
+  }, [page, radarWeek])
 
   // param：article 时为 slug，radar 时为 weekId
   const navigateTo = useCallback((newPage: AppPage, param?: string) => {
