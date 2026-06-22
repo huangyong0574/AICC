@@ -7,9 +7,10 @@ import { readFile, writeFile, readdir, mkdir, unlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import yaml from 'js-yaml'
 
-const aiccDir = (vault) => join(vault, 'AICC')
-export const conceptsDir = (vault) => join(aiccDir(vault), 'concepts')
-export const articlesDir = (vault) => join(aiccDir(vault), 'articles')
+// concepts/ 与 articles/ 直接放在 VAULT_DIR 下（VAULT_DIR 即 AICC 命名空间文件夹，
+// 如指向 Obsidian 的「AICC项目」则与 AICC-Input 并列；默认 <project>/vault）
+export const conceptsDir = (vault) => join(vault, 'concepts')
+export const articlesDir = (vault) => join(vault, 'articles')
 
 export async function ensureDirs(vault) {
   await mkdir(conceptsDir(vault), { recursive: true })
