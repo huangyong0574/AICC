@@ -483,6 +483,8 @@ User input -> FeynmanApp.tsx (learning 阶段内部状态管理)
 | 创作选题 | `callTopics` | deepseek-v4-flash | No | **No** | No | json_object | 0.7 | 进创作页（无缓存）/「换一批」；全部历史已闭环知识点（跨周）× 趋势 → 面向 AI Native 转型客户的融合选题（角度/客户共鸣度 rubric 自评，conceptIds 前端过滤防幻觉） |
 | 创作陪练 | `callSparring` | deepseek-v4-flash | No | **No** | No | 文本（非 JSON） | 0.5 | 写作台 4 按钮（找反方/缺论据/事实核查/读者之问）对当前草稿「只挑刺、不代笔」，返回点评要点 |
 
+> **自 Phase 1（变更 `aicc-local-obsidian`）**：以上所有 LLM 调用经**本地 Gateway `/api/llm` 代理**（`server/gateway.mjs`），key 仅存 Gateway `.env`、前端不再持 key；调用矩阵各参数不变。
+
 **Design Rationale for Call Matrix**:
 - **Warmup no search**: Avoid LLM being misled by homonymous business concepts (e.g. PolarDB GDN = Global Database Network)
 - **Warmup high temperature (0.8)**: Ensure diversity without garbled output; disable thinking for JSON stability

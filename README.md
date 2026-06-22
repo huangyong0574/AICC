@@ -337,7 +337,17 @@ npm run build
 npm run preview
 ```
 
-### Configuration
+### 本地 Gateway 模式（推荐 · 自变更 `aicc-local-obsidian` Phase 1）
+key 不再进浏览器：由本地 Gateway 持有并代理 DashScope。
+```bash
+cp server/.env.example server/.env   # 填 DASHSCOPE_API_KEY（绝不入库）
+npm run aicc                         # build + 起 Gateway（绑 127.0.0.1，默认 :8787）
+# 浏览器开 http://localhost:8787
+# 开发热更新：另起 npm run dev（vite 经 /api proxy 到 Gateway）
+```
+
+### Configuration（旧·浏览器直连模式）
+> 迁移期保留；本地 Gateway 模式下 key 在 `server/.env`、无需在「设置」里填。
 
 1. Open `http://localhost:5188` in browser（或你的 dev server 实际端口）
 2. Click **Settings** (gear icon) → enter your DashScope API Key（**本产品必须连接 LLM，无离线模式**）

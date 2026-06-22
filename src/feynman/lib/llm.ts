@@ -15,8 +15,19 @@ import {
   buildFeynmanWarmupPrompt,
 } from "./prompts"
 
+// ── 本地 Gateway 代理：前端不再持 key，所有 LLM 调用统一打到 /api/llm ──
+// dev 经 vite proxy → 127.0.0.1:8787；dist 经 Gateway 自身。key 始终只在 Gateway 端。
+const LLM_ENDPOINT = "/api/llm"
+function gatewayHeaders(): Record<string, string> {
+  const token = (typeof window !== "undefined" && (window as Window & { __AICC_TOKEN__?: string }).__AICC_TOKEN__) || ""
+  return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+}
+function llmChat(body: Record<string, unknown>, signal?: AbortSignal): Promise<Response> {
+  return fetch(LLM_ENDPOINT, { method: "POST", headers: gatewayHeaders(), body: JSON.stringify(body), signal })
+}
+
 // ============================================================
-// Legacy 六问 QA API 调用（已废弃，保留兼容）
+// Legacy 六问 QA API 调用（已废弃，保留兼容；仍直连 DashScope，非活跃路径）
 // ============================================================
 
 // ============================================================
@@ -32,24 +43,16 @@ export async function callFeynmanWarmup(
   rawQuestion: string,
   cfg: LlmConfig,
 ): Promise<FeynmanWarmupQuestion[]> {
-  if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
-  const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
-
   const messages: { role: string; content: string }[] = [
     { role: "system", content: SYSTEM_WARMUP },
     { role: "user", content: buildFeynmanWarmupPrompt(rawQuestion) },
   ]
 
-  const res = await fetch(`${base}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` },
-    body: JSON.stringify({
-      model: cfg.model || "deepseek-v4-flash",
-      messages,
-      temperature: 0.8,
-      // 费曼预热：适度 temperature 保障多样性；关闭思考提升 JSON 稳定性
-      enable_thinking: false,
-    }),
+  const res = await llmChat({
+    model: cfg.model || "deepseek-v4-flash",
+    messages,
+    temperature: 0.8, // 费曼预热：适度 temperature 保障多样性；关闭思考提升 JSON 稳定性
+    enable_thinking: false,
   })
 
   if (!res.ok) {
@@ -250,9 +253,6 @@ export async function callStep<K extends StepKey>(
   signal?: AbortSignal,
   grounding?: string,
 ): Promise<StepAnswerMap[K]> {
-  if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
-  const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
-
   // 每步使用独立 system prompt，概念嵌入 user 消息
   const messages: { role: string; content: string }[] = [
     { role: "system", content: SYSTEM_PROMPTS[stepKey] },
@@ -280,24 +280,18 @@ export async function callStep<K extends StepKey>(
   // step1（类比理解）+ step2（场景选择）需联网获取真实案例；step3/step4 纯推理不需要
   const useSearch = stepKey === "step1" || stepKey === "step2"
 
-  const res = await fetch(`${base}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` },
-    body: JSON.stringify({
-      model: cfg.model || "deepseek-v4-flash",
-      messages,
-      temperature: 0.3,
-      response_format: { type: "json_object" },
-      stream: true,
-      // 四大步骤全部关闭深度思考，避免 thinking 流拖慢响应
-      enable_thinking: false,
-      enable_search: useSearch,
-      ...(useSearch
-        ? { search_options: { forced_search: true, enable_source: true, enable_citation: true } }
-        : {}),
-    }),
-    signal,
-  })
+  const res = await llmChat({
+    model: cfg.model || "deepseek-v4-flash",
+    messages,
+    temperature: 0.3,
+    response_format: { type: "json_object" },
+    stream: true,
+    enable_thinking: false, // 四大步骤关闭深度思考，避免 thinking 流拖慢响应
+    enable_search: useSearch,
+    ...(useSearch
+      ? { search_options: { forced_search: true, enable_source: true, enable_citation: true } }
+      : {}),
+  }, signal)
   if (!res.ok || !res.body) {
     const t = await res.text().catch(() => "")
     throw new Error(`LLM HTTP ${res.status}: ${t.slice(0, 200)}`)
@@ -353,9 +347,6 @@ export async function callFeynmanReview(
   answers: FeynmanAnswers,
   cfg: LlmConfig,
 ): Promise<{ reviews: FeynmanReviewItem[]; graph: GraphDelta }> {
-  if (!cfg.apiKey) throw new Error("请先填入 API Key")
-  const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
-
   const sys = buildFeynmanSystemPrompt(topic)
 
   const body = {
@@ -372,11 +363,7 @@ export async function callFeynmanReview(
     enable_search: true,
     search_options: { forced_search: true, enable_source: true, enable_citation: true },
   }
-  const res = await fetch(`${base}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` },
-    body: JSON.stringify(body),
-  })
+  const res = await llmChat(body)
   if (!res.ok) throw new Error(`Feynman HTTP ${res.status}`)
   const json = await res.json()
   const content: string = json.choices?.[0]?.message?.content || "{}"
@@ -420,25 +407,19 @@ export async function callGap(
   cfg: LlmConfig,
   grounding?: string,
 ): Promise<StepGap> {
-  if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
-  const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
   const sys = `你是费曼学习法的"认知差"评估器。学习者在看到答案前，先用自己的话写了对某 AI 概念某一步的猜想。请**以「认知雷达原文」为权威事实标准**（若提供），对比"学习者猜想"与"权威标准 + 标准答案"，输出三类要点（每类 1-3 条、每条 ≤20 字、简体中文、务实具体，对着学习者说"你"）：
 - hit：学习者猜对/命中的关键点（须与雷达原文一致）
 - miss：雷达原文/答案里重要、但学习者完全没提到的点（遗漏）
 - wrong：学习者说错、或与雷达原文相悖的点（偏差）
 评判优先以雷达原文为准；标准答案 JSON 仅作辅助。只返回单一合法 JSON：{"hit":[],"miss":[],"wrong":[]}，不加任何 Markdown 围栏或前后缀；某类没有就给空数组。`
   const user = `概念：${rawQuestion}\n步骤：${stepKey}\n\n【认知雷达原文（权威标准，评判优先以此为准）】\n${(grounding || "（未提供，仅依据下方标准答案）").slice(0, 2500)}\n\n【学习者猜想】\n${prediction}\n\n【标准答案 JSON（讲解生成，辅助参考）】\n${JSON.stringify(answer).slice(0, 2500)}`
-  const res = await fetch(`${base}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` },
-    body: JSON.stringify({
-      model: cfg.model || "deepseek-v4-flash",
-      messages: [{ role: "system", content: sys }, { role: "user", content: user }],
-      temperature: 0.3,
-      enable_thinking: false,
-      response_format: { type: "json_object" },
-      stream: false,
-    }),
+  const res = await llmChat({
+    model: cfg.model || "deepseek-v4-flash",
+    messages: [{ role: "system", content: sys }, { role: "user", content: user }],
+    temperature: 0.3,
+    enable_thinking: false,
+    response_format: { type: "json_object" },
+    stream: false,
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const data = await res.json()
@@ -468,8 +449,6 @@ export async function callTopics(
   trends: string[],
   cfg: LlmConfig,
 ): Promise<GenTopic[]> {
-  if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
-  const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
   const validIds = new Set(concepts.map(c => c.id))
 
   const sys = `你是面向「AI Native 组织转型客户」的深度内容选题策划。读者是正在做 AI Native 组织转型的决策者（CIO/CTO/转型负责人），兼顾落地一线。
@@ -484,17 +463,13 @@ export async function callTopics(
 
   const user = `【用户已闭环知识点（跨周累积，可自由融合/对比）】\n${concepts.map(c => `- [${c.id}] ${c.topic}：${c.essence}`).join("\n")}\n\n【近期行业趋势（每条选题选 1 条做钩子）】\n${trends.map(t => `- ${t}`).join("\n")}\n\n请据此生成 3–5 条选题。`
 
-  const res = await fetch(`${base}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` },
-    body: JSON.stringify({
-      model: cfg.model || "deepseek-v4-flash",
-      messages: [{ role: "system", content: sys }, { role: "user", content: user }],
-      temperature: 0.7,
-      enable_thinking: false,
-      response_format: { type: "json_object" },
-      stream: false,
-    }),
+  const res = await llmChat({
+    model: cfg.model || "deepseek-v4-flash",
+    messages: [{ role: "system", content: sys }, { role: "user", content: user }],
+    temperature: 0.7,
+    enable_thinking: false,
+    response_format: { type: "json_object" },
+    stream: false,
   })
   if (!res.ok) {
     const t = await res.text().catch(() => "")
@@ -538,20 +513,14 @@ const SPARRING_INSTR: Record<SparringMode, string> = {
 }
 
 export async function callSparring(mode: SparringMode, draft: string, cfg: LlmConfig): Promise<string> {
-  if (!cfg.apiKey) throw new Error("请先在设置里填入 API Key")
-  const base = (cfg.baseUrl || "https://dashscope.aliyuncs.com/compatible-mode/v1").replace(/\/$/, "")
   const sys = `你是作者的 AI 陪练，只挑刺、不代笔。本次任务：${SPARRING_INSTR[mode]}
 硬性要求：只做点评 / 提问 / 给方向，**严禁代写或改写任何成段正文**；简体中文，给 3–5 条要点，每条 ≤40 字，对着作者说「你」。直接给要点（可用「- 」开头），不加前后缀说明。`
-  const res = await fetch(`${base}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` },
-    body: JSON.stringify({
-      model: cfg.model || "deepseek-v4-flash",
-      messages: [{ role: "system", content: sys }, { role: "user", content: `【草稿】\n${draft.slice(0, 4000)}` }],
-      temperature: 0.5,
-      enable_thinking: false,
-      stream: false,
-    }),
+  const res = await llmChat({
+    model: cfg.model || "deepseek-v4-flash",
+    messages: [{ role: "system", content: sys }, { role: "user", content: `【草稿】\n${draft.slice(0, 4000)}` }],
+    temperature: 0.5,
+    enable_thinking: false,
+    stream: false,
   })
   if (!res.ok) {
     const t = await res.text().catch(() => "")

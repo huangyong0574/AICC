@@ -3,11 +3,11 @@
 ## ✅ 评审已定（2026-06-22）
 - Gateway = **Node**；vault 目录 `vault/AICC/{concepts,articles}`；公开 ECS 阅读页保留不变（本变更不动）。
 
-## Phase 1 · 本地 Gateway 骨架（最小可跑）
-- [ ] 起本地 server（绑 `127.0.0.1` + 单用户 token），serve 现有 React build
-- [ ] LLM 代理端点：前端调用改走 Gateway，key 进 server `.env`（浏览器不再持 key）
-- [ ] 启动器：`npm run`/脚本一键起 + 自动开 localhost
-- [ ] 验收：localhost 可用全流程；浏览器存储/网络无 key；费曼跑通
+## Phase 1 · 本地 Gateway 骨架（最小可跑）✅ 完成 2026-06-22
+- [x] 起本地 server `server/gateway.mjs`（绑 `127.0.0.1` + 可选单用户 token），serve dist + SPA 兜底
+- [x] LLM 代理 `/api/llm`：`llm.ts` 6 调用改走 Gateway（SSE 透传），key 进 server `.env`（浏览器不再持 key）
+- [x] 启动器 `npm run aicc`（build + 起 Gateway）；dev 经 vite `/api` proxy → Gateway
+- [x] 验收：localhost 全流程、浏览器无 key、token 鉴权(401)、无 key 优雅(503)、**代理真机冒烟（回「你好」）**
 
 ## Phase 2 · Obsidian vault 作认知存储
 - [ ] Gateway 读写配置的 vault 文件夹（路径设置项）
