@@ -1,5 +1,6 @@
 // 成稿发布的共享落库逻辑（编辑器 EditorPage 与 创作写作台 CreationPage 同源，避免双实现漂移）。
 // 仅负责 localStorage 落库 + 文章连边；认知状态机 upsert（published）由调用方用 useCognition() 完成。
+import { syncArticleToVault } from "./vaultSync"
 
 export const DRAFT_PREFIX = "aicc-article-md:"
 export const PUBLISHED_INDEX = "aicc-published-articles"
@@ -77,6 +78,8 @@ export function publishArticleToStorage(input: PublishInput): boolean {
       ]
       localStorage.setItem(EDGES_KEY, JSON.stringify(next))
     }
+    // vault write-through：把成稿写成 <VAULT>/AICC/articles/<slug>.md（融合链接连概念节点）
+    syncArticleToVault(entry, input.markdown)
     return true
   } catch {
     return true // localStorage 不可用：当作已发布（调用方仍可下载 .md 兜底）

@@ -16,11 +16,13 @@
 - [x] SettingsDialog：gateway 模式放宽 key 必填 + 「测试连通」改走 `/api/llm` + 文案提示
 - [x] 验收：localhost:8787 浏览器无 key 不弹设置、真机 LLM 冒烟回「你好」、tsc/build 通过
 
-## Phase 2 · Obsidian vault 作认知存储
-- [ ] Gateway 读写配置的 vault 文件夹（路径设置项）
-- [ ] 概念/成稿写 atomic Markdown（frontmatter status/source-week + 三域 tag + `[[wikilink]]`：relation / 融合）
-- [ ] localStorage 降级为缓存，vault 为权威（启动从 vault 重建缓存）
-- [ ] 验收：发布后 vault 出现 .md；Obsidian 打开能看到笔记 + 图谱浮现
+## Phase 2 · Obsidian vault 作认知存储 ✅ 完成 2026-06-22
+- [x] Gateway 读写配置的 vault 文件夹（`VAULT_DIR`，默认 `<project>/vault`；`server/vault.mjs` + `/api/vault/{status,concepts,articles,concept,article}`，js-yaml frontmatter）
+- [x] 概念/成稿写 atomic Markdown（`src/lib/vaultSync.ts` write-through；frontmatter aicc-id/status/source-week/maturity + tags + `[[wikilink]]`：`## 关联 [[parent]]` / `## 融合 [[concept]]`）
+- [x] localStorage 降级为缓存，vault 为权威（`hydrateFromVault()` 启动安全合并重建，绝不删本地独有项）
+- [x] 验收：真机点「加入计划」→ vault 出 `.md`（in-plan）；清缓存重载 → 从 vault 重建；gateway round-trip 无损；tsc/build 通过
+- [x] 审计加固（2026-06-22）：按 aicc-id 防撞名静默覆盖/清改名孤儿（resolveFileName）、文章融合段幂等、listConcepts 按 id 去重、vault 写错误不回传本机路径
+- [ ] 待办（迁移期/后续，均非数据丢失级）：① 三域 tag 未强制分类（用 relation.tags 占位，需改费曼 prompt）② 概念改名后文章内 `[[旧标题]]` 链接会断（建议改 `[[id\|title]]` 或级联重写）③ `remove()` 未删 vault 文件 ④ 发布把融合概念标题统一改成文章标题（`CreationPage.tsx:391`，疑似 app 既有 bug，待决策）⑤ write-through 失败静默无提示
 
 ## Phase 3 · 认知图谱归 Obsidian
 - [ ] AICC 自建 SVG 图谱退役（或改为读 vault 渲染的轻量着色视图）

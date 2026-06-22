@@ -5,6 +5,7 @@ import { createServer } from 'node:http'
 import { readFile, stat } from 'node:fs/promises'
 import { join, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { writeConcept, writeArticle, listConcepts, listArticles, vaultStatus } from './vault.mjs'
 
 // 读取 server/.env（极简解析，无依赖）
 try {
@@ -23,6 +24,8 @@ const PORT = Number(process.env.PORT || 8787)
 const KEY = process.env.DASHSCOPE_API_KEY || ''
 const TOKEN = process.env.AICC_TOKEN || ''
 const BASE = (process.env.DASHSCOPE_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1').replace(/\/$/, '')
+// 认知存储 vault 根（默认 <project>/vault，可在 .env 配 VAULT_DIR 指向你的 Obsidian 库）；笔记落 <VAULT>/AICC/{concepts,articles}
+const VAULT = process.env.VAULT_DIR || join(ROOT, 'vault')
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript',
@@ -39,6 +42,11 @@ function readBody(req) {
     req.on('data', (c) => chunks.push(c))
     req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
   })
+}
+
+function sendJson(res, status, obj) {
+  res.writeHead(status, { 'content-type': 'application/json' })
+  res.end(JSON.stringify(obj))
 }
 
 async function serveStatic(req, res, pathname) {
@@ -104,9 +112,31 @@ const server = createServer(async (req, res) => {
     return res.end()
   }
 
+  // 认知存储：vault 读写（写 in-plan+ 概念与成稿成 .md；读供前端 hydrate）。带 token 鉴权。
+  if (url.pathname.startsWith('/api/vault/')) {
+    if (!authed(req)) { res.writeHead(401); return res.end('unauthorized') }
+    const sub = url.pathname.slice('/api/vault/'.length)
+    const method = req.method
+    try {
+      if (method === 'GET' && sub === 'status') return sendJson(res, 200, await vaultStatus(VAULT))
+      if (method === 'GET' && sub === 'concepts') return sendJson(res, 200, await listConcepts(VAULT))
+      if (method === 'GET' && sub === 'articles') return sendJson(res, 200, await listArticles(VAULT))
+      if ((method === 'PUT' || method === 'POST') && (sub === 'concept' || sub === 'article')) {
+        let payload
+        try { payload = JSON.parse((await readBody(req)) || '{}') } catch { return sendJson(res, 400, { error: 'invalid json' }) }
+        const file = sub === 'concept' ? await writeConcept(VAULT, payload) : await writeArticle(VAULT, payload)
+        return sendJson(res, 200, { ok: true, file })
+      }
+      return sendJson(res, 404, { error: 'not found' })
+    } catch (e) {
+      console.error('[vault] error:', e)            // 详情进服务端日志，不回传（避免泄露本机路径）
+      return sendJson(res, 500, { error: 'vault operation failed' })
+    }
+  }
+
   return serveStatic(req, res, url.pathname)
 })
 
 server.listen(PORT, HOST, () => {
-  console.log(`AICC Gateway → http://${HOST}:${PORT}  (key: ${KEY ? '已配置' : '未配置'}, token: ${TOKEN ? '启用' : '关闭'})`)
+  console.log(`AICC Gateway → http://${HOST}:${PORT}  (key: ${KEY ? '已配置' : '未配置'}, token: ${TOKEN ? '启用' : '关闭'}, vault: ${VAULT})`)
 })

@@ -11,11 +11,17 @@ import { CreationPage } from './pages/CreationPage'
 import { GraphPage } from './pages/GraphPage'
 import { CognitionProvider, useCognition } from './lib/cognition'
 import { probeGateway } from './lib/gateway'
+import { initVault } from './lib/vault'
+import { hydrateFromVault } from './lib/vaultSync'
 import type { NavPage } from './pages/SiteHeader'
 import './index.css'
 
-// 启动即探测本地 Gateway（dev 模式据 /api/health 判定 key 是否在服务端就绪；dist 模式靠注入标志已同步可知）
-void probeGateway()
+// 启动：①探测 Gateway（key 是否服务端就绪）②探测 vault ③从 vault 重建 localStorage 缓存（vault 权威）
+void (async () => {
+  await probeGateway()
+  await initVault()
+  await hydrateFromVault()
+})()
 
 type AppPage = 'letter' | 'graph' | 'article' | 'feynman' | 'radar-archive' | 'radar' | 'plan' | 'editor' | 'creation'
 

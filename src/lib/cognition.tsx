@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
+import { syncConceptToVault } from "./vaultSync"
 
 /* ──────────────────────────────────────────────────────────────
  * AICC 认知状态机（与 aicc-html-bundle 共享同一份 localStorage 模型）
@@ -118,6 +119,7 @@ export function CognitionProvider({ children }: { children: ReactNode }) {
       setMap((prev) => {
         const next = { ...prev, [id]: { ...prev[id], ...patch } as CognitionItem }
         persist(next)
+        syncConceptToVault(id, next[id])
         return next
       })
     },
@@ -132,6 +134,7 @@ export function CognitionProvider({ children }: { children: ReactNode }) {
         state !== "discovered" && !existing.addedAt ? Date.now() : existing.addedAt
       const next = { ...prev, [id]: { ...existing, state, addedAt } }
       persist(next)
+      syncConceptToVault(id, next[id])
       return next
     })
   }, [])
@@ -160,6 +163,7 @@ export function CognitionProvider({ children }: { children: ReactNode }) {
         },
       }
       persist(next)
+      syncConceptToVault(id, next[id])
       return next
     })
   }, [])

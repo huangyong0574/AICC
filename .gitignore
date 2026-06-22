@@ -1,6 +1,7 @@
 node_modules
 dist
 dist-ssr
+vault/
 *.local
 .DS_Store
 .env.local.json
