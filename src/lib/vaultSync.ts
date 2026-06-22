@@ -9,6 +9,7 @@ const STATE_KEY = "aicc-cognition-state"
 const PLAN_KEY = "aicc-deep-plan"
 const PUBLISHED_INDEX = "aicc-published-articles"
 const DRAFT_PREFIX = "aicc-article-md:"
+const EDGES_KEY = "aicc-creation-edges"
 
 function readCognition(): CognitionMap {
   try { return JSON.parse(localStorage.getItem(STATE_KEY) || "{}") as CognitionMap } catch { return {} }
@@ -104,6 +105,12 @@ export async function hydrateFromVault(): Promise<void> {
         }
       }
       localStorage.setItem(PUBLISHED_INDEX, JSON.stringify([...bySlug.values()]))
+      // 融合连边从 vault 文章重建（成文连接 = 文章 concept-ids ≥2 两两相连）：
+      // 让应用内图谱的边也 vault 溯源、不再依赖独立的 aicc-creation-edges 数据源
+      const edges = articles
+        .filter((a) => (a.conceptIds || []).length >= 2)
+        .map((a) => ({ slug: a.slug, title: a.title, conceptIds: a.conceptIds || [], at: 0 }))
+      localStorage.setItem(EDGES_KEY, JSON.stringify(edges))
       changed = true
     } catch { /* localStorage 不可用 */ }
   }

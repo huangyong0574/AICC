@@ -486,6 +486,7 @@ User input -> FeynmanApp.tsx (learning 阶段内部状态管理)
 > **自 Phase 1（变更 `aicc-local-obsidian`）**：以上所有 LLM 调用经**本地 Gateway `/api/llm` 代理**（`server/gateway.mjs`），key 仅存 Gateway `.env`、前端不再持 key；调用矩阵各参数不变。
 > **Phase 1.1**：前端经 `src/lib/gateway.ts` 的 `isLlmReady()` 判定就绪——dist 模式读 Gateway 注入的 `window.__AICC_KEY_READY__`、dev 模式探 `/api/health`；浏览器无 key 即可使用，所有 `if(!cfg.apiKey)` 闸门已改为 `isLlmReady(cfg)`。无 Gateway 的纯静态部署回落「浏览器持 key」旧模式。
 > **Phase 2（认知存储）**：**Obsidian vault 为权威、localStorage 为缓存**。Gateway（`server/vault.mjs` + `/api/vault/*`）读写 `${VAULT_DIR:-<project>/vault}/{concepts,articles}/*.md`（js-yaml frontmatter；VAULT_DIR 即 AICC 命名空间文件夹，可指向 Obsidian 库的 AICC 子目录）。前端 `src/lib/vaultSync.ts` write-through：认知点变更（in-plan+）/费曼内化/发布 → 写 `.md`（概念 `## 关联 [[parent]]`、文章 `## 融合 [[concept]]`，链接即图谱）；启动 `hydrateFromVault()` 从 vault 安全合并重建缓存（只增改、不删本地独有项）。discovered 雷达层仍留 JSON（`content/radar/*.json`），不为每条建笔记。
+> **Phase 3（图谱归 Obsidian）**：**认知关系图谱 = Obsidian 原生图谱**（节点=概念/文章 .md，边=`[[关联 parent]]`/`[[融合 concept]]`），用 `.obsidian/graph.json` color group 按 `status` 着色（published/learning/in-plan + 文章路径）。AICC 自建 `GraphPage` 重定位为「雷达覆盖视图」（学了什么/缺什么），gateway 模式下加横幅 + `obsidian://` 深链导向 Obsidian；其连边由 `hydrateFromVault()` 从 vault 文章重建（`aicc-creation-edges` 不再是独立数据源），关系源自 cognition 缓存(vault)——**无第二份图谱数据**。
 
 **Design Rationale for Call Matrix**:
 - **Warmup no search**: Avoid LLM being misled by homonymous business concepts (e.g. PolarDB GDN = Global Database Network)

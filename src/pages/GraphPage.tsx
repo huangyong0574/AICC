@@ -3,6 +3,7 @@ import { SiteHeader, type NavPage } from "./SiteHeader"
 import { useCognition, type CognitionStateValue } from "../lib/cognition"
 import { useRadarArchive } from "../data/radarData"
 import { loadArticleEdges } from "../lib/publishArticle"
+import { vaultEnabled } from "../lib/vault"
 
 interface GraphPageProps {
   onNavigate: (page: NavPage) => void
@@ -187,6 +188,16 @@ export function GraphPage({ onNavigate }: GraphPageProps) {
             <p className="lede">
               把每周雷达的认知点沉淀为长期的知识网络。已加入计划的节点用色彩突出，未涉及的保持灰色，便于一眼看出“我学到了什么，缺什么”。
             </p>
+            {vaultEnabled() && (
+              <div className="obsidian-banner">
+                <span className="ob-dot" />
+                <span>
+                  <strong>认知关系图谱已归 Obsidian。</strong>
+                  本页是「雷达覆盖视图」（学到什么 / 缺什么）；概念间的关系网络（费曼关联 + 成文融合）以 vault 链接为准，在 Obsidian 图谱视图按 status 着色查看。
+                </span>
+                <a className="ob-open" href="obsidian://open?vault=Obsidian%20Vault">在 Obsidian 打开 ↗</a>
+              </div>
+            )}
           </section>
 
           <div className="growth-grid">
@@ -384,6 +395,11 @@ const GRAPH_CSS = `
 .graph-page .hero-kicker .pulse{width:6px;height:6px;border-radius:9999px;background:hsl(var(--mature));box-shadow:0 0 0 4px hsl(var(--mature)/0.15)}
 .graph-page .page-hero h1{font-size:clamp(2.25rem,5vw,3.5rem);font-weight:600;letter-spacing:-0.04em;line-height:1.05;margin-bottom:18px}
 .graph-page .page-hero .lede{max-width:62ch;color:hsl(var(--muted-foreground));font-size:15.5px;line-height:1.7}
+.graph-page .obsidian-banner{display:flex;align-items:flex-start;gap:10px;margin-top:18px;max-width:80ch;padding:12px 16px;border:1px solid hsl(var(--border));border-radius:var(--radius);background:hsl(var(--secondary)/0.5);font-size:13px;line-height:1.6;color:hsl(var(--muted-foreground))}
+.graph-page .obsidian-banner .ob-dot{flex:none;width:7px;height:7px;margin-top:6px;border-radius:9999px;background:hsl(var(--frontier))}
+.graph-page .obsidian-banner strong{color:hsl(var(--foreground));font-weight:600}
+.graph-page .obsidian-banner .ob-open{flex:none;align-self:center;white-space:nowrap;font-family:var(--font-mono);font-size:12px;color:hsl(var(--frontier));text-decoration:none;border:1px solid hsl(var(--frontier)/0.4);border-radius:9999px;padding:4px 12px}
+.graph-page .obsidian-banner .ob-open:hover{background:hsl(var(--frontier)/0.1)}
 .graph-page .growth-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:0 0 32px}
 @media(max-width:768px){.graph-page .growth-grid{grid-template-columns:repeat(2,1fr)}}
 .graph-page .growth-card{padding:18px 20px;border:1px solid hsl(var(--border));border-radius:var(--radius);background:hsl(var(--card))}

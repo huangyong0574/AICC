@@ -24,10 +24,11 @@
 - [x] 审计加固（2026-06-22）：按 aicc-id 防撞名静默覆盖/清改名孤儿（resolveFileName）、文章融合段幂等、listConcepts 按 id 去重、vault 写错误不回传本机路径
 - [ ] 待办（迁移期/后续，均非数据丢失级）：① 三域 tag 未强制分类（用 relation.tags 占位，需改费曼 prompt）② 概念改名后文章内 `[[旧标题]]` 链接会断（建议改 `[[id\|title]]` 或级联重写）③ `remove()` 未删 vault 文件 ④ 发布把融合概念标题统一改成文章标题（`CreationPage.tsx:391`，疑似 app 既有 bug，待决策）⑤ write-through 失败静默无提示
 
-## Phase 3 · 认知图谱归 Obsidian
-- [ ] AICC 自建 SVG 图谱退役（或改为读 vault 渲染的轻量着色视图）
-- [ ] 文档化 Obsidian graph color group（按 status 着色）配置
-- [ ] 验收：图谱来自 vault 链接，无第二份图谱数据
+## Phase 3 · 认知图谱归 Obsidian ✅ 完成 2026-06-23
+- [x] 认知关系图谱归 Obsidian（节点=概念/文章 .md，边=`[[关联]]`/`[[融合]]`）；AICC 自建 SVG 图谱重定位为「雷达覆盖视图」，加横幅 + `obsidian://` 深链导向 Obsidian 关系图谱（仅 gateway 模式显示）
+- [x] 应用内图谱去掉第二份数据源：`hydrateFromVault()` 从 vault 文章重建 `aicc-creation-edges`（连边也 vault 溯源）；relations 早已源自 cognition map(vault)；`aicc-feynman-graph` 本就 vestigial（GraphPage 不读）
+- [x] Obsidian graph color group 按 status 着色：`.obsidian/graph.json` colorGroups（published=绿 / learning=琥珀 / in-plan=蓝 / articles 路径=紫；已备份 graph.json.bak-aicc）
+- [x] 验收：Obsidian 关系图谱真机着色正确（learning 琥珀 / in-plan 蓝 / 文章紫 / discovered 灰）；应用内连边 `at:0` 证明源自 vault；tsc/build 通过
 
 ## Phase 4 · 雷达消费 vault
 - [ ] AICC 启动检测 vault `AICC-Input/` 新周 JSON → 拉进流水线
