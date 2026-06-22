@@ -9,6 +9,7 @@ import type { FeynmanAnswers, FeynmanDigest, FeynmanReviewItem, FeynmanWarmupQue
 import { FEYNMAN_ROLES } from "../types"
 import { callFeynmanReview } from "../lib/llm"
 import { upsertGraph } from "../lib/storage"
+import { isLlmReady } from "@/lib/gateway"
 
 const ICONS: Record<string, any> = { biz: Users, dev: Code2, internal: FlaskConical }
 
@@ -60,7 +61,7 @@ export function FeynmanDigestPanel({
 
   async function submit() {
     if (!hasAny) return toast.error("请至少回答一个角色的问题（只有回答过的才会存到知识图谱）")
-    if (!cfg.apiKey) return toast.error("请先配置 API Key")
+    if (!isLlmReady(cfg)) return toast.error("LLM 未就绪（本地 Gateway 未配置 key 或未填 API Key）")
     setLoading(true)
     try {
       const { reviews, graph } = await callFeynmanReview(rawQuestion, topic, context, answers, cfg)

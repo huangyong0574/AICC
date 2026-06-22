@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Toaster, toast } from "sonner"
+import { isLlmReady } from "@/lib/gateway"
 import {
   Settings, Play, MessageCircle, Brain, SquarePen, ArrowLeft, ExternalLink,
 } from "lucide-react"
@@ -97,8 +98,10 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
   useEffect(() => {
     const c = loadCfg()
     setCfg(c)
-    if (!c.apiKey) {
-      setTimeout(() => setShowSettings(true), 500)
+    // gateway 模式（key 在服务端）不弹设置；仅旧模式才提示。
+    // 500ms 后二次判定：dev 模式 probeGateway() 异步，届时多已返回，避免误弹。
+    if (!isLlmReady(c)) {
+      setTimeout(() => { if (!isLlmReady(c)) setShowSettings(true) }, 500)
     }
   }, [])
 
@@ -129,8 +132,8 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
       toast.error("先写下你想讲透的 AI 概念问题")
       return
     }
-    if (!cfg.apiKey) {
-      toast.error("请先在右上角设置 API Key（本产品需连接 LLM）")
+    if (!isLlmReady(cfg)) {
+      toast.error("LLM 未就绪：请确认本地 Gateway 已配置 key（server/.env），或在右上角设置里填入 API Key")
       setShowSettings(true)
       return
     }

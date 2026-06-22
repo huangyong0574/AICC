@@ -7,6 +7,7 @@ import { Select, SelectTrigger, SelectContent, SelectValue, SelectItem } from "@
 import { toast } from "sonner"
 import type { LlmConfig } from "../types"
 import { loadCfg, saveCfg, DEFAULT_CFG } from "../lib/storage"
+import { gatewayKeyConfigured, gatewayToken } from "@/lib/gateway"
 
 const MODEL_OPTIONS = [
   { value: "deepseek-v4-flash", label: "deepseek-v4-flash（推荐 · 更快）" },
@@ -24,8 +25,11 @@ export function SettingsDialog({ open, onOpenChange, onSaved }: { open: boolean;
     if (open) setCfg(loadCfg())
   }, [open])
 
+  const gatewayMode = gatewayKeyConfigured()
+
   function save() {
-    if (!cfg.apiKey.trim()) return toast.error("API Key 不能为空（本产品需连接 LLM）")
+    // gateway 模式 key 在服务端，浏览器无需填；仅旧模式强制非空
+    if (!gatewayMode && !cfg.apiKey.trim()) return toast.error("API Key 不能为空（本产品需连接 LLM）")
     saveCfg(cfg)
     onSaved(cfg)
     toast.success("设置已保存")
@@ -33,9 +37,21 @@ export function SettingsDialog({ open, onOpenChange, onSaved }: { open: boolean;
   }
 
   async function test() {
-    if (!cfg.apiKey) return toast.error("请先填 API Key")
     toast.info("测试中…")
     try {
+      if (gatewayMode) {
+        // 经本地 Gateway 测试（key 在服务端，浏览器不持 key）
+        const token = gatewayToken()
+        const res = await fetch("/api/llm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ model: cfg.model, messages: [{ role: "user", content: "ping" }], max_tokens: 8 }),
+        })
+        if (res.ok) toast.success("Gateway 连通成功 ✓")
+        else toast.error(`Gateway HTTP ${res.status}`)
+        return
+      }
+      if (!cfg.apiKey) return toast.error("请先填 API Key")
       const res = await fetch(`${cfg.baseUrl.replace(/\/$/, "")}/chat/completions`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` },
@@ -53,12 +69,16 @@ export function SettingsDialog({ open, onOpenChange, onSaved }: { open: boolean;
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>LLM 设置</DialogTitle>
-          <DialogDescription>接入阿里云百炼 / DashScope 兼容端点。Key 仅存本地 localStorage。</DialogDescription>
+          <DialogDescription>
+            {gatewayMode
+              ? "本地 Gateway 已配置 key（存于服务端 server/.env），浏览器无需填写 API Key。"
+              : "接入阿里云百炼 / DashScope 兼容端点。Key 仅存本地 localStorage。"}
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="key">API Key</Label>
-            <Input id="key" type="password" value={cfg.apiKey} onChange={e => setCfg({ ...cfg, apiKey: e.target.value })} placeholder="sk-xxxxxxxxxxxxxx" />
+            <Label htmlFor="key">API Key{gatewayMode && <span className="ml-1 text-xs text-muted-foreground">（gateway 模式可留空）</span>}</Label>
+            <Input id="key" type="password" value={cfg.apiKey} onChange={e => setCfg({ ...cfg, apiKey: e.target.value })} placeholder={gatewayMode ? "已由本地 Gateway 提供，无需填写" : "sk-xxxxxxxxxxxxxx"} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="base">Base URL</Label>

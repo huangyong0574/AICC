@@ -8,6 +8,7 @@ import {
   Loader2, ChevronDown, AlertCircle, Zap, X,
 } from "lucide-react"
 import { toast } from "sonner"
+import { isLlmReady } from "@/lib/gateway"
 import type {
   StepEntry, StepKey, StepGap, LlmConfig,
   Step1Answer, Step2Answer, Step3Answer, Step4Answer, GlossaryTerm,
@@ -98,8 +99,8 @@ export function StepPipeline({
   }
 
   async function runOne(idx: number, prediction?: string) {
-    if (!cfg.apiKey) {
-      toast.error("请先设置 API Key")
+    if (!isLlmReady(cfg)) {
+      toast.error("LLM 未就绪（本地 Gateway 未配置 key 或未填 API Key）")
       return
     }
     const cur = valueRef.current[idx]

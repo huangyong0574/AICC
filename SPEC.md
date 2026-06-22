@@ -484,6 +484,7 @@ User input -> FeynmanApp.tsx (learning 阶段内部状态管理)
 | 创作陪练 | `callSparring` | deepseek-v4-flash | No | **No** | No | 文本（非 JSON） | 0.5 | 写作台 4 按钮（找反方/缺论据/事实核查/读者之问）对当前草稿「只挑刺、不代笔」，返回点评要点 |
 
 > **自 Phase 1（变更 `aicc-local-obsidian`）**：以上所有 LLM 调用经**本地 Gateway `/api/llm` 代理**（`server/gateway.mjs`），key 仅存 Gateway `.env`、前端不再持 key；调用矩阵各参数不变。
+> **Phase 1.1**：前端经 `src/lib/gateway.ts` 的 `isLlmReady()` 判定就绪——dist 模式读 Gateway 注入的 `window.__AICC_KEY_READY__`、dev 模式探 `/api/health`；浏览器无 key 即可使用，所有 `if(!cfg.apiKey)` 闸门已改为 `isLlmReady(cfg)`。无 Gateway 的纯静态部署回落「浏览器持 key」旧模式。
 
 **Design Rationale for Call Matrix**:
 - **Warmup no search**: Avoid LLM being misled by homonymous business concepts (e.g. PolarDB GDN = Global Database Network)

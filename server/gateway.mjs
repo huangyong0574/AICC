@@ -58,8 +58,9 @@ async function serveStatic(req, res, pathname) {
   let out = body
   const ext = extname(file)
   if (ext === '.html') {
-    // 把单用户 token 注入页面，供前端调 /api/llm 时携带（dist 模式）
-    out = Buffer.from(body.toString('utf8').replace('</head>', `<script>window.__AICC_TOKEN__=${JSON.stringify(TOKEN)}</script></head>`), 'utf8')
+    // 注入：①单用户 token（前端调 /api/llm 时携带）②key 是否在服务端就绪（前端据此判定 gateway 模式、免浏览器持 key）
+    const inject = `<script>window.__AICC_TOKEN__=${JSON.stringify(TOKEN)};window.__AICC_KEY_READY__=${JSON.stringify(!!KEY)}</script>`
+    out = Buffer.from(body.toString('utf8').replace('</head>', `${inject}</head>`), 'utf8')
   }
   res.writeHead(200, { 'content-type': MIME[ext] || 'application/octet-stream' })
   res.end(out)

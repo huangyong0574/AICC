@@ -9,6 +9,13 @@
 - [x] 启动器 `npm run aicc`（build + 起 Gateway）；dev 经 vite `/api` proxy → Gateway
 - [x] 验收：localhost 全流程、浏览器无 key、token 鉴权(401)、无 key 优雅(503)、**代理真机冒烟（回「你好」）**
 
+## Phase 1.1 · 前端 gateway 模式闸门改造（补完 P1「浏览器无 key」）✅ 完成 2026-06-22
+- [x] 验收发现：P1 只迁移网络层，前端 7 处 `if(!cfg.apiKey)` 闸门 + SettingsDialog 仍逼浏览器持 key → gateway 模式打开即被挡死
+- [x] 新增 `src/lib/gateway.ts`：`isLlmReady()`/`gatewayKeyConfigured()`/`probeGateway()`（dist 读注入 `window.__AICC_KEY_READY__`，dev 探 `/api/health`）
+- [x] Gateway 注入 `__AICC_KEY_READY__`；6 处活跃闸门改 `isLlmReady(cfg)`（FeynmanApp×2 / StepPipeline / FeynmanDigestPanel / CreationPage×2）
+- [x] SettingsDialog：gateway 模式放宽 key 必填 + 「测试连通」改走 `/api/llm` + 文案提示
+- [x] 验收：localhost:8787 浏览器无 key 不弹设置、真机 LLM 冒烟回「你好」、tsc/build 通过
+
 ## Phase 2 · Obsidian vault 作认知存储
 - [ ] Gateway 读写配置的 vault 文件夹（路径设置项）
 - [ ] 概念/成稿写 atomic Markdown（frontmatter status/source-week + 三域 tag + `[[wikilink]]`：relation / 融合）

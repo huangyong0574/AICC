@@ -6,6 +6,7 @@ import { loadNotes, loadCfg } from '../feynman/lib/storage'
 import { callTopics, callSparring, type GenTopic, type TopicAngle, type SparringMode } from '../feynman/lib/llm'
 import { SettingsDialog } from '../feynman/components/SettingsDialog'
 import { useCognition } from '../lib/cognition'
+import { isLlmReady } from '@/lib/gateway'
 import { renderArticleBody } from '../lib/markdown'
 import { publishArticleToStorage, slugify, loadPublishedMarkdown, findPublishedByConceptId } from '../lib/publishArticle'
 import type { Note, LlmConfig } from '../feynman/types'
@@ -123,7 +124,7 @@ export function CreationPage({ onNavigate, topicId }: CreationPageProps) {
       const cached = loadTopicCache(sig)
       if (cached && cached.length) { setTopics(cached); setErr(null); return }
     }
-    if (!cfg.apiKey) { setErr('no-key'); setShowSettings(true); return }
+    if (!isLlmReady(cfg)) { setErr('no-key'); setShowSettings(true); return }
     setLoading(true); setErr(null)
     try {
       const gen: GenTopic[] = await callTopics(conceptList, trends, cfg)
@@ -375,7 +376,7 @@ function DeskView({ pinned, onBack, notes, cfg }: { pinned: Topic; onBack: () =>
 
   async function runSpar(mode: SparringMode) {
     if (!body.trim()) { setSparErr('先写点正文，再让我挑刺'); return }
-    if (!cfg.apiKey) { setSparErr('未配置 API Key（到选题页「设置」填入）'); return }
+    if (!isLlmReady(cfg)) { setSparErr('LLM 未就绪（本地 Gateway 未配置 key 或未填 API Key）'); return }
     setSparLoading(mode); setSparErr(null)
     try { setSpar({ mode, text: await callSparring(mode, body, cfg) }) }
     catch (e: any) { setSparErr(e?.message || 'AI 陪练失败') }
