@@ -218,8 +218,20 @@ export interface RadarIndexEntry {
   generatedAt?: string
 }
 
-/** 读取周索引（新→旧）；失败返回空数组 */
+// 本地 Gateway 雷达源是否可用（Phase 4：消费 vault AICC-Input ∪ 打包历史周）。
+// null=未探测；由 loadRadarIndex 设定，loadRadarWeek 据此选择源。无 Gateway（ECS/纯静态）回退 RADAR_BASE。
+let _radarGateway: boolean | null = null
+
+/** 读取周索引（新→旧）；优先本地 Gateway（vault），失败回退静态；再失败返回空数组 */
 export async function loadRadarIndex(): Promise<RadarIndexEntry[]> {
+  try {
+    const r = await fetch("/api/radar/index")
+    if (r.ok) {
+      const data = await r.json()
+      if (Array.isArray(data?.weeks)) { _radarGateway = true; return data.weeks as RadarIndexEntry[] }
+    }
+  } catch { /* 无 Gateway，回退静态 */ }
+  _radarGateway = false
   try {
     const r = await fetch(`${RADAR_BASE}/index.json`)
     if (!r.ok) throw new Error(`HTTP ${r.status}`)
@@ -230,8 +242,18 @@ export async function loadRadarIndex(): Promise<RadarIndexEntry[]> {
   }
 }
 
-/** 读取某一周数据；失败返回 null */
+/** 读取某一周数据；与索引同源（Gateway/静态）；失败返回 null */
 export async function loadRadarWeek(file: string): Promise<RadarWeek | null> {
+  if (_radarGateway) {
+    try {
+      const id = file.replace(/\.json$/, "")
+      const r = await fetch(`/api/radar/week?id=${encodeURIComponent(id)}`)
+      if (r.ok) {
+        const data = (await r.json()) as RadarWeek
+        return data?.insights?.length ? data : null
+      }
+    } catch { /* 回退静态 */ }
+  }
   try {
     const r = await fetch(`${RADAR_BASE}/${file}`)
     if (!r.ok) throw new Error(`HTTP ${r.status}`)

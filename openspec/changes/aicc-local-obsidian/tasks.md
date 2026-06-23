@@ -30,10 +30,12 @@
 - [x] Obsidian graph color group 按 status 着色：`.obsidian/graph.json` colorGroups（published=绿 / learning=琥珀 / in-plan=蓝 / articles 路径=紫；已备份 graph.json.bak-aicc）
 - [x] 验收：Obsidian 关系图谱真机着色正确（learning 琥珀 / in-plan 蓝 / 文章紫 / discovered 灰）；应用内连边 `at:0` 证明源自 vault；tsc/build 通过
 
-## Phase 4 · 雷达消费 vault
-- [ ] AICC 启动检测 vault `AICC-Input/` 新周 JSON → 拉进流水线
-- [ ] 个人自用去掉 ingest→git→build→ECS（采集仍由本地 Cowork 产 JSON 落 vault）
-- [ ] 验收：新周 JSON 落 vault 后，AICC 自动多一期
+## Phase 4 · 雷达消费 vault ✅ 完成 2026-06-23
+- [x] Gateway `server/radar.mjs` + `/api/radar/{index,week}`：扫 `${VAULT_DIR}/AICC-Input/`（根+日期子目录）的 `{weekId}.json`（校验 weekId 正则 + insights 非空）∪ 打包历史周（dist/content/radar），按 weekId 降序
+- [x] 前端 `radarData.ts` 的 `loadRadarIndex/loadRadarWeek` 优先走 `/api/radar/*`（vault），无 Gateway 回退静态 `content/radar`（ECS 不受影响）
+- [x] 个人自用：新周只需把 `{weekId}.json` 落 AICC-Input，AICC 即多一期——免 ingest→git→build→ECS（采集仍由本地 Cowork 产 JSON）
+- [x] 验收：丢 `2026-W26.json` 进 AICC-Input → `/api/radar/index` 立即多出 W26、归档页渲染全部周（gateway 源）；vault 富数据版（含 videos 速览）优先；tsc/build 通过
+- [ ] 待办：坏掉的 `com.aicc.radar-publish` launchd（状态 126）属旧 ECS 发布管线——个人自用可停用；若仍要更新公开 ECS 页再修
 
 ## Phase 5 · 开源化（后续独立推进）
 - [ ] 打包分发（npx / 单二进制 → Tauri/Electron 桌面 App，包同一 Gateway）

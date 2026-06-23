@@ -6,6 +6,7 @@ import { readFile, stat } from 'node:fs/promises'
 import { join, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { writeConcept, writeArticle, listConcepts, listArticles, vaultStatus } from './vault.mjs'
+import { radarIndex, radarWeek } from './radar.mjs'
 
 // 读取 server/.env（极简解析，无依赖）
 try {
@@ -131,6 +132,22 @@ const server = createServer(async (req, res) => {
     } catch (e) {
       console.error('[vault] error:', e)            // 详情进服务端日志，不回传（避免泄露本机路径）
       return sendJson(res, 500, { error: 'vault operation failed' })
+    }
+  }
+
+  // 雷达消费 vault：直接从 AICC-Input 读每周 JSON（∪ 打包历史周）。非敏感内容，不强制 token。
+  if (url.pathname.startsWith('/api/radar/')) {
+    const sub = url.pathname.slice('/api/radar/'.length)
+    try {
+      if (sub === 'index') return sendJson(res, 200, { weeks: await radarIndex(VAULT, DIST) })
+      if (sub === 'week') {
+        const wk = await radarWeek(VAULT, DIST, url.searchParams.get('id') || '')
+        return wk ? sendJson(res, 200, wk) : sendJson(res, 404, { error: 'week not found' })
+      }
+      return sendJson(res, 404, { error: 'not found' })
+    } catch (e) {
+      console.error('[radar] error:', e)
+      return sendJson(res, 500, { error: 'radar operation failed' })
     }
   }
 
