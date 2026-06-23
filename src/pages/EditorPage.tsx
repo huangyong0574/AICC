@@ -28,7 +28,7 @@ interface EditorPageProps {
 
 export function EditorPage({ onBack, conceptId, onPublished }: EditorPageProps) {
   const [dark, toggleDark] = useDarkModeShared()
-  const { upsert } = useCognition()
+  const { upsert, map } = useCognition()
   const [raw, setRaw] = useState("")
   const [toast, setToast] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -113,7 +113,8 @@ export function EditorPage({ onBack, conceptId, onPublished }: EditorPageProps) 
     if (!ok) return
     // learning → published：回写认知状态机，计划页/图谱即时联动
     if (conceptId) {
-      upsert(conceptId, { title: pubTitle || title, slug, state: "published" })
+      // 保留概念自身标题（不改成文章标题，避免图谱节点名漂移、断 [[链接]]）；仅标记成稿 + 关联 slug
+      upsert(conceptId, { title: map[conceptId]?.title || pubTitle || title, slug, state: "published" })
     }
     downloadMd(slug)
     setDialogOpen(false)
