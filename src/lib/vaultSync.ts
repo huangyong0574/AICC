@@ -100,8 +100,10 @@ export async function hydrateFromVault(): Promise<void> {
           date: a.date || "", status: a.status || "草稿", tags: a.tags || [], conceptIds: a.conceptIds || [],
         })
         // 文章正文：仅在本地缺失时回填（保留本地再编辑的完整原文，避免被 vault body 降级覆盖）
+        // 剥掉 vault 的「## 融合 [[...]]」段（Obsidian 链接、非文章正文），避免污染可编辑/渲染的 markdown
         if (a.body != null && localStorage.getItem(DRAFT_PREFIX + a.slug) == null) {
-          localStorage.setItem(DRAFT_PREFIX + a.slug, a.body)
+          const clean = /##\s*融合\s*\n[\s\S]*\[\[/.test(a.body) ? a.body.replace(/\n*##\s*融合\s*\n[\s\S]*$/, "").trimEnd() : a.body
+          localStorage.setItem(DRAFT_PREFIX + a.slug, clean)
         }
       }
       localStorage.setItem(PUBLISHED_INDEX, JSON.stringify([...bySlug.values()]))

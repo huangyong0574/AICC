@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type DragEvent } from "react"
+import { useEffect, useMemo, useRef, useState, type DragEvent } from "react"
 import {
   ArrowLeft,
   Sun,
@@ -16,17 +16,19 @@ import {
 import { useDarkModeShared } from "./SiteHeader"
 import { parseFrontmatter, countWords, renderArticleBody, fmtDate, type Frontmatter } from "../lib/markdown"
 import { useCognition } from "../lib/cognition"
-import { slugify, publishArticleToStorage } from "../lib/publishArticle"
+import { slugify, publishArticleToStorage, loadPublishedMarkdown, findPublishedBySlug } from "../lib/publishArticle"
 
 interface EditorPageProps {
   onBack: () => void
   /** 来自费曼工作台的认知点 id（发布时置为 published 并回写 slug） */
   conceptId?: string
+  /** 再编辑入口：按 slug 载入已发布文章的 markdown（保留其 conceptIds，避免丢链） */
+  initialSlug?: string
   /** 发布成功后跳到文章页预览（可选） */
   onPublished?: (slug: string) => void
 }
 
-export function EditorPage({ onBack, conceptId, onPublished }: EditorPageProps) {
+export function EditorPage({ onBack, conceptId, initialSlug, onPublished }: EditorPageProps) {
   const [dark, toggleDark] = useDarkModeShared()
   const { upsert, map } = useCognition()
   const [raw, setRaw] = useState("")
@@ -35,7 +37,23 @@ export function EditorPage({ onBack, conceptId, onPublished }: EditorPageProps) 
   const [pubSlug, setPubSlug] = useState("")
   const [pubTitle, setPubTitle] = useState("")
   const [pubCategory, setPubCategory] = useState("")
+  const [loadedConceptIds, setLoadedConceptIds] = useState<string[]>([])   // 再编辑时取回原文章的 conceptIds
   const toastTimer = useRef<number | undefined>(undefined)
+
+  // 再编辑：按 slug 载入已发布文章的 markdown + 元信息（保留 conceptIds 防丢链）
+  useEffect(() => {
+    if (!initialSlug) return
+    const md = loadPublishedMarkdown(initialSlug)
+    // 剥掉 vault 写入的「## 融合 [[...]]」段（Obsidian 链接、非正文），避免带进编辑框
+    if (md != null) setRaw(/##\s*融合\s*\n[\s\S]*\[\[/.test(md) ? md.replace(/\n*##\s*融合\s*\n[\s\S]*$/, "").trimEnd() : md)
+    setPubSlug(initialSlug)
+    const entry = findPublishedBySlug(initialSlug)
+    if (entry) {
+      if (entry.title) setPubTitle(entry.title)
+      if (entry.category) setPubCategory(entry.category)
+      setLoadedConceptIds(entry.conceptIds || [])
+    }
+  }, [initialSlug])
 
   const { meta, bodyHtml, words } = useMemo(() => {
     const trimmed = raw.trim()
@@ -99,6 +117,8 @@ export function EditorPage({ onBack, conceptId, onPublished }: EditorPageProps) 
       return
     }
     // 共享落库（含同名 slug 覆盖二次确认）；返回 false = 用户取消
+    // 再编辑时用回原文章的 conceptIds（防丢链）；否则用费曼带入的单概念
+    const effectiveConceptIds = loadedConceptIds.length ? loadedConceptIds : (conceptId ? [conceptId] : [])
     const ok = publishArticleToStorage({
       slug,
       markdown: raw,
@@ -108,14 +128,11 @@ export function EditorPage({ onBack, conceptId, onPublished }: EditorPageProps) 
       date: date || undefined,
       status,
       tags,
-      conceptIds: conceptId ? [conceptId] : [],
+      conceptIds: effectiveConceptIds,
     })
     if (!ok) return
-    // learning → published：回写认知状态机，计划页/图谱即时联动
-    if (conceptId) {
-      // 保留概念自身标题（不改成文章标题，避免图谱节点名漂移、断 [[链接]]）；仅标记成稿 + 关联 slug
-      upsert(conceptId, { title: map[conceptId]?.title || pubTitle || title, slug, state: "published" })
-    }
+    // learning → published：回写认知状态机；保留各概念自身标题（不改成文章标题，避免图谱节点名漂移、断 [[链接]]）
+    effectiveConceptIds.forEach((id) => upsert(id, { title: map[id]?.title || pubTitle || title, slug, state: "published" }))
     downloadMd(slug)
     setDialogOpen(false)
     showToast("已发布 → 文章页 ?slug=" + slug)

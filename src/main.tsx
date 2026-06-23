@@ -44,7 +44,10 @@ function pathToState(pathname: string): { page: AppPage; slug: string; week: str
   if (p === '/editor') return { page: 'editor', ...none }
   if (p === '/creation') return { page: 'creation', ...none }
   if (p.startsWith('/article/')) {
-    const slug = p.slice('/article/'.length)
+    const rawSlug = p.slice('/article/'.length)
+    // 解码中文等非 ASCII slug（直链/书签/刷新时 location.pathname 是 percent-encoded）
+    let slug = rawSlug
+    try { slug = decodeURIComponent(rawSlug) } catch { /* 保留原值 */ }
     return { page: 'article', slug: slug || 'flash-attention', week: '' }
   }
   return { page: 'letter', ...none }
@@ -94,6 +97,8 @@ function App() {
     if (id) sessionStorage.setItem(ACTIVE_CONCEPT_KEY, id)
     else sessionStorage.removeItem(ACTIVE_CONCEPT_KEY)
   }, [])
+  // 再编辑：从文章页「编辑」进入编辑器时载入的 slug（''=普通空白编辑器）
+  const [editorSlug, setEditorSlug] = useState<string>('')
 
   // 监听浏览器前进/后退
   useEffect(() => {
@@ -138,8 +143,9 @@ function App() {
     else if (nav === 'radar') navigateTo('radar-archive')
     else if (nav === 'plan') navigateTo('plan')
     else if (nav === 'editor') {
-      // 「编辑器」现为内部成稿入口（不在导航暴露）：清空 conceptId，避免误回写
+      // 「编辑器」现为内部成稿入口（不在导航暴露）：清空 conceptId + slug，避免误回写
       setActiveConcept('')
+      setEditorSlug('')
       navigateTo('editor')
     }
     else if (nav === 'creation') navigateTo('creation')
@@ -194,6 +200,7 @@ function App() {
       <ArticlePage
         slug={articleSlug}
         onNavigate={handleNavigate}
+        onEdit={(s) => { setActiveConcept(''); setEditorSlug(s); navigateTo('editor') }}
       />
     )
   }
@@ -216,10 +223,12 @@ function App() {
     return (
       <EditorPage
         conceptId={activeConceptId}
+        initialSlug={editorSlug}
         onBack={() => navigateTo('radar-archive')}
         onPublished={(slug) => {
-          // 发布完成：清空 conceptId，避免下一次进编辑器误写到这个已成稿的认知点
+          // 发布完成：清空 conceptId + slug，避免下一次进编辑器误写到这个已成稿的认知点
           setActiveConcept('')
+          setEditorSlug('')
           navigateTo('article', slug)
         }}
       />

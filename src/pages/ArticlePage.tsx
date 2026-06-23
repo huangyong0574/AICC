@@ -18,6 +18,8 @@ hljs.registerLanguage("python", python)
 interface ArticlePageProps {
   slug: string
   onNavigate: (page: NavPage) => void
+  /** 编辑本文（仅本地发布的文章可编辑）→ 打开编辑器载入此 slug */
+  onEdit?: (slug: string) => void
 }
 
 interface ArticleData {
@@ -29,10 +31,11 @@ interface ArticleData {
 
 const DRAFT_PREFIX = "aicc-article-md:"
 
-export function ArticlePage({ slug, onNavigate }: ArticlePageProps) {
+export function ArticlePage({ slug, onNavigate, onEdit }: ArticlePageProps) {
   const [state, setState] = useState<"loading" | "ok" | "error">("loading")
   const [errorMsg, setErrorMsg] = useState("")
   const [data, setData] = useState<ArticleData | null>(null)
+  const [editable, setEditable] = useState(false)   // 来自本地草稿（app 发布）= 可编辑
   const [activeId, setActiveId] = useState("")
   const [progress, setProgress] = useState(0)
   const bodyRef = useRef<HTMLElement | null>(null)
@@ -45,10 +48,13 @@ export function ArticlePage({ slug, onNavigate }: ArticlePageProps) {
       return
     }
     setState("loading")
+    setEditable(false)
     let cancelled = false
 
     const build = (raw: string) => {
-      const { meta, content } = parseFrontmatter(raw)
+      // 剥掉 vault 写入的「## 融合 [[...]]」段（那是给 Obsidian 图谱的链接、非文章正文）；仅当该段含 [[ 才剥，避免误伤同名小节
+      const cleaned = /##\s*融合\s*\n[\s\S]*\[\[/.test(raw) ? raw.replace(/\n*##\s*融合\s*\n[\s\S]*$/, "").trimEnd() : raw
+      const { meta, content } = parseFrontmatter(cleaned)
       const { html, headings } = renderArticlePage(content)
       if (cancelled) return
       setData({ meta, html, headings, words: countWords(content) })
@@ -59,6 +65,7 @@ export function ArticlePage({ slug, onNavigate }: ArticlePageProps) {
     // 1) 优先本地草稿（编辑器发布的）
     const draft = typeof window !== "undefined" ? localStorage.getItem(DRAFT_PREFIX + slug) : null
     if (draft) {
+      setEditable(true)   // 本地草稿 = app 自己发布的，可再编辑
       build(draft)
       return () => {
         cancelled = true
@@ -202,6 +209,9 @@ export function ArticlePage({ slug, onNavigate }: ArticlePageProps) {
                     <span className="dot" />
                     {status}
                   </span>
+                  {editable && onEdit && (
+                    <button className="edit-btn" onClick={() => onEdit(slug)}>✎ 编辑文章</button>
+                  )}
                 </div>
                 <h1>{title}</h1>
                 {subtitle && <p className="subtitle">{subtitle}</p>}
@@ -303,6 +313,8 @@ const ARTICLE_CSS = `
 .article-page .breadcrumb button:hover{color:hsl(var(--foreground))}
 .article-page .breadcrumb .sep{opacity:0.4}
 .article-page .breadcrumb .current{color:hsl(var(--foreground))}
+.article-page .edit-btn{margin-left:8px;cursor:pointer;font-family:var(--font-mono);font-size:12px;color:hsl(var(--frontier));background:none;border:1px solid hsl(var(--frontier)/0.4);border-radius:9999px;padding:3px 12px;transition:background 0.15s ease}
+.article-page .edit-btn:hover{background:hsl(var(--frontier)/0.1)}
 
 .article-page .article-hero{max-width:760px;margin:0 auto 56px;text-align:center}
 .article-page .article-hero .badge-row{display:inline-flex;align-items:center;gap:8px;margin-bottom:24px}

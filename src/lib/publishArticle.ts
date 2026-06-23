@@ -100,6 +100,15 @@ export function findPublishedByConceptId(conceptId: string): PublishedEntry | nu
   } catch { return null }
 }
 
+/** 按 slug 找已发布条目（再编辑入口：取回 conceptIds/category/title 等，避免丢链） */
+export function findPublishedBySlug(slug: string): PublishedEntry | null {
+  try {
+    const idxRaw = localStorage.getItem(PUBLISHED_INDEX)
+    const idx: PublishedEntry[] = idxRaw ? JSON.parse(idxRaw) : []
+    return idx.find((e) => e.slug === slug) || null
+  } catch { return null }
+}
+
 /** 读全部文章连边（GraphPage 渲染概念间「成文连接」） */
 export function loadArticleEdges(): ArticleEdge[] {
   try {
