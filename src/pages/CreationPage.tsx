@@ -8,7 +8,8 @@ import { SettingsDialog } from '../feynman/components/SettingsDialog'
 import { useCognition } from '../lib/cognition'
 import { isLlmReady } from '@/lib/gateway'
 import { renderArticleBody } from '../lib/markdown'
-import { publishArticleToStorage, slugify, loadPublishedMarkdown, findPublishedByConceptId } from '../lib/publishArticle'
+import { publishArticleToStorage, slugify, loadPublishedMarkdown, findPublishedByConceptId, cleanArticleBody } from '../lib/publishArticle'
+import { fetchArticle } from '../lib/vault'
 import type { Note, LlmConfig } from '../feynman/types'
 import { Button } from '@/components/ui/button'
 
@@ -338,18 +339,25 @@ function DeskView({ pinned, onBack, notes, cfg }: { pinned: Topic; onBack: () =>
   const [published, setPublished] = useState(!!publishedEntry)
   const saveTimer = useRef<number | undefined>(undefined)
 
-  // 进入：有草稿 → 提示「继续/重新开始」；否则若已发布 → 预填已发布正文（再修改）
+  // 进入：有本地草稿 → 提示「继续/重新开始」；否则若已发布 → 预填正文。
+  // A 档双向同步：已发布正文优先从 vault 读最新（Obsidian 改完→重开网页即见），回退本地；统一剥 frontmatter + 机器「## 融合」块。
   useEffect(() => {
-    try {
-      const d = localStorage.getItem(draftKey)
-      if (d) { const p = JSON.parse(d); setRestore({ title: p.title || pinned.title, body: p.body || '' }); return }
-    } catch { /* ignore */ }
-    if (publishedEntry) {
-      const md = loadPublishedMarkdown(publishedEntry.slug) || ''
-      const m = md.match(/^---[\s\S]*?---\s*([\s\S]*)$/)
-      setBody((m ? m[1] : md).trim())
+    let cancelled = false
+    ;(async () => {
+      try {
+        const d = localStorage.getItem(draftKey)
+        if (d) { const p = JSON.parse(d); if (!cancelled) setRestore({ title: p.title || pinned.title, body: cleanArticleBody(p.body || '') }); return }
+      } catch { /* ignore */ }
+      if (!publishedEntry) return
+      let md = ''
+      const a = await fetchArticle(publishedEntry.slug)   // vault 最新优先（自带探测，无则 null）
+      if (a) md = a.body || ''
+      if (!md) md = loadPublishedMarkdown(publishedEntry.slug) || ''
+      if (cancelled) return
+      setBody(cleanArticleBody(md))
       setTitle(publishedEntry.title || pinned.title)
-    }
+    })()
+    return () => { cancelled = true }
   }, []) // 仅挂载
 
   // 草稿防抖自动存（选择继续/重开前不存，避免覆盖待恢复草稿）

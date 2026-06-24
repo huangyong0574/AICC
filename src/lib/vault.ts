@@ -39,6 +39,11 @@ export async function fetchConcepts(): Promise<VaultConcept[]> {
 export async function fetchArticles(): Promise<VaultArticle[]> {
   try { const r = await fetch("/api/vault/articles", { headers: vh() }); return r.ok ? r.json() : [] } catch { return [] }
 }
+/** 取 vault 里某篇成稿的最新版（A 档双向同步：Obsidian 改完，网页打开读回）。无则 null。 */
+export async function fetchArticle(slug: string): Promise<VaultArticle | null> {
+  if (!slug) return null
+  try { return (await fetchArticles()).find((a) => a.slug === slug) || null } catch { return null }
+}
 export async function putConcept(payload: Record<string, unknown>): Promise<boolean> {
   try { const r = await fetch("/api/vault/concept", { method: "PUT", headers: vh(), body: JSON.stringify(payload) }); return r.ok } catch { return false }
 }

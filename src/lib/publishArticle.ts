@@ -91,6 +91,19 @@ export function loadPublishedMarkdown(slug: string): string | null {
   try { return localStorage.getItem(DRAFT_PREFIX + slug) } catch { return null }
 }
 
+/**
+ * 清洗文章正文供「编辑/展示」：剥 frontmatter + 机器生成的「## 融合 [[...]]」块。
+ * 融合块是写库时按概念标题自动生成给 Obsidian 图谱的，不应进编辑器/正文（仅当该段含 [[ 才剥，避免误伤同名小节）。
+ */
+export function cleanArticleBody(md: string): string {
+  if (!md) return ""
+  const noFm = md.replace(/^---[\s\S]*?---\s*/, "")
+  const noFusion = /##\s*融合\s*\n[\s\S]*\[\[/.test(noFm)
+    ? noFm.replace(/\n*##\s*融合\s*\n[\s\S]*$/, "").trimEnd()
+    : noFm
+  return noFusion.trim()
+}
+
 /** 按 conceptId 找其已发布文章（再修改入口：该选题已 published 时预填） */
 export function findPublishedByConceptId(conceptId: string): PublishedEntry | null {
   try {

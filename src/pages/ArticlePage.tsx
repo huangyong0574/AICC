@@ -12,6 +12,8 @@ import {
   type Frontmatter,
   type TocHeading,
 } from "../lib/markdown"
+import { fetchArticle } from "../lib/vault"
+import { cleanArticleBody } from "../lib/publishArticle"
 
 hljs.registerLanguage("python", python)
 
@@ -52,9 +54,9 @@ export function ArticlePage({ slug, onNavigate, onEdit }: ArticlePageProps) {
     let cancelled = false
 
     const build = (raw: string) => {
-      // 剥掉 vault 写入的「## 融合 [[...]]」段（那是给 Obsidian 图谱的链接、非文章正文）；仅当该段含 [[ 才剥，避免误伤同名小节
-      const cleaned = /##\s*融合\s*\n[\s\S]*\[\[/.test(raw) ? raw.replace(/\n*##\s*融合\s*\n[\s\S]*$/, "").trimEnd() : raw
-      const { meta, content } = parseFrontmatter(cleaned)
+      // 本地/静态来源含 frontmatter：保留 frontmatter 给 parseFrontmatter，仅剥机器「## 融合」块（含 [[ 才剥，避免误伤同名小节）
+      const stripped = /##\s*融合\s*\n[\s\S]*\[\[/.test(raw) ? raw.replace(/\n*##\s*融合\s*\n[\s\S]*$/, "").trimEnd() : raw
+      const { meta, content } = parseFrontmatter(stripped)
       const { html, headings } = renderArticlePage(content)
       if (cancelled) return
       setData({ meta, html, headings, words: countWords(content) })
@@ -62,34 +64,42 @@ export function ArticlePage({ slug, onNavigate, onEdit }: ArticlePageProps) {
       document.title = `${meta.title || slug} — AICC`
     }
 
-    // 1) 优先本地草稿（编辑器发布的）
-    const draft = typeof window !== "undefined" ? localStorage.getItem(DRAFT_PREFIX + slug) : null
-    if (draft) {
-      setEditable(true)   // 本地草稿 = app 自己发布的，可再编辑
-      build(draft)
-      return () => {
-        cancelled = true
+    ;(async () => {
+      // A 档双向同步：始终先试 vault 读最新（Obsidian 改完→网页打开即见）。
+      // fetchArticle 自带探测：无 Gateway / vault 无此文 → 返回 null 自动回退；不依赖竞态的 vaultEnabled()。
+      const a = await fetchArticle(slug)
+      if (a && !cancelled) {
+        const content = cleanArticleBody(a.body)
+        const { html, headings } = renderArticlePage(content)
+        setEditable(true)
+        setData({
+          meta: { title: a.title, subtitle: a.subtitle, category: a.category, date: a.date, status: a.status, tags: a.tags } as Frontmatter,
+          html, headings, words: countWords(content),
+        })
+        setState("ok")
+        document.title = `${a.title || slug} — AICC`
+        return
       }
-    }
 
-    // 2) 公共 content 目录的 markdown
-    fetch(`/content/${slug}.md`)
-      .then((r) => {
+      // 回退 1) 本地草稿（编辑器发布的）
+      const draft = typeof window !== "undefined" ? localStorage.getItem(DRAFT_PREFIX + slug) : null
+      if (draft) { setEditable(true); build(draft); return }
+
+      // 回退 2) 公共 content 目录的 markdown（ECS/纯静态）
+      try {
+        const r = await fetch(`/content/${slug}.md`)
         if (!r.ok) throw new Error(`找不到文章 content/${slug}.md（HTTP ${r.status}）`)
-        return r.text()
-      })
-      .then((raw) => {
-        // Vite dev 会把缺失文件 fallback 到 index.html（HTTP 200），需识别 SPA 入口
+        const raw = await r.text()
         if (raw.includes('<div id="root">') && raw.includes("/src/main.tsx")) {
           throw new Error(`文章 "${slug}" 尚未发布。可在编辑器粘贴 Markdown 后发布，或在 public/content/ 放入 ${slug}.md。`)
         }
         build(raw)
-      })
-      .catch((err) => {
+      } catch (err) {
         if (cancelled) return
-        setErrorMsg(err.message)
+        setErrorMsg(err instanceof Error ? err.message : String(err))
         setState("error")
-      })
+      }
+    })()
 
     return () => {
       cancelled = true

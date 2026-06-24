@@ -34,6 +34,15 @@
 - [x] 验收：6 条既有笔记自动落 `vault/notes/*.json`（status notes:6）；清空 localStorage 笔记 → 重载 hydrate 救回 6 条、创作页自动「已闭环 2」解锁；tsc/build 通过
 - [ ] 待办：草稿 write-through 前端未接（每键触发需防抖；服务端已就绪，hydrate 暂不恢复草稿）
 
+## Phase 2.2 · 文章双向同步 A 档（Obsidian 改完→网页读回）✅ 完成 2026-06-23
+- [x] 起因：之前只有 网页→Obsidian（write-through）；Obsidian→网页 不通（hydrate 仅启动跑 + 正文「本地已有不覆盖」）
+- [x] `cleanArticleBody()`（publishArticle.ts）：剥 frontmatter + 机器「## 融合 [[...]]」块（不让融合块进编辑器/正文）
+- [x] `fetchArticle(slug)`（vault.ts）：取 vault 最新单篇
+- [x] 写作台 DeskView + 文章页 ArticlePage **打开即从 vault 读最新**（结构字段拼 meta + cleanArticleBody）
+- [x] 修竞态：读取路径直接 try `fetchArticle`（自带探测、自动回退），不依赖 `initVault` 未决的 `vaultEnabled()`（main.tsx init 与 render 并发）
+- [x] 验收：往 vault 文章 .md 注入「Obsidian 端标记」→ 网页文章页重开即显示该标记 + 融合块剥离 + 编辑按钮在；原文已还原；tsc/build 通过
+- [ ] B 档（实时同步：网页开着时轮询/监听 vault 变化自动刷新）后续按需再加
+
 ## Phase 3 · 认知图谱归 Obsidian ✅ 完成 2026-06-23
 - [x] 认知关系图谱归 Obsidian（节点=概念/文章 .md，边=`[[关联]]`/`[[融合]]`）；AICC 自建 SVG 图谱重定位为「雷达覆盖视图」，加横幅 + `obsidian://` 深链导向 Obsidian 关系图谱（仅 gateway 模式显示）
 - [x] 应用内图谱去掉第二份数据源：`hydrateFromVault()` 从 vault 文章重建 `aicc-creation-edges`（连边也 vault 溯源）；relations 早已源自 cognition map(vault)；`aicc-feynman-graph` 本就 vestigial（GraphPage 不读）
