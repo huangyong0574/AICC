@@ -91,9 +91,18 @@ function saveTopicCache(sig: string, topics: Topic[]) {
 
 export function CreationPage({ onNavigate, topicId }: CreationPageProps) {
   const { week } = useLatestRadarWeek()
+  // 笔记可能在挂载后才由 hydrate（vault→localStorage）异步恢复 / 跨标签页变更；
+  // 用版本号在 focus/storage 时触发重算，避免"已闭环 N"停在挂载瞬间的旧值（如缓存清空后恢复）。
+  const [notesV, setNotesV] = useState(0)
+  useEffect(() => {
+    const bump = () => setNotesV(v => v + 1)
+    window.addEventListener('focus', bump)
+    window.addEventListener('storage', bump)
+    return () => { window.removeEventListener('focus', bump); window.removeEventListener('storage', bump) }
+  }, [])
   const closed = useMemo(
     () => loadNotes().filter(n => n.feynman || (n.steps?.filter(s => s.confirmed).length ?? 0) === 4),
-    [],
+    [notesV],
   )
   // 全部历史已闭环知识点（跨周），按时间新→旧，集大时控量喂 LLM
   const conceptList = useMemo(

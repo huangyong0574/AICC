@@ -1,4 +1,5 @@
 import type { LlmConfig, Note, GraphDelta } from "../types"
+import { vaultEnabled, putNote, deleteVaultNote } from "../../lib/vault"
 
 const LLM_KEY = "aicc-llm-cfg"
 const NOTES_KEY = "aicc-feynman-notes"
@@ -75,6 +76,8 @@ export function addNote(note: Note) {
   if (idx >= 0) list[idx] = note
   else list.unshift(note)
   saveNotes(list)
+  // 数据唯一来源：费曼笔记 write-through 进 vault（JSON 无损），不只存浏览器
+  if (vaultEnabled()) putNote(note as unknown as Record<string, unknown>).catch(() => {})
 }
 
 /** 按原始问题文本查找已完成的离线缓存（含费曼内化结果的笔记） */
@@ -95,6 +98,7 @@ export function findNoteByConceptId(conceptId: string): Note | undefined {
 
 export function deleteNote(id: string) {
   saveNotes(loadNotes().filter(n => n.id !== id))
+  if (vaultEnabled()) deleteVaultNote(id).catch(() => {})
 }
 export function clearNotes() {
   saveNotes([])

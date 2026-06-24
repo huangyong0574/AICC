@@ -11,6 +11,9 @@ import yaml from 'js-yaml'
 // 如指向 Obsidian 的「AICC项目」则与 AICC-Input 并列；默认 <project>/vault）
 export const conceptsDir = (vault) => join(vault, 'concepts')
 export const articlesDir = (vault) => join(vault, 'articles')
+// 费曼笔记（完整工作记录，JSON 无损）与创作草稿（in-progress 正文）——数据唯一来源落盘，不只存浏览器
+export const notesDir = (vault) => join(vault, 'notes')
+export const draftsDir = (vault) => join(vault, 'drafts')
 
 export async function ensureDirs(vault) {
   await mkdir(conceptsDir(vault), { recursive: true })
@@ -171,7 +174,51 @@ export async function listArticles(vault) {
   }))
 }
 
+// ── 费曼笔记（完整工作记录，JSON 无损存档；可恢复闭环资产/素材）──────
+export async function writeNote(vault, note) {
+  if (!note || !note.id) throw new Error('note.id required')
+  await mkdir(notesDir(vault), { recursive: true })
+  const file = `${safeFileName(note.id, note.id)}.json`
+  await writeFile(join(notesDir(vault), file), JSON.stringify(note, null, 2), 'utf8')
+  return file
+}
+export async function listNotes(vault) {
+  let names = []
+  try { names = (await readdir(notesDir(vault))).filter((n) => n.endsWith('.json')) } catch { return [] }
+  const out = []
+  for (const n of names) {
+    try { out.push(JSON.parse(await readFile(join(notesDir(vault), n), 'utf8'))) } catch { /* skip 坏文件 */ }
+  }
+  return out
+}
+export async function deleteNote(vault, id) {
+  if (!id) return false
+  try { await unlink(join(notesDir(vault), `${safeFileName(id, id)}.json`)); return true } catch { return false }
+}
+
+// ── 创作草稿（in-progress 正文；topicId 作文件名）────────────────────
+export async function writeDraft(vault, topicId, body) {
+  if (!topicId) throw new Error('topicId required')
+  await mkdir(draftsDir(vault), { recursive: true })
+  const file = `${safeFileName(topicId, topicId)}.md`
+  await writeFile(join(draftsDir(vault), file), String(body ?? ''), 'utf8')
+  return file
+}
+export async function listDrafts(vault) {
+  let names = []
+  try { names = (await readdir(draftsDir(vault))).filter((n) => n.endsWith('.md')) } catch { return {} }
+  const out = {}
+  for (const n of names) {
+    try { out[n.replace(/\.md$/, '')] = await readFile(join(draftsDir(vault), n), 'utf8') } catch { /* skip */ }
+  }
+  return out
+}
+export async function deleteDraft(vault, topicId) {
+  if (!topicId) return false
+  try { await unlink(join(draftsDir(vault), `${safeFileName(topicId, topicId)}.md`)); return true } catch { return false }
+}
+
 export async function vaultStatus(vault) {
-  const [c, a] = await Promise.all([listConcepts(vault), listArticles(vault)])
-  return { configured: true, dir: vault, concepts: c.length, articles: a.length }
+  const [c, a, n, d] = await Promise.all([listConcepts(vault), listArticles(vault), listNotes(vault), listDrafts(vault)])
+  return { configured: true, dir: vault, concepts: c.length, articles: a.length, notes: n.length, drafts: Object.keys(d).length }
 }

@@ -1,6 +1,6 @@
 // vault 同步：write-through（认知点/成稿变更 → 写 .md）+ 启动 hydrate（vault → localStorage 缓存）。
 // 设计：vault 权威、localStorage 缓存。hydrate 安全合并——vault 覆盖同名字段、绝不删除本地独有项（迁移前不破坏现有数据）。
-import { putConcept, putArticle, fetchConcepts, fetchArticles, vaultEnabled } from "./vault"
+import { putConcept, putArticle, fetchConcepts, fetchArticles, fetchNotes, putNote, vaultEnabled } from "./vault"
 import { findNoteByConceptId } from "../feynman/lib/storage"
 import type { CognitionItem, CognitionMap, CognitionStateValue } from "./cognition"
 import type { Step4Answer } from "../feynman/types"
@@ -10,6 +10,7 @@ const PLAN_KEY = "aicc-deep-plan"
 const PUBLISHED_INDEX = "aicc-published-articles"
 const DRAFT_PREFIX = "aicc-article-md:"
 const EDGES_KEY = "aicc-creation-edges"
+const NOTES_KEY = "aicc-feynman-notes"
 
 function readCognition(): CognitionMap {
   try { return JSON.parse(localStorage.getItem(STATE_KEY) || "{}") as CognitionMap } catch { return {} }
@@ -54,7 +55,7 @@ export function syncArticleToVault(entry: ArticleSyncEntry, markdown: string): v
 /** 启动 hydrate：vault → localStorage（安全合并）。完成后派发 focus 让 CognitionProvider 重读。 */
 export async function hydrateFromVault(): Promise<void> {
   if (!vaultEnabled()) return
-  const [concepts, articles] = await Promise.all([fetchConcepts(), fetchArticles()])
+  const [concepts, articles, notes] = await Promise.all([fetchConcepts(), fetchArticles(), fetchNotes()])
   let changed = false
 
   if (concepts.length) {
@@ -116,6 +117,21 @@ export async function hydrateFromVault(): Promise<void> {
       changed = true
     } catch { /* localStorage 不可用 */ }
   }
+
+  // 费曼笔记：vault → localStorage 合并（vault 覆盖同 id、保留本地独有）；
+  // 并一次性回灌「本地有 vault 无」的笔记，让既有笔记落盘存档、自愈 write-through 漏写。
+  try {
+    const local: Array<{ id?: string }> = JSON.parse(localStorage.getItem(NOTES_KEY) || "[]")
+    const vNotes = (notes as Array<{ id?: string }>).filter((n) => n && n.id)
+    if (vNotes.length || local.length) {
+      const vaultIds = new Set(vNotes.map((n) => n.id))
+      const byId = new Map<string, unknown>(local.filter((n) => n && n.id).map((n) => [n.id as string, n]))
+      for (const n of vNotes) byId.set(n.id as string, n)            // vault 权威：覆盖/新增
+      localStorage.setItem(NOTES_KEY, JSON.stringify([...byId.values()]))
+      changed = true
+      for (const n of local) if (n && n.id && !vaultIds.has(n.id)) void putNote(n as Record<string, unknown>)  // 回灌
+    }
+  } catch { /* localStorage 不可用 */ }
 
   if (changed && typeof window !== "undefined") window.dispatchEvent(new Event("focus"))
 }

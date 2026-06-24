@@ -22,7 +22,17 @@
 - [x] localStorage 降级为缓存，vault 为权威（`hydrateFromVault()` 启动安全合并重建，绝不删本地独有项）
 - [x] 验收：真机点「加入计划」→ vault 出 `.md`（in-plan）；清缓存重载 → 从 vault 重建；gateway round-trip 无损；tsc/build 通过
 - [x] 审计加固（2026-06-22）：按 aicc-id 防撞名静默覆盖/清改名孤儿（resolveFileName）、文章融合段幂等、listConcepts 按 id 去重、vault 写错误不回传本机路径
-- [ ] 待办（迁移期/后续，均非数据丢失级）：① 三域 tag 未强制分类（用 relation.tags 占位，需改费曼 prompt）② 概念改名后文章内 `[[旧标题]]` 链接会断（建议改 `[[id\|title]]` 或级联重写）③ `remove()` 未删 vault 文件 ④ 发布把融合概念标题统一改成文章标题（`CreationPage.tsx:391`，疑似 app 既有 bug，待决策）⑤ write-through 失败静默无提示
+- [x] ④ 已修：发布不再把融合概念标题改成文章标题（`bbb6e0f`，CreationPage:391/EditorPage:116 保留概念自身标题）
+- [ ] 待办（迁移期/后续，均非数据丢失级）：① 三域 tag 未强制分类（用 relation.tags 占位，需改费曼 prompt）② 概念改名后文章内 `[[旧标题]]` 链接会断（建议改 `[[id\|title]]` 或级联重写）③ `remove()` 未删 vault 文件 ⑤ write-through 失败静默无提示
+
+## Phase 2.1 · 费曼笔记 + 草稿落 vault（数据唯一来源铁律）✅ 完成 2026-06-23
+- [x] 起因：费曼笔记/草稿原只存浏览器 localStorage，违反「所有数据落 vault 作唯一来源」铁律——清缓存即丢闭环资产
+- [x] Gateway `server/vault.mjs` + `/api/vault/{notes,note,drafts,draft}`（GET/PUT/DELETE）：笔记存 `vault/AICC/notes/<id>.json`（JSON 无损）、草稿存 `vault/AICC/drafts/`
+- [x] `storage.ts` 的 `addNote`/`deleteNote` write-through 进 vault（`putNote`/`deleteVaultNote`，fire-and-forget）
+- [x] `hydrateFromVault()` 恢复笔记（vault 覆盖同 id、保留本地独有）+ **一次性回灌**本地已有笔记进 vault（自愈漏写）
+- [x] `CreationPage` 闭环计数 `closed` 改为 focus/storage 重算（修 hydrate 异步恢复晚于挂载 → 停在「已闭环 0」的旧值 bug）
+- [x] 验收：6 条既有笔记自动落 `vault/notes/*.json`（status notes:6）；清空 localStorage 笔记 → 重载 hydrate 救回 6 条、创作页自动「已闭环 2」解锁；tsc/build 通过
+- [ ] 待办：草稿 write-through 前端未接（每键触发需防抖；服务端已就绪，hydrate 暂不恢复草稿）
 
 ## Phase 3 · 认知图谱归 Obsidian ✅ 完成 2026-06-23
 - [x] 认知关系图谱归 Obsidian（节点=概念/文章 .md，边=`[[关联]]`/`[[融合]]`）；AICC 自建 SVG 图谱重定位为「雷达覆盖视图」，加横幅 + `obsidian://` 深链导向 Obsidian 关系图谱（仅 gateway 模式显示）

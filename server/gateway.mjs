@@ -5,7 +5,7 @@ import { createServer } from 'node:http'
 import { readFile, stat } from 'node:fs/promises'
 import { join, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { writeConcept, writeArticle, listConcepts, listArticles, vaultStatus } from './vault.mjs'
+import { writeConcept, writeArticle, listConcepts, listArticles, vaultStatus, writeNote, listNotes, deleteNote, writeDraft, listDrafts, deleteDraft } from './vault.mjs'
 import { radarIndex, radarWeek } from './radar.mjs'
 
 // 读取 server/.env（极简解析，无依赖）
@@ -122,12 +122,24 @@ const server = createServer(async (req, res) => {
       if (method === 'GET' && sub === 'status') return sendJson(res, 200, await vaultStatus(VAULT))
       if (method === 'GET' && sub === 'concepts') return sendJson(res, 200, await listConcepts(VAULT))
       if (method === 'GET' && sub === 'articles') return sendJson(res, 200, await listArticles(VAULT))
-      if ((method === 'PUT' || method === 'POST') && (sub === 'concept' || sub === 'article')) {
+      if (method === 'GET' && sub === 'notes') return sendJson(res, 200, await listNotes(VAULT))
+      if (method === 'GET' && sub === 'drafts') return sendJson(res, 200, await listDrafts(VAULT))
+      if ((method === 'PUT' || method === 'POST') && (sub === 'concept' || sub === 'article' || sub === 'note')) {
         let payload
         try { payload = JSON.parse((await readBody(req)) || '{}') } catch { return sendJson(res, 400, { error: 'invalid json' }) }
-        const file = sub === 'concept' ? await writeConcept(VAULT, payload) : await writeArticle(VAULT, payload)
+        const file = sub === 'concept' ? await writeConcept(VAULT, payload)
+          : sub === 'article' ? await writeArticle(VAULT, payload)
+          : await writeNote(VAULT, payload)
         return sendJson(res, 200, { ok: true, file })
       }
+      if ((method === 'PUT' || method === 'POST') && sub === 'draft') {
+        let payload
+        try { payload = JSON.parse((await readBody(req)) || '{}') } catch { return sendJson(res, 400, { error: 'invalid json' }) }
+        const file = await writeDraft(VAULT, payload.topicId, payload.body)
+        return sendJson(res, 200, { ok: true, file })
+      }
+      if (method === 'DELETE' && sub === 'note') { await deleteNote(VAULT, url.searchParams.get('id') || ''); return sendJson(res, 200, { ok: true }) }
+      if (method === 'DELETE' && sub === 'draft') { await deleteDraft(VAULT, url.searchParams.get('topicId') || ''); return sendJson(res, 200, { ok: true }) }
       return sendJson(res, 404, { error: 'not found' })
     } catch (e) {
       console.error('[vault] error:', e)            // 详情进服务端日志，不回传（避免泄露本机路径）

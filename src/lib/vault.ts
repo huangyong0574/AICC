@@ -7,7 +7,7 @@ function vh(): Record<string, string> {
   return { "Content-Type": "application/json", ...(t ? { Authorization: `Bearer ${t}` } : {}) }
 }
 
-export interface VaultStatus { configured: boolean; dir: string; concepts: number; articles: number }
+export interface VaultStatus { configured: boolean; dir: string; concepts: number; articles: number; notes?: number; drafts?: number }
 export interface VaultConcept {
   id: string; title: string; titleEn?: string; status?: string; sourceWeek?: string
   maturity?: number; slug?: string; tags?: string[]; parent?: string; relationText?: string; oneLine?: string
@@ -44,4 +44,24 @@ export async function putConcept(payload: Record<string, unknown>): Promise<bool
 }
 export async function putArticle(payload: Record<string, unknown>): Promise<boolean> {
   try { const r = await fetch("/api/vault/article", { method: "PUT", headers: vh(), body: JSON.stringify(payload) }); return r.ok } catch { return false }
+}
+
+// ── 费曼笔记（JSON 无损）+ 创作草稿：数据唯一来源落 vault ──
+export async function fetchNotes(): Promise<unknown[]> {
+  try { const r = await fetch("/api/vault/notes", { headers: vh() }); return r.ok ? r.json() : [] } catch { return [] }
+}
+export async function putNote(note: Record<string, unknown>): Promise<boolean> {
+  try { const r = await fetch("/api/vault/note", { method: "PUT", headers: vh(), body: JSON.stringify(note) }); return r.ok } catch { return false }
+}
+export async function deleteVaultNote(id: string): Promise<boolean> {
+  try { const r = await fetch(`/api/vault/note?id=${encodeURIComponent(id)}`, { method: "DELETE", headers: vh() }); return r.ok } catch { return false }
+}
+export async function fetchDrafts(): Promise<Record<string, string>> {
+  try { const r = await fetch("/api/vault/drafts", { headers: vh() }); return r.ok ? r.json() : {} } catch { return {} }
+}
+export async function putDraft(topicId: string, body: string): Promise<boolean> {
+  try { const r = await fetch("/api/vault/draft", { method: "PUT", headers: vh(), body: JSON.stringify({ topicId, body }) }); return r.ok } catch { return false }
+}
+export async function deleteVaultDraft(topicId: string): Promise<boolean> {
+  try { const r = await fetch(`/api/vault/draft?topicId=${encodeURIComponent(topicId)}`, { method: "DELETE", headers: vh() }); return r.ok } catch { return false }
 }
