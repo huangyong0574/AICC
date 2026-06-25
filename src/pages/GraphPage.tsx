@@ -27,7 +27,8 @@ const STATE_RANK: Record<NodeState, number> = {
   discovered: 0,
   "in-plan": 1,
   learning: 2,
-  published: 3,
+  internalized: 3,
+  published: 4,
 }
 
 /** 概念 slug：去掉 id 的 `{weekId}-{NN}-` 前缀 */
@@ -38,6 +39,7 @@ function conceptSlug(id: string): string {
 function nodeColor(state: NodeState): string {
   if (state === "in-plan") return "hsl(var(--frontier))"
   if (state === "learning") return "hsl(var(--learning))"
+  if (state === "internalized") return "hsl(var(--mature))"
   if (state === "published") return "hsl(var(--published))"
   return "hsl(var(--muted-foreground) / 0.4)"
 }

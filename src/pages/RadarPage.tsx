@@ -37,7 +37,7 @@ export function RadarPage({ onNavigate, onOpenFeynman, weekId: weekIdProp }: Rad
         // 仅「待启动(in-plan)」可在雷达页一键移除；学习中/已成稿含有学习进度或文章关联，
         // 必须二次确认，避免误点一下就静默删掉这些数据。
         if (state !== 'in-plan') {
-          const label = state === 'learning' ? '学习中' : '已成稿'
+          const label = state === 'learning' ? '学习中' : state === 'internalized' ? '已闭环' : '已成稿'
           if (
             typeof window !== 'undefined' &&
             !window.confirm(`该认知点处于「${label}」，移除会丢失其学习进度 / 文章关联。确定移除？`)

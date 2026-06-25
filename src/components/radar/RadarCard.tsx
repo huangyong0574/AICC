@@ -150,6 +150,22 @@ function StatusCTA({
     )
   }
 
+  // internalized：已闭环（费曼内化完成，待融合成文）——不显示「继续学习」
+  if (state === 'internalized') {
+    return (
+      <span className="inline-flex items-center gap-2.5 whitespace-nowrap">
+        <span className="inline-flex items-center gap-1 font-mono text-[11px] font-medium text-[hsl(var(--mature))]">
+          <Check style={{ width: 13, height: 13 }} />
+          已闭环
+        </span>
+        <button type="button" onClick={onOpen} className={ghostBtn} style={{ padding: '0 12px' }}>
+          <RotateCcw style={{ width: 12, height: 12 }} />
+          查看
+        </button>
+      </span>
+    )
+  }
+
   // learning：迷你进度条（4 步，learning 绿）+ 继续学习 · N/4
   const done = Math.max(0, Math.min(4, progress ?? 0))
   return (

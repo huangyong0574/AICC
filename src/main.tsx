@@ -178,6 +178,8 @@ function App() {
       upsert(id, {
         title: existing?.title || id,
         relation: { parent: delta.parent, text: delta.relation, tags: delta.tags, oneLine: delta.oneLine },
+        // 费曼内化完成 → 升「已闭环」（learning/in-plan → internalized）；已成稿不降级
+        ...(existing?.state !== "published" ? { state: "internalized" as const } : {}),
       })
     },
     [upsert, map],

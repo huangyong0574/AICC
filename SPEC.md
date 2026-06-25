@@ -11,7 +11,7 @@
 > 设计稿源码归档于 `design/aicc-html-bundle/`，与 `src/` 实现对照。
 >
 > **v3 关键变化**：产品从单一「费曼概念教练」升级为以**认知状态机**为主线的多页面平台
-> （discovered→in-plan→learning→published）。费曼引擎降为「learning」阶段的深度学习子系统，
+> （discovered→in-plan→learning→internalized（已闭环）→published）。费曼引擎降为「learning」阶段的深度学习子系统，
 > 其详细规格见第 5/7/8 章（仍然有效）。
 
 ---
@@ -1252,7 +1252,7 @@ This enables progressive rendering: as each field completes in the stream, its c
 - **E2E / 流程**: `scripts/test-main-flow.mjs`、`scripts/test-step1.mjs`、`scripts/test-radar*.mjs`（Playwright/Node 脚本）
 - **平台导航/状态机走查**: `test-screenshots/*.mjs`（run-e2e / test-nav-routing / verify-* 等，含截图产物）
 - **真实 LLM E2E**: 本产品必须连接 LLM（已移除离线 Mock）；费曼链路需配置 DashScope key 走真实调用
-- **手动验证**: 本次集成已用浏览器预览全链路实测 discovered→in-plan→learning→published（含刷新保活、误删护栏）
+- **手动验证**: 本次集成已用浏览器预览全链路实测 discovered→in-plan→learning→internalized（已闭环）→published（含刷新保活、误删护栏）
 
 ---
 
@@ -1277,7 +1277,7 @@ npm run preview
 > 平台级方向（待产品确认，详见与本次梳理同步给出的「产品逻辑建议」）：
 
 ### P0 — 状态机闭环（已完成 v3.0.0）
-- [x] 认知状态机 discovered→in-plan→learning→published 全链路打通
+- [x] 认知状态机 discovered→in-plan→learning→internalized（已闭环）→published 全链路打通
 - [x] 计划页 / 编辑器 / 图谱接入，`activeConceptId` 跨刷新保活
 - [x] 雷达删除护栏、编辑器 slug 冲突护栏
 - [x] **雷达数据动态化**：`ai-cognitive-radar` skill 输出 `public/content/radar/*.json`，工程动态加载；id 规范 `{weekId}-{NN}-{slug}`（详见 §3.6）

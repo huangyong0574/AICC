@@ -22,10 +22,11 @@ import { syncConceptToVault } from "./vaultSync"
  *   aicc-deep-plan        —— 派生：所有 state ≠ discovered 的 id 列表
  * ────────────────────────────────────────────────────────────── */
 
-export type CognitionStateValue = "discovered" | "in-plan" | "learning" | "published"
+// discovered（雷达发现）→ in-plan（加入计划）→ learning（费曼学习中）→ internalized（费曼内化完成·已闭环）→ published（融合成文·已成稿）
+export type CognitionStateValue = "discovered" | "in-plan" | "learning" | "internalized" | "published"
 
 /** 计划页/雷达页里参与流转的“非发现”状态 */
-export const PLANNED_STATES: CognitionStateValue[] = ["in-plan", "learning", "published"]
+export const PLANNED_STATES: CognitionStateValue[] = ["in-plan", "learning", "internalized", "published"]
 
 export interface CognitionItem {
   state: CognitionStateValue
@@ -51,6 +52,7 @@ export const STATE_LABELS: Record<CognitionStateValue, string> = {
   discovered: "已发现",
   "in-plan": "待启动",
   learning: "学习中",
+  internalized: "已闭环",
   published: "已成稿",
 }
 

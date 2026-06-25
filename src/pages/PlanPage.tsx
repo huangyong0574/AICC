@@ -25,6 +25,7 @@ const FILTERS: { value: FilterValue; label: string; dot?: string }[] = [
   { value: "all", label: "全部" },
   { value: "in-plan", label: "待启动", dot: "in-plan" },
   { value: "learning", label: "学习中", dot: "learning" },
+  { value: "internalized", label: "已闭环", dot: "internalized" },
   { value: "published", label: "已成稿", dot: "published" },
 ]
 
@@ -50,6 +51,7 @@ export function PlanPage({ onNavigate, onOpenArticle, onOpenFeynman }: PlanPageP
       total: items.length,
       "in-plan": items.filter((i) => i.state === "in-plan").length,
       learning: items.filter((i) => i.state === "learning").length,
+      internalized: items.filter((i) => i.state === "internalized").length,
       published: items.filter((i) => i.state === "published").length,
     }),
     [items],
@@ -185,6 +187,16 @@ export function PlanPage({ onNavigate, onOpenArticle, onOpenFeynman }: PlanPageP
                           <Loader /> 继续学习
                         </button>
                       )}
+                      {item.state === "internalized" && (
+                        <>
+                          <button className="btn" onClick={() => onOpenFeynman(item.id)}>
+                            <BookOpen /> 查看学习情况
+                          </button>
+                          <button className="btn primary" onClick={() => onNavigate("creation")}>
+                            <Layers /> 去成稿
+                          </button>
+                        </>
+                      )}
                       {item.state === "published" &&
                         (item.slug ? (
                           <button className="btn primary" onClick={() => onOpenArticle(item.slug!)}>
@@ -272,6 +284,7 @@ const PLAN_CSS = `
 .plan-page .chip .dot{width:6px;height:6px;border-radius:9999px}
 .plan-page .chip .dot.in-plan{background:hsl(var(--frontier))}
 .plan-page .chip .dot.learning{background:hsl(var(--learning))}
+.plan-page .chip .dot.internalized{background:hsl(var(--mature))}
 .plan-page .chip .dot.published{background:hsl(var(--published))}
 
 .plan-page .plan-list{display:grid;grid-template-columns:1fr;gap:14px}
@@ -279,6 +292,7 @@ const PLAN_CSS = `
 .plan-page .plan-item:hover{border-color:hsl(var(--foreground)/0.18);box-shadow:0 8px 24px -12px hsl(var(--foreground)/0.15);transform:translateY(-1px)}
 .plan-page .plan-item.is-published{border-color:hsl(var(--published)/0.4);background:hsl(var(--published)/0.04)}
 .plan-page .plan-item.is-learning{border-left:3px solid hsl(var(--learning))}
+.plan-page .plan-item.is-internalized{border-left:3px solid hsl(var(--mature))}
 .plan-page .plan-num{font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:hsl(var(--muted-foreground));text-align:left;line-height:1.4;font-feature-settings:'tnum' 1}
 .plan-page .plan-num strong{display:block;font-size:13px;color:hsl(var(--foreground));font-weight:600;letter-spacing:0.04em;margin-top:2px}
 .plan-page .plan-body{min-width:0}
@@ -289,6 +303,7 @@ const PLAN_CSS = `
 .plan-page .plan-meta .badge .dot{width:5px;height:5px;border-radius:9999px}
 .plan-page .plan-meta .badge .dot.in-plan{background:hsl(var(--frontier))}
 .plan-page .plan-meta .badge .dot.learning{background:hsl(var(--learning))}
+.plan-page .plan-meta .badge .dot.internalized{background:hsl(var(--mature))}
 .plan-page .plan-meta .badge .dot.published{background:hsl(var(--published))}
 
 .plan-page .plan-actions{display:inline-flex;align-items:center;gap:8px;flex-shrink:0}
