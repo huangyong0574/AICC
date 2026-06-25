@@ -133,5 +133,24 @@ export async function hydrateFromVault(): Promise<void> {
     }
   } catch { /* localStorage 不可用 */ }
 
+  // 一次性迁移（幂等）：已有费曼内化摘要(note.feynman) 但状态仍 learning 的概念 → 升「已闭环」并写回 vault。
+  // 仅"已内化"升级（只走完 4 步、待内化的不动）；升级后状态不再是 learning，故每次启动跑也自限、收敛。
+  try {
+    const cog = JSON.parse(localStorage.getItem(STATE_KEY) || "{}") as CognitionMap
+    const allNotes = JSON.parse(localStorage.getItem(NOTES_KEY) || "[]") as Array<{ id?: string; conceptId?: string; feynman?: unknown }>
+    const internalizedIds = new Set(
+      allNotes.filter((n) => n && n.feynman).map((n) => n.conceptId || n.id).filter(Boolean) as string[],
+    )
+    let migrated = 0
+    for (const [id, item] of Object.entries(cog)) {
+      if (item && item.state === "learning" && internalizedIds.has(id)) {
+        item.state = "internalized"
+        migrated++
+        syncConceptToVault(id, item)   // 写回 vault：status=internalized（已闭环）
+      }
+    }
+    if (migrated) { localStorage.setItem(STATE_KEY, JSON.stringify(cog)); changed = true }
+  } catch { /* localStorage 不可用 */ }
+
   if (changed && typeof window !== "undefined") window.dispatchEvent(new Event("focus"))
 }
