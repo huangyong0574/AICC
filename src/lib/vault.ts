@@ -44,6 +44,17 @@ export async function fetchArticle(slug: string): Promise<VaultArticle | null> {
   if (!slug) return null
   try { return (await fetchArticles()).find((a) => a.slug === slug) || null } catch { return null }
 }
+
+/**
+ * 写作归 Obsidian：确保该文章 .md 存在（不存在则按骨架建）并返回 `obsidian://` 打开链接。
+ * 已有文章只需传 {slug}；新建需传 {slug,title,conceptIds,conceptLinks,markdown(骨架正文)}。
+ */
+export async function articleToObsidian(payload: Record<string, unknown>): Promise<{ file: string; created: boolean; obsidianUri: string } | null> {
+  try {
+    const r = await fetch("/api/vault/article-obsidian", { method: "POST", headers: vh(), body: JSON.stringify(payload) })
+    return r.ok ? r.json() : null
+  } catch { return null }
+}
 export async function putConcept(payload: Record<string, unknown>): Promise<boolean> {
   try { const r = await fetch("/api/vault/concept", { method: "PUT", headers: vh(), body: JSON.stringify(payload) }); return r.ok } catch { return false }
 }

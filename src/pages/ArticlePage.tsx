@@ -12,7 +12,7 @@ import {
   type Frontmatter,
   type TocHeading,
 } from "../lib/markdown"
-import { fetchArticle } from "../lib/vault"
+import { fetchArticle, articleToObsidian } from "../lib/vault"
 import { cleanArticleBody } from "../lib/publishArticle"
 
 hljs.registerLanguage("python", python)
@@ -20,8 +20,6 @@ hljs.registerLanguage("python", python)
 interface ArticlePageProps {
   slug: string
   onNavigate: (page: NavPage) => void
-  /** 编辑本文（仅本地发布的文章可编辑）→ 打开编辑器载入此 slug */
-  onEdit?: (slug: string) => void
 }
 
 interface ArticleData {
@@ -33,7 +31,7 @@ interface ArticleData {
 
 const DRAFT_PREFIX = "aicc-article-md:"
 
-export function ArticlePage({ slug, onNavigate, onEdit }: ArticlePageProps) {
+export function ArticlePage({ slug, onNavigate }: ArticlePageProps) {
   const [state, setState] = useState<"loading" | "ok" | "error">("loading")
   const [errorMsg, setErrorMsg] = useState("")
   const [data, setData] = useState<ArticleData | null>(null)
@@ -219,8 +217,15 @@ export function ArticlePage({ slug, onNavigate, onEdit }: ArticlePageProps) {
                     <span className="dot" />
                     {status}
                   </span>
-                  {editable && onEdit && (
-                    <button className="edit-btn" onClick={() => onEdit(slug)}>✎ 编辑文章</button>
+                  {editable && (
+                    <button
+                      className="edit-btn"
+                      title="在 Obsidian 中编辑这篇文章（写作归 Obsidian）"
+                      onClick={async () => {
+                        const r = await articleToObsidian({ slug })
+                        if (r?.obsidianUri) window.location.href = r.obsidianUri
+                      }}
+                    >✍ 在 Obsidian 编辑</button>
                   )}
                 </div>
                 <h1>{title}</h1>

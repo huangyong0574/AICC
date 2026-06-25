@@ -5,7 +5,7 @@ import { createServer } from 'node:http'
 import { readFile, stat } from 'node:fs/promises'
 import { join, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { writeConcept, writeArticle, listConcepts, listArticles, vaultStatus, writeNote, listNotes, deleteNote, writeDraft, listDrafts, deleteDraft } from './vault.mjs'
+import { writeConcept, writeArticle, listConcepts, listArticles, vaultStatus, writeNote, listNotes, deleteNote, writeDraft, listDrafts, deleteDraft, ensureArticleForObsidian } from './vault.mjs'
 import { radarIndex, radarWeek } from './radar.mjs'
 
 // 读取 server/.env（极简解析，无依赖）
@@ -131,6 +131,12 @@ const server = createServer(async (req, res) => {
           : sub === 'article' ? await writeArticle(VAULT, payload)
           : await writeNote(VAULT, payload)
         return sendJson(res, 200, { ok: true, file })
+      }
+      if (method === 'POST' && sub === 'article-obsidian') {
+        let payload
+        try { payload = JSON.parse((await readBody(req)) || '{}') } catch { return sendJson(res, 400, { error: 'invalid json' }) }
+        const r = await ensureArticleForObsidian(VAULT, payload)
+        return r ? sendJson(res, 200, r) : sendJson(res, 404, { error: 'article not found and no skeleton data' })
       }
       if ((method === 'PUT' || method === 'POST') && sub === 'draft') {
         let payload

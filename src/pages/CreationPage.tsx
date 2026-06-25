@@ -9,7 +9,7 @@ import { useCognition } from '../lib/cognition'
 import { isLlmReady } from '@/lib/gateway'
 import { renderArticleBody } from '../lib/markdown'
 import { publishArticleToStorage, slugify, loadPublishedMarkdown, findPublishedByConceptId, cleanArticleBody } from '../lib/publishArticle'
-import { fetchArticle } from '../lib/vault'
+import { fetchArticle, articleToObsidian } from '../lib/vault'
 import type { Note, LlmConfig } from '../feynman/types'
 import { Button } from '@/components/ui/button'
 
@@ -400,15 +400,45 @@ function DeskView({ pinned, onBack, notes, cfg }: { pinned: Topic; onBack: () =>
     finally { setSparLoading(null) }
   }
 
-  function publish() {
-    if (!title.trim() || !body.trim()) return
-    const slug = publishedEntry?.slug || slugify(title)
-    const ok = publishArticleToStorage({ slug, markdown: buildArticleMd(title, body), title, category: '创作', status: '已发布', conceptIds: pinned.conceptIds })
+  async function publish() {
+    const t = title.trim()
+    if (!t) return
+    const slug = publishedEntry?.slug || slugify(t)
+    // 写作归 Obsidian：发布以 vault 最新正文为准（你可能刚在 Obsidian 写完）；vault 无该文则用本地编辑区
+    const va = await fetchArticle(slug)
+    const vaultBody = va ? cleanArticleBody(va.body) : ''
+    const pubBody = vaultBody.trim() ? vaultBody : body
+    if (!pubBody.trim()) return
+    const ok = publishArticleToStorage({ slug, markdown: buildArticleMd(t, pubBody), title: t, category: '创作', status: '已发布', conceptIds: pinned.conceptIds })
     if (!ok) return
     // 保留各概念自身标题（不要改成文章标题——否则融合多概念会撞名、断 [[链接]]）；只标记已成稿 + 关联文章 slug
     pinned.conceptIds.forEach((id, i) => upsert(id, { title: map[id]?.title || pinned.conceptTitles[i] || id, slug, state: 'published' }))
     try { localStorage.removeItem(draftKey) } catch { /* ignore */ }
     setPublished(true)
+  }
+
+  // 写作归 Obsidian：把选题钩子 + 已闭环概念素材铺成骨架正文（## 融合链接由 gateway 按概念标题补）
+  function buildSkeleton(): string {
+    const lines: string[] = []
+    if (pinned.hook?.text) lines.push(`> 选题钩子 · ${pinned.hook.text}`, '')
+    lines.push('## 正文（在这下面用你自己的话写）', '', '')
+    if (materials.length) {
+      lines.push('## 📎 可用素材（来自你已闭环的认知点 · 写完可删）')
+      for (const m of materials) lines.push(`- **${m.kind} · ${m.source}**：${m.text}`)
+    }
+    return lines.join('\n')
+  }
+  const [obLoading, setObLoading] = useState(false)
+  async function writeInObsidian() {
+    const t = title.trim() || pinned.title
+    const slug = publishedEntry?.slug || slugify(t)
+    const conceptLinks = pinned.conceptIds.map((id, i) => map[id]?.title || pinned.conceptTitles[i] || id)
+    setObLoading(true)
+    // 已存在的文章只取打开链接（不覆盖你在 Obsidian 的改动）；新文章才铺骨架
+    const r = await articleToObsidian({ slug, title: t, conceptIds: pinned.conceptIds, conceptLinks, markdown: buildSkeleton() })
+    setObLoading(false)
+    if (r?.obsidianUri) window.location.href = r.obsidianUri
+    else setSparErr('打开 Obsidian 失败（本地 Gateway 未就绪或未配置 vault）')
   }
 
   return (
@@ -426,6 +456,16 @@ function DeskView({ pinned, onBack, notes, cfg }: { pinned: Topic; onBack: () =>
           {pinned.hook?.text && <div className="mt-1 text-[11.5px] text-muted-foreground">钩子 · {pinned.hook.text}</div>}
         </div>
         <span className="shrink-0 text-[11px] text-muted-foreground">{published ? '已成文 · 可再改' : '已钉选题'}</span>
+      </div>
+
+      {/* 写作归 Obsidian：主路径——建骨架 .md 并在 Obsidian 打开 */}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-secondary/40 px-4 py-3">
+        <div className="min-w-0 flex-1 text-[12.5px] leading-relaxed text-muted-foreground">
+          <strong className="text-foreground">在 Obsidian 写正文（推荐）。</strong> {published ? '在 Obsidian 打开本文继续改，写完回来点「发布」。' : '会把选题钩子 + 你已闭环概念的素材 + 概念链接铺成骨架 .md，在 Obsidian 里写；写完回来点「发布」。'}
+        </div>
+        <button onClick={writeInObsidian} disabled={obLoading} className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-[12.5px] font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50">
+          {obLoading ? '打开中…' : '✍ 在 Obsidian 写'}
+        </button>
       </div>
 
       {/* 草稿恢复提示 */}

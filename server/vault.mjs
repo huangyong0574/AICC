@@ -218,6 +218,30 @@ export async function deleteDraft(vault, topicId) {
   try { await unlink(join(draftsDir(vault), `${safeFileName(topicId, topicId)}.md`)); return true } catch { return false }
 }
 
+// ── 写作归 Obsidian：建骨架（不存在时）+ 生成 obsidian:// 打开链接 ──────
+// 按 slug 找已存在的文章文件名（存在返回文件名，否则 null）
+async function findArticleFile(vault, slug) {
+  for (const { file, frontmatter } of await readDirMd(articlesDir(vault))) {
+    if ((frontmatter.slug || file.replace(/\.md$/, '')) === slug) return file
+  }
+  return null
+}
+// obsidian://open?path=<绝对路径>（用绝对路径，免依赖 Obsidian vault 注册名）
+export function obsidianOpenUri(vault, file) {
+  return `obsidian://open?path=${encodeURIComponent(join(articlesDir(vault), file))}`
+}
+// 确保该 slug 的文章 .md 存在：存在→直接返回其打开链接；不存在且给了骨架数据→建骨架再返回。
+export async function ensureArticleForObsidian(vault, p) {
+  let file = await findArticleFile(vault, p.slug)
+  let created = false
+  if (!file) {
+    if (!p.markdown && !p.title) return null   // 文件不存在、又没骨架数据，无法打开
+    file = await writeArticle(vault, p)        // 建骨架（writeArticle 负责 frontmatter + ## 融合）
+    created = true
+  }
+  return { file, created, obsidianUri: obsidianOpenUri(vault, file) }
+}
+
 export async function vaultStatus(vault) {
   const [c, a, n, d] = await Promise.all([listConcepts(vault), listArticles(vault), listNotes(vault), listDrafts(vault)])
   return { configured: true, dir: vault, concepts: c.length, articles: a.length, notes: n.length, drafts: Object.keys(d).length }

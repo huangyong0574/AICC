@@ -196,7 +196,6 @@ function App() {
       <ArticlePage
         slug={articleSlug}
         onNavigate={handleNavigate}
-        onEdit={(s) => { setActiveConcept(''); setEditorSlug(s); navigateTo('editor') }}
       />
     )
   }
