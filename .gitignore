@@ -14,3 +14,6 @@ vault/
 !.claude/commands/
 *.tsbuildinfo
 test-screenshots/
+
+# 无关独立子项目（误入工作树，勿纳入 AICC 仓库）
+meoo-aicc-radar/
