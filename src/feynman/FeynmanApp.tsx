@@ -30,9 +30,7 @@ interface FeynmanAppProps {
   conceptId?: string
   /** 进入时预填的问题（认知点中文标题） */
   initialQuestion?: string
-  /** 学习完成后跳转到成稿编辑器，携带认知点 id */
-  onGoToEditor?: (id?: string) => void
-  /** 平台全局导航（套 AICC SiteHeader 用） */
+  /** 平台全局导航（套 AICC SiteHeader 用）；内化完成后引导去「创作」频道融合选题 */
   onNavigate?: (page: NavPage) => void
   /** 费曼内化完成时回调：把图谱关系（concept→parent）回写平台认知状态 */
   onInternalized?: (id: string, delta: GraphDelta) => void
@@ -40,7 +38,7 @@ interface FeynmanAppProps {
   onProgress?: (id: string, progress: number) => void
 }
 
-export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigate, onInternalized, onProgress }: FeynmanAppProps = {}) {
+export function FeynmanApp({ conceptId, initialQuestion, onNavigate, onInternalized, onProgress }: FeynmanAppProps = {}) {
   const [cfg, setCfg] = useState<LlmConfig>(DEFAULT_CFG)
   const [rawQuestion, setRawQuestion] = useState(initialQuestion ?? "")
   const [topic, setTopic] = useState("")
@@ -482,29 +480,29 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
               />
             )}
 
-            {/* 内化前置成成稿门槛：四步确认后，必须先完成费曼内化三问，才解锁「去成稿」 */}
-            {onGoToEditor && allConfirmed && !feynman && (
+            {/* 闭环门槛：四步确认后，必须先完成费曼内化三问，这个知识点才算真正闭环 */}
+            {onNavigate && allConfirmed && !feynman && (
               <Card className="border-dashed">
                 <CardContent className="pt-5 flex items-center gap-3 text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">成稿前，先完成上方「费曼内化三问」</span>
-                  —— 输出倒逼输入：你能讲清、经评分，才算真懂，才能成文。
+                  <span className="font-semibold text-foreground">想把它结合成选题？先完成上方「费曼内化三问」</span>
+                  —— 输出倒逼输入：你能讲清、经评分，这个知识点才算闭环。
                 </CardContent>
               </Card>
             )}
 
-            {/* 内化完成 → 整理成文：进入成稿编辑器（learning → published 入口） */}
-            {onGoToEditor && feynman && (
+            {/* 内化完成 → 引导去「创作」频道融合选题（单概念不再单独成文） */}
+            {onNavigate && feynman && (
               <Card className="border-primary/30">
                 <CardContent className="pt-5 flex items-center justify-between gap-4 flex-wrap">
                   <div className="space-y-1">
-                    <div className="text-sm font-semibold">已讲透？整理成文，沉淀为文章</div>
+                    <div className="text-sm font-semibold">已讲透 ✓ 这个知识点已闭环</div>
                     <div className="text-xs text-muted-foreground">
-                      费曼内化已完成，进入成稿编辑器把它写成文章，发布后该认知点将标记为「已成稿」。
+                      单个概念无需单独成文。去「创作」频道，AI 会把它和你其它已闭环的知识点融合成选题，写一篇面向转型客户的文章。
                     </div>
                   </div>
-                  <Button variant="glow" size="lg" onClick={() => onGoToEditor(conceptId)}>
+                  <Button variant="glow" size="lg" onClick={() => onNavigate("creation")}>
                     <SquarePen className="mr-2 h-4 w-4" />
-                    去成稿
+                    去创作 · 融合选题
                   </Button>
                 </CardContent>
               </Card>
@@ -513,7 +511,7 @@ export function FeynmanApp({ conceptId, initialQuestion, onGoToEditor, onNavigat
         )}
 
         <footer className="text-center text-[11px] text-muted-foreground py-6 font-mono tracking-[0.04em]">
-          AICC · 费曼学习（learning 阶段）· 笔记仅存浏览器 localStorage
+          AICC · 费曼学习（learning 阶段）· 笔记落 vault 存档（浏览器仅作缓存）
         </footer>
       </main>
 

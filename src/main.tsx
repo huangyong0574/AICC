@@ -170,12 +170,6 @@ function App() {
     navigateTo('feynman')
   }, [navigateTo, setState, setActiveConcept, map])
 
-  // 费曼学习完成 → 去成稿编辑器（携带认知点 id，发布时回写 published）
-  const handleGoToEditor = useCallback((id?: string) => {
-    if (id) setActiveConcept(id)
-    navigateTo('editor')
-  }, [navigateTo, setActiveConcept])
-
   // 费曼内化完成 → 把图谱关系（concept→parent）回写到平台认知状态，供认知图谱渲染关系边
   const handleInternalized = useCallback(
     (id: string, delta: { parent: string; relation: string; tags?: string[]; oneLine?: string }) => {
@@ -237,12 +231,11 @@ function App() {
   if (page === 'creation') {
     return <CreationPage onNavigate={handleNavigate} />
   }
-  // 费曼学习工作台：携带认知点上下文，完成后可一键去成稿
+  // 费曼学习工作台：携带认知点上下文，内化完成后引导去「创作」频道融合选题
   return (
     <FeynmanApp
       conceptId={activeConceptId}
       initialQuestion={activeConceptId ? (map[activeConceptId]?.title || '') : ''}
-      onGoToEditor={handleGoToEditor}
       onNavigate={handleNavigate}
       onInternalized={handleInternalized}
       onProgress={setProgress}
