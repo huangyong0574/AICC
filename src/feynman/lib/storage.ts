@@ -89,11 +89,39 @@ export function findCachedNote(rawQuestion: string): Note | undefined {
   )
 }
 
-/** 按 conceptId 查笔记（含中途草稿，不要求完成）——费曼页据此恢复学习进度 */
+/** 笔记“完整度”分：有费曼内化最高，其次确认步数 —— 同概念多笔记时据此取最完整的 */
+function noteScore(n: Note): number {
+  const confirmed = (n.steps || []).filter(s => s.confirmed).length
+  return (n.feynman ? 1000 : 0) + confirmed * 10
+}
+const byCompleteness = (a: Note, b: Note) => noteScore(b) - noteScore(a) || (b.createdAt || "").localeCompare(a.createdAt || "")
+
+/**
+ * 按 conceptId 查笔记（含中途草稿，不要求完成）——费曼页据此恢复学习进度。
+ * 一个概念若有多条（点过「重新开始」会留旧草稿），返回**最完整/最新**的那条，避免已内化却误显「待内化」。
+ */
 export function findNoteByConceptId(conceptId: string): Note | undefined {
   const id = conceptId?.trim()
   if (!id) return undefined
-  return loadNotes().find(n => n.conceptId === id)
+  const matches = loadNotes().filter(n => n.conceptId === id)
+  return matches.length <= 1 ? matches[0] : matches.slice().sort(byCompleteness)[0]
+}
+
+/** 一次性清理：同 conceptId 的多条笔记只保留最完整一条，删掉被超越的废草稿（同步删 vault）。返回删除数。幂等。 */
+export function dedupeNotesByConcept(): number {
+  const byConcept = new Map<string, Note[]>()
+  for (const n of loadNotes()) {
+    if (!n.conceptId) continue
+    const g = byConcept.get(n.conceptId) ?? []
+    g.push(n); byConcept.set(n.conceptId, g)
+  }
+  let removed = 0
+  for (const group of byConcept.values()) {
+    if (group.length <= 1) continue
+    const [, ...rest] = group.slice().sort(byCompleteness)   // [最完整, ...被超越的]
+    for (const n of rest) if (n.id) { deleteNote(n.id); removed++ }
+  }
+  return removed
 }
 
 export function deleteNote(id: string) {

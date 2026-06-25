@@ -1,7 +1,7 @@
 // vault 同步：write-through（认知点/成稿变更 → 写 .md）+ 启动 hydrate（vault → localStorage 缓存）。
 // 设计：vault 权威、localStorage 缓存。hydrate 安全合并——vault 覆盖同名字段、绝不删除本地独有项（迁移前不破坏现有数据）。
 import { putConcept, putArticle, fetchConcepts, fetchArticles, fetchNotes, putNote, vaultEnabled } from "./vault"
-import { findNoteByConceptId } from "../feynman/lib/storage"
+import { findNoteByConceptId, dedupeNotesByConcept } from "../feynman/lib/storage"
 import type { CognitionItem, CognitionMap, CognitionStateValue } from "./cognition"
 import type { Step4Answer } from "../feynman/types"
 
@@ -132,6 +132,9 @@ export async function hydrateFromVault(): Promise<void> {
       for (const n of local) if (n && n.id && !vaultIds.has(n.id)) void putNote(n as Record<string, unknown>)  // 回灌
     }
   } catch { /* localStorage 不可用 */ }
+
+  // 一次性去重（幂等）：同概念的多条重复笔记只留最完整一条（同步删 vault），避免已内化却误显「待内化」。
+  try { if (dedupeNotesByConcept() > 0) changed = true } catch { /* ignore */ }
 
   // 一次性迁移（幂等）：已有费曼内化摘要(note.feynman) 但状态仍 learning 的概念 → 升「已闭环」并写回 vault。
   // 仅"已内化"升级（只走完 4 步、待内化的不动）；升级后状态不再是 learning，故每次启动跑也自限、收敛。
