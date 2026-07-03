@@ -264,6 +264,18 @@ export async function loadRadarWeek(file: string): Promise<RadarWeek | null> {
   }
 }
 
+/**
+ * 按认知点 id 取其雷达 insight（id 规范 `{weekId}-{NN}-{slug}` → 定位周 JSON 再按 id 查）。
+ * 供费曼预热等场景取「真实材料」（tagline/corePrinciple/whyMatters），锚定 LLM、禁止编造。
+ * 手建概念（无周前缀）或查不到时返回 null，调用方回退纯标题模式。
+ */
+export async function loadInsightById(conceptId: string): Promise<RadarInsight | null> {
+  const m = /^(\d{4}-W\d{2})-/.exec(conceptId || "")
+  if (!m) return null
+  const week = await loadRadarWeek(`${m[1]}.json`)
+  return week?.insights.find((i) => i.id === conceptId) || null
+}
+
 /** 读取最新一周（index[0]）；任何环节失败回退到内置 seed radarWeekData */
 export async function loadLatestRadarWeek(): Promise<RadarWeek> {
   const idx = await loadRadarIndex()

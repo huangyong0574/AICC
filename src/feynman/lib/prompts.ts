@@ -94,9 +94,31 @@ export function buildConceptIntro(rawQ: string): string {
 // ============================================================
 // 2.5 费曼预热问题生成（LLM 动态改写 3 个问题）
 // ============================================================
-export function buildFeynmanWarmupPrompt(rawQ: string): string {
-  return `用户想学习的概念：${rawQ}
+/** 费曼预热的雷达真实材料（来自该认知点的 RadarInsight）；问题中的事实/数字只许取自这里，防 LLM 编造 */
+export interface WarmupMaterial {
+  tagline?: string
+  corePrinciple?: string
+  whyMatters?: string
+  org?: string
+  dateRange?: string
+}
 
+export function buildFeynmanWarmupPrompt(rawQ: string, material?: WarmupMaterial): string {
+  const hasMat = !!(material && (material.tagline || material.corePrinciple || material.whyMatters))
+  const matBlock = hasMat
+    ? `\n【本周雷达对该认知点的材料（唯一事实依据）】\n` +
+      (material!.tagline ? `- 一句话：${material!.tagline}\n` : "") +
+      (material!.corePrinciple ? `- 核心原理：${material!.corePrinciple}\n` : "") +
+      (material!.whyMatters ? `- 为何重要：${material!.whyMatters}\n` : "") +
+      ([material!.org, material!.dateRange].filter(Boolean).length
+        ? `- 出处：${[material!.org, material!.dateRange].filter(Boolean).join(" · ")}\n`
+        : "")
+    : ""
+  const grounding = hasMat
+    ? `- 问题中的事实、数字、案例只能取自上方雷达材料；材料里没有的数字和案例一律禁止编造\n`
+    : ""
+  return `用户想学习的概念：${rawQ}
+${matBlock}
 你是费曼学习法教练。学习者是 MaaS 行业的售前/解决方案角色，即将学习「${rawQ}」。
 请生成 3 个预热思考题，让学习者在正式学习前先想想：学完之后我能不能讲给这些人听？
 
@@ -106,7 +128,7 @@ export function buildFeynmanWarmupPrompt(rawQ: string): string {
 3. internal（公司模型产研同学）：你如何让公司的模型产研同学觉得"他是售前里面最懂这个的了！"
 
 要求：
-- 每个问题必须代入「${rawQ}」这个具体概念，禁止用通用模板
+${grounding}- 每个问题必须代入「${rawQ}」这个具体概念，禁止用通用模板
 - 问题格式：以"你如何…让他/她…"的句式，重点是激发学习者的输出欲望
 - 每个问题严格限制在 60 字以内
 - 问题要让学习者意识到：如果接下来不认真学，就讲不好

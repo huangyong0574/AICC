@@ -19,7 +19,7 @@ import { StepPipeline, emptySteps } from "./components/StepPipeline"
 import { FeynmanProgress } from "./components/FeynmanProgress"
 import { FeynmanDigestPanel } from "./components/FeynmanDigestPanel"
 import { SettingsDialog } from "./components/SettingsDialog"
-import { useLatestRadarWeek, useRadarWeekById } from "../data/radarData"
+import { useLatestRadarWeek, useRadarWeekById, loadInsightById } from "../data/radarData"
 
 function genId() {
   return `note_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
@@ -157,8 +157,10 @@ export function FeynmanApp({ conceptId, initialQuestion, onNavigate, onInternali
     setWarmupConfirmed(false)
     setStarted(true)
 
-    // 调用 LLM 生成费曼预热问题
-    callFeynmanWarmup(rawQuestion, cfg)
+    // 调用 LLM 生成费曼预热问题：先取该认知点的雷达 insight 作「唯一事实材料」，
+    // 锚定问题中的事实/数字、防编造；手建概念（无雷达来源）自动回退纯标题模式
+    loadInsightById(conceptId || "")
+      .then(insight => callFeynmanWarmup(rawQuestion, cfg, insight ?? undefined))
       .then(questions => {
         setWarmupQuestions(questions)
         // 第一个问题返回后就关闭 loading，后续问题逐个“跳出来”

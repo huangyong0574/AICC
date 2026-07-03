@@ -13,6 +13,7 @@ import {
   SYSTEM_WARMUP,
   buildFeynmanSystemPrompt,
   buildFeynmanWarmupPrompt,
+  type WarmupMaterial,
 } from "./prompts"
 
 // ── 本地 Gateway 代理：前端不再持 key，所有 LLM 调用统一打到 /api/llm ──
@@ -42,10 +43,11 @@ export interface FeynmanWarmupQuestion {
 export async function callFeynmanWarmup(
   rawQuestion: string,
   cfg: LlmConfig,
+  material?: WarmupMaterial,
 ): Promise<FeynmanWarmupQuestion[]> {
   const messages: { role: string; content: string }[] = [
     { role: "system", content: SYSTEM_WARMUP },
-    { role: "user", content: buildFeynmanWarmupPrompt(rawQuestion) },
+    { role: "user", content: buildFeynmanWarmupPrompt(rawQuestion, material) },
   ]
 
   const res = await llmChat({

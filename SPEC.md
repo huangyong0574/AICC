@@ -161,7 +161,7 @@ User inputs natural language question (e.g. "GDN是什么意思？")  ← 计划
 
 | Module | Function | Status | Notes |
 |---|---|---|---|
-| **Feynman Warmup** | Dynamic 3 role-based questions (biz/CTO/dev) | Done | `callFeynmanWarmup()` |
+| **Feynman Warmup** | Dynamic 3 role-based questions (biz/CTO/dev)，事实锚定：注入该认知点的雷达 insight（tagline/corePrinciple/whyMatters）作唯一事实依据、禁止编造；手建概念回退纯标题 | Done | `callFeynmanWarmup(raw, cfg, material?)` + `loadInsightById()` |
 | **Step 1** | Concept perception (4 parts + loop placeholder) | Done | `callStep("step1")` |
 | **Step 2** | Algorithm principle & math (timeline+anim+formula+loop) | Done | `callStep("step2")` |
 | **Step 3** | Business value (engineering+business, no loop field) | Done | `callStep("step3")` |
