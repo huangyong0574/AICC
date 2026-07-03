@@ -28,7 +28,7 @@ export const SYSTEM_WARMUP = `你是费曼学习法预热教练。
 1. 输出 JSON 数组，格式：[{"role":"biz","question":"..."},{"role":"dev","question":"..."},{"role":"internal","question":"..."}]，不加任何 Markdown 围栏或前后缀。
 2. 语言：简体中文。
 3. 每个问题 ≤60 字，必须代入具体概念，以"你如何…让他/她…"句式。
-4. 三个角色分别是：客户的业务小姐姐(biz)、客户的程序员小哥(dev)、公司的模型产研同学(internal)。`
+4. 三个角色分别是：客户 CEO(biz)、客户 CTO(dev)、客户业务运营负责人(internal)。`
 
 export const SYSTEM_STEP1 = `你是 AI 概念通俗讲解教练，善于用生活化类比让非技术人员建立直觉。
 读者画像：大模型售前解决方案、业务架构师、产品经理、甚至完全不懂技术的管理者。
@@ -122,10 +122,10 @@ ${matBlock}
 你是费曼学习法教练。学习者是 MaaS 行业的售前/解决方案角色，即将学习「${rawQ}」。
 请生成 3 个预热思考题，让学习者在正式学习前先想想：学完之后我能不能讲给这些人听？
 
-3 个问题分别面向：
-1. biz（客户的业务小姐姐）：你如何向完全不懂技术的客户业务人员解释「${rawQ}」？让她背后说"他讲的我居然听懂了~"
-2. dev（客户的程序员小哥）：你如何向客户的开发者解释「${rawQ}」？让他背后说"这哥们是真的专业"
-3. internal（公司模型产研同学）：你如何让公司的模型产研同学觉得"他是售前里面最懂这个的了！"
+3 个问题分别面向（客户决策层三角色）：
+1. biz（客户 CEO）：你如何用生意语言向 CEO 讲清「${rawQ}」的战略价值与风险？让他觉得"这个人懂我的生意"
+2. dev（客户 CTO）：你如何向 CTO 讲清「${rawQ}」的技术判断与取舍？让他觉得"这人的技术洞察靠谱"
+3. internal（客户业务运营负责人）：你如何让业务运营负责人看到「${rawQ}」能落进现有流程、改善哪些指标？让他觉得"这事能落地"
 
 要求：
 ${grounding}- 每个问题必须代入「${rawQ}」这个具体概念，禁止用通用模板
@@ -390,9 +390,9 @@ export function buildFeynmanSystemPrompt(topic: string): string {
 必须返回单一合法 JSON：
 {
   "reviews": [
-    {"role":"biz","score":0-100,"oneLine":"客户业务小姐姐视角总评","strengths":["..."],"gaps":["..."],"followups":["..."]},
-    {"role":"dev","score":0-100,"oneLine":"客户程序员小哥视角总评","strengths":["..."],"gaps":["..."],"followups":["..."]},
-    {"role":"internal","score":0-100,"oneLine":"公司产研同学视角总评","strengths":["..."],"gaps":["..."],"followups":["..."]}
+    {"role":"biz","score":0-100,"oneLine":"客户 CEO 视角总评","strengths":["..."],"gaps":["..."],"followups":["..."]},
+    {"role":"dev","score":0-100,"oneLine":"客户 CTO 视角总评","strengths":["..."],"gaps":["..."],"followups":["..."]},
+    {"role":"internal","score":0-100,"oneLine":"客户业务运营负责人视角总评","strengths":["..."],"gaps":["..."],"followups":["..."]}
   ],
   "graph": {"concept":"${topic}","parent":"Transformer","relation":"与父节点的一句关系","tags":["标签1","标签2","标签3"],"oneLine":"一句话精髓"}
 }

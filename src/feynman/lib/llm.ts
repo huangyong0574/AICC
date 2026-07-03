@@ -355,7 +355,7 @@ export async function callFeynmanReview(
     model: cfg.model || "deepseek-v4-flash",
     messages: [
       { role: "system", content: sys },
-      { role: "user", content: `讲解内容 JSON：\n${JSON.stringify(context.map(q => ({ key: q.key, answer: q.answer })))}\n\n学习者原问题：${rawQuestion}\n\n学习者分别对三类听众的复述：\n- 客户业务小姐姐：${answers.biz || "（未填）"}\n- 客户程序员小哥：${answers.dev || "（未填）"}\n- 公司产研同学：${answers.internal || "（未填）"}` },
+      { role: "user", content: `讲解内容 JSON：\n${JSON.stringify(context.map(q => ({ key: q.key, answer: q.answer })))}\n\n学习者原问题：${rawQuestion}\n\n学习者分别对三类听众的复述：\n- 客户 CEO：${answers.biz || "（未填）"}\n- 客户 CTO：${answers.dev || "（未填）"}\n- 客户业务运营负责人：${answers.internal || "（未填）"}` },
     ],
     temperature: 0.5,
     response_format: { type: "json_object" },

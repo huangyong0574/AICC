@@ -147,10 +147,12 @@ export interface FeynmanWarmupQuestion {
   question: string
 }
 
+// 2026-06-26 语义重映射：面向客户决策层「链接 CEO / CTO / 业务运营负责人」。
+// key 保持 biz/dev/internal 不变——已存笔记（localStorage/vault）与 FeynmanAnswers 按旧键存储，改键会断档。
 export const FEYNMAN_ROLES: { key: FeynmanRole; label: string; hint: string; loadingText: string; question?: string }[] = [
-  { key: "biz", label: "讲给客户的业务小姐姐听", hint: "完全不懂技术，你能让她秒懂吗？", loadingText: "正在代入业务小姐姐视角…" },
-  { key: "dev", label: "讲给客户的程序员小哥听", hint: "他关心怎么调、踩坑在哪、上手门槛", loadingText: "正在代入程序员小哥视角…" },
-  { key: "internal", label: "让公司产研同学服气", hint: "模型产研同学，他们比你更懂底层", loadingText: "正在代入产研同学视角…" },
+  { key: "biz", label: "链接 CEO", hint: "不聊技术聊生意——战略价值、风险、投入产出", loadingText: "正在代入 CEO 视角…" },
+  { key: "dev", label: "链接 CTO", hint: "技术决策者——架构取舍、趋势判断、为什么是现在", loadingText: "正在代入 CTO 视角…" },
+  { key: "internal", label: "链接业务运营负责人", hint: "关心怎么落进现有流程、指标怎么变、团队怎么用", loadingText: "正在代入业务运营负责人视角…" },
 ]
 
 export interface FeynmanAnswers {

@@ -13,11 +13,11 @@ import { isLlmReady } from "@/lib/gateway"
 
 const ICONS: Record<string, any> = { biz: Users, dev: Code2, internal: FlaskConical }
 
-/** C1: 每个角色 textarea 的引导开头 starter */
+/** C1: 每个角色 textarea 的引导开头 starter（链接 CEO / CTO / 业务运营负责人） */
 const STARTERS: Record<string, string> = {
-  biz: "简单来说，这个概念就像……",
-  dev: "从工程实现角度看，关键步骤是……",
-  internal: "底层原理可以概括为……",
+  biz: "对咱们的生意来说，这个概念意味着……",
+  dev: "从技术判断看，它的关键取舍是……",
+  internal: "落到业务流程里，它改变的是……",
 }
 
 /** 步骤讲解内容的最小上下文投影：只要 key + answer 即可给 LLM 参考 */
